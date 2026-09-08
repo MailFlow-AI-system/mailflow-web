@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -124,7 +124,7 @@ a {
 }
 
 .app-header nav a:hover,
-.app-header nav a[aria-current='page'] {
+.app-header nav a[aria-current="page"] {
   color: var(--foreground);
 }
 

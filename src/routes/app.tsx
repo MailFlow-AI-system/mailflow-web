@@ -8,8 +8,8 @@ function ApplicationShell() {
       <p className="eyebrow">Authenticated application</p>
       <h1>Application shell</h1>
       <p>
-        Authentication and product capabilities will be introduced by their own
-        vertical feature slices.
+        Authentication and product capabilities will be introduced by their own vertical feature
+        slices.
       </p>
     </section>
   )

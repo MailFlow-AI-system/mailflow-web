@@ -1,4 +1,4 @@
-import { Link, createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowRight, CheckCircle2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -12,8 +12,8 @@ function Home() {
         <p className="eyebrow">Project foundation</p>
         <h1>Email workflows, built on a dependable foundation.</h1>
         <p className="hero__lede">
-          MailFlow is ready for feature development with server rendering, typed
-          routing, server-state caching, and Cloudflare Workers support.
+          MailFlow is ready for feature development with server rendering, typed routing,
+          server-state caching, and Cloudflare Workers support.
         </p>
         <div className="hero__actions">
           <Button render={<Link to="/app" />} size="lg">

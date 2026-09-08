@@ -2,7 +2,7 @@
   "name": "mailflow-web",
   "private": true,
   "type": "module",
-  "packageManager": "npm@10.9.8",
+  "packageManager": "bun@1.4.1",
   "engines": {
     "node": ">=22"
   },
@@ -18,10 +18,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "lint": "eslint",
-    "format": "prettier --write . && eslint --fix",
-    "check": "prettier --check .",
-    "deploy": "npm run build && wrangler deploy",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "check": "bun run lint && bun run format:check && bun run typecheck && bun run test && bun run build",
+    "deploy": "bun run build && wrangler deploy",
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
@@ -45,9 +47,9 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.26.0",
+    "@biomejs/biome": "^2.5.12",
     "@playwright/test": "^1.63.0",
     "@tanstack/devtools-vite": "^0.8.5",
-    "@tanstack/eslint-config": "^0.4.0",
     "@tanstack/router-cli": "^1.132.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
@@ -56,21 +58,10 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.1",
-    "eslint": "^9.20.0",
     "jsdom": "^30.0.1",
-    "msw": "^2.15.0",
-    "prettier": "^3.8.1",
     "typescript": "^6.0.2",
     "vite": "^8.0.0",
     "vitest": "^5.0.0",
     "wrangler": "^4.70.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "lightningcss",
-      "sharp",
-      "workerd"
-    ]
   }
 }

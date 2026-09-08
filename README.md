@@ -6,15 +6,15 @@ Workers with Static Assets.
 
 ## Requirements
 
-- Node.js 22 or newer
-- npm 10 or newer
+- Bun 1.4.1
+- Node.js 22 or newer (for ecosystem tooling compatibility)
 
 ## Local development
 
 ```bash
-npm install
+bun install
 cp .env.example .env
-npm run dev
+bun run dev
 ```
 
 The application is available at `http://localhost:3000`.
@@ -22,19 +22,21 @@ The application is available at `http://localhost:3000`.
 ## Commands
 
 ```bash
-npm run dev          # Start the local development server
-npm run build        # Create the Cloudflare production build
-npm run preview      # Preview the Worker build locally
-npm run typecheck    # Validate TypeScript
-npm run lint         # Run ESLint
-npm run check        # Check formatting
-npm run test         # Run unit and component tests
-npm run test:e2e     # Run the Playwright browser smoke test
-npm run cf-typegen   # Generate types for Cloudflare bindings
+bun run dev           # Start the local development server
+bun run build         # Create the Cloudflare production build
+bun run preview       # Preview the Worker build locally
+bun run typecheck     # Validate TypeScript
+bun run lint          # Run Biome checks
+bun run lint:fix      # Apply safe Biome fixes
+bun run format        # Format the codebase with Biome
+bun run check         # Run all validation checks
+bun run test          # Run unit and component tests
+bun run test:e2e      # Run the Playwright browser smoke test
+bun run cf-typegen    # Generate types for Cloudflare bindings
 ```
 
 Before running the browser test for the first time, install its local browser and
-Linux dependencies with `npx playwright install --with-deps chromium`.
+Linux dependencies with `bunx playwright install --with-deps chromium`.
 
 `deploy` is available for manual Cloudflare deployment, but CI/CD automation is
 intentionally outside this initialization task.
@@ -65,7 +67,7 @@ src/config/             Validated client configuration
 src/i18n/               Locale and timezone primitives
 src/lib/                Shared application adapters
 src/routes/             TanStack Router file-based routes
-src/test/               Test setup and MSW network mocks
+src/test/               Shared test setup
 ```
 
 ## Frontend stack validation

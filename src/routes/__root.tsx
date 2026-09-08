@@ -1,13 +1,13 @@
+import { TanStackDevtools } from '@tanstack/react-devtools'
 import type { QueryClient } from '@tanstack/react-query'
 import {
+  createRootRouteWithContext,
   HeadContent,
   Link,
   Outlet,
   Scripts,
-  createRootRouteWithContext,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { TanStackDevtools } from '@tanstack/react-devtools'
 
 import appCss from '../styles.css?url'
 
@@ -53,11 +53,7 @@ function AppShell() {
           <span>MailFlow</span>
         </Link>
         <nav aria-label="Primary navigation">
-          <Link
-            to="/"
-            activeOptions={{ exact: true }}
-            activeProps={{ 'aria-current': 'page' }}
-          >
+          <Link to="/" activeOptions={{ exact: true }} activeProps={{ 'aria-current': 'page' }}>
             Home
           </Link>
           <Link to="/app" activeProps={{ 'aria-current': 'page' }}>

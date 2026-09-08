@@ -1,8 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-test('renders the public foundation and opens the application shell', async ({
-  page,
-}) => {
+test('renders the public foundation and opens the application shell', async ({ page }) => {
   await page.goto('/')
 
   await expect(
@@ -14,7 +12,5 @@ test('renders the public foundation and opens the application shell', async ({
   await page.getByRole('link', { name: 'Open application shell' }).click()
 
   await expect(page).toHaveURL('/app')
-  await expect(
-    page.getByRole('heading', { name: 'Application shell' }),
-  ).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Application shell' })).toBeVisible()
 })
