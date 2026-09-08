@@ -47,15 +47,16 @@ intentionally outside this initialization task.
 - TanStack Query owns backend server state and its cache.
 - URL-visible navigation and filter state belongs in router search parameters.
 - React state is the default for simple local component state.
+- Zustand is available for shared client-only state that does not belong in the URL
+  or TanStack Query.
 - Server functions are presentation-edge adapters only: session bootstrap,
   backend API calls, locale, CSP, and correlation concerns. They must not contain
   domain rules or access PostgreSQL or R2 directly.
 - UI and persisted application content start in English. Locale configuration is
   centralized in `src/i18n`, and timestamps are formatted in the user's timezone.
 
-Jotai and Tiptap are approved for future complex editor state and rich-text
-features, respectively. They are deliberately deferred until a feature needs
-them.
+Tiptap is approved for future rich-text features and is deliberately deferred
+until a feature needs it.
 
 ## Project structure
 
