@@ -89,7 +89,8 @@ React Router with Vite. That fallback is not active in this repository.
 ## Environment
 
 `VITE_API_BASE_URL` is the public base URL for the MailFlow backend. It defaults
-to `/api`.
+to `/api` and is validated with T3 Env during application startup and production
+builds.
 
 Only variables prefixed with `VITE_` are exposed to browser code. Never place
 secrets in them.
