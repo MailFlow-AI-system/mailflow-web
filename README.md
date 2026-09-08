@@ -7,7 +7,6 @@ Workers with Static Assets.
 ## Requirements
 
 - Bun 1.4.1
-- Node.js 22 or newer (for ecosystem tooling compatibility)
 
 ## Local development
 
