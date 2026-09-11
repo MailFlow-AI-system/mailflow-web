@@ -7,21 +7,26 @@ Workers with Static Assets.
 ## Requirements
 
 - Bun 1.4.1
+- Infisical CLI
+- Access to the `MailFlow-AI` project in Infisical
 
 ## Local development
 
 ```bash
-bun install
-cp .env.example .env
+bun install --frozen-lockfile
+infisical login
+infisical init
 bun run dev
 ```
 
-The application is available at `http://localhost:3000`.
+Select `MailFlow-AI` when prompted. Development commands read the `dev` environment and `/mailflow-web` secret path. `.infisical.json` contains project-link metadata, never secret values, and should be committed.
+
+The application is available at `http://127.0.0.1:3000`.
 
 ## Commands
 
 ```bash
-bun run dev           # Start the local development server
+bun run dev           # Start the local development server with Infisical
 bun run build         # Create the Cloudflare production build
 bun run preview       # Preview the Worker build locally
 bun run typecheck     # Validate TypeScript
@@ -88,9 +93,26 @@ React Router with Vite. That fallback is not active in this repository.
 
 ## Environment
 
+Infisical injects environment variables before a process starts. Application
+code does not use the Infisical SDK or load `.env` files.
+
 `VITE_API_BASE_URL` is the public base URL for the MailFlow backend. It defaults
-to `/api` and is validated with T3 Env during application startup and production
-builds.
+to `/api` when unset and is validated with T3 Env when the router boots and
+during production builds. Local development uses `http://localhost:8080` from
+the `/mailflow-web` Infisical path.
 
 Only variables prefixed with `VITE_` are exposed to browser code. Never place
 secrets in them.
+
+Vite does not load `.env` files (`envDir: false`). Build validation reads
+`process.env` — the same process Infisical injects into. `.env.example`
+documents the contract only.
+
+Playwright starts the app with `bun run dev`, so `test:e2e` needs the Infisical
+CLI. `lint`, `test`, and `typecheck` do not.
+
+Local production-like builds:
+
+```bash
+infisical run --env=dev --path=/mailflow-web -- bun run build
+```
