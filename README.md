@@ -21,7 +21,7 @@ bun run dev
 
 Select `MailFlow-AI` when prompted. Development commands read the `dev` environment and `/mailflow-web` secret path. `.infisical.json` contains project-link metadata, never secret values, and should be committed.
 
-The application is available at `http://localhost:3000`.
+The application is available at `http://127.0.0.1:3000`.
 
 ## Commands
 
@@ -97,19 +97,22 @@ Infisical injects environment variables before a process starts. Application
 code does not use the Infisical SDK or load `.env` files.
 
 `VITE_API_BASE_URL` is the public base URL for the MailFlow backend. It defaults
-to `/api` when unset and is validated with T3 Env during application startup and
-production builds. Local development uses `http://localhost:8080` from the
-`/mailflow-web` Infisical path.
+to `/api` when unset and is validated with T3 Env when the router boots and
+during production builds. Local development uses `http://localhost:8080` from
+the `/mailflow-web` Infisical path.
 
 Only variables prefixed with `VITE_` are exposed to browser code. Never place
 secrets in them.
 
-`.env.example` documents the contract. It is not loaded by the application.
+Vite does not load `.env` files (`envDir: false`). Build validation reads
+`process.env` — the same process Infisical injects into. `.env.example`
+documents the contract only.
+
+Playwright starts the app with `bun run dev`, so `test:e2e` needs the Infisical
+CLI. `lint`, `test`, and `typecheck` do not.
 
 Local production-like builds:
 
 ```bash
 infisical run --env=dev --path=/mailflow-web -- bun run build
 ```
-
-`lint`, `test`, and `typecheck` do not require Infisical.

@@ -7,7 +7,7 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "infisical run --env=dev --path=/mailflow-web -- vite dev --port 3000",
+    "dev": "infisical run --env=dev --path=/mailflow-web -- vite dev --port 3000 --host 127.0.0.1",
     "generate-routes": "tsr generate",
     "build": "vite build",
     "preview": "vite preview",

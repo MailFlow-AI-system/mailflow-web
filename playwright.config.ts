@@ -17,8 +17,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command:
-      'infisical run --env=dev --path=/mailflow-web -- vite dev --port 3000 --host 127.0.0.1',
+    command: 'bun run dev',
     url: 'http://127.0.0.1:3000',
     reuseExistingServer: !process.env.CI,
   },
