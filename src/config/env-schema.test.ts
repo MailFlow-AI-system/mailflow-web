@@ -12,4 +12,14 @@ describe('createClientEnvironment', () => {
       'Invalid environment variables',
     )
   })
+
+  it('treats an empty string as unset', () => {
+    expect(createClientEnvironment({ VITE_API_BASE_URL: '' }).VITE_API_BASE_URL).toBe('/api')
+  })
+
+  it('accepts an absolute URL', () => {
+    expect(
+      createClientEnvironment({ VITE_API_BASE_URL: 'http://localhost:8080' }).VITE_API_BASE_URL,
+    ).toBe('http://localhost:8080')
+  })
 })
