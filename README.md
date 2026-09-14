@@ -28,6 +28,7 @@ The application is available at `http://127.0.0.1:3000`.
 ```bash
 bun run dev           # Start the local development server with Infisical
 bun run build         # Create the Cloudflare production build
+bun run build:local   # Same build, with Infisical `dev` env injected
 bun run preview       # Preview the Worker build locally
 bun run typecheck     # Validate TypeScript
 bun run lint          # Run Biome checks
@@ -111,8 +112,8 @@ documents the contract only.
 Playwright starts the app with `bun run dev`, so `test:e2e` needs the Infisical
 CLI. `lint`, `test`, and `typecheck` do not.
 
-Local production-like builds:
+Local production-like builds (`VITE_*` from Infisical `dev`):
 
 ```bash
-infisical run --env=dev --path=/mailflow-web -- bun run build
+bun run build:local
 ```
