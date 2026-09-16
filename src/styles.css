@@ -1,60 +1,5 @@
 @import "tailwindcss";
-
-@custom-variant dark (&:is(.dark *));
-
-:root {
-  color-scheme: light;
-  --radius: 0.75rem;
-  --background: oklch(0.985 0.004 106);
-  --foreground: oklch(0.19 0.018 257);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.19 0.018 257);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.19 0.018 257);
-  --primary: oklch(0.38 0.125 248);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.94 0.012 248);
-  --secondary-foreground: oklch(0.28 0.06 248);
-  --muted: oklch(0.95 0.006 257);
-  --muted-foreground: oklch(0.49 0.022 257);
-  --accent: oklch(0.92 0.035 155);
-  --accent-foreground: oklch(0.26 0.06 155);
-  --destructive: oklch(0.58 0.22 27);
-  --border: oklch(0.89 0.012 257);
-  --input: oklch(0.89 0.012 257);
-  --ring: oklch(0.55 0.13 248);
-}
-
-@theme inline {
-  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-}
-
-* {
-  box-sizing: border-box;
-  border-color: var(--border);
-}
+@import "@mailflow/ui/styles.css";
 
 html,
 body {
@@ -63,19 +8,18 @@ body {
 
 body {
   margin: 0;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
   text-rendering: optimizeLegibility;
 }
 
-button,
-a {
-  -webkit-tap-highlight-color: transparent;
-}
+@layer base {
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
 
-a {
-  color: inherit;
+  a {
+    color: inherit;
+  }
 }
 
 .app-shell {
@@ -96,7 +40,7 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 0.625rem;
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
   text-decoration: none;
 }
 
@@ -105,10 +49,10 @@ a {
   width: 2rem;
   height: 2rem;
   place-items: center;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-sm);
   background: var(--primary);
   color: var(--primary-foreground);
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
 }
 
 .app-header nav {
@@ -118,8 +62,8 @@ a {
 
 .app-header nav a {
   color: var(--muted-foreground);
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
   text-decoration: none;
 }
 
@@ -131,28 +75,28 @@ a {
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.65fr);
-  gap: clamp(2rem, 7vw, 7rem);
+  gap: clamp(var(--space-8), 7vw, 7rem);
   align-items: center;
   width: min(72rem, calc(100% - 2rem));
   min-height: calc(100vh - 4.5rem);
   margin: 0 auto;
-  padding: 5rem 0;
+  padding: var(--space-20) 0;
 }
 
 .hero h1,
 .placeholder-page h1 {
   max-width: 13ch;
   margin: 0;
-  font-size: clamp(2.75rem, 7vw, 5.75rem);
+  font-size: clamp(var(--font-size-4xl), 7vw, var(--font-size-7xl));
   line-height: 0.96;
   letter-spacing: -0.055em;
 }
 
 .eyebrow {
-  margin: 0 0 1.25rem;
+  margin: 0 0 calc(var(--spacing) * 5);
   color: var(--primary);
-  font-size: 0.75rem;
-  font-weight: 800;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
@@ -160,41 +104,41 @@ a {
 .hero__lede,
 .placeholder-page > p:last-child {
   max-width: 42rem;
-  margin: 1.75rem 0 0;
+  margin: calc(var(--spacing) * 7) 0 0;
   color: var(--muted-foreground);
-  font-size: 1.125rem;
+  font-size: var(--font-size-lg);
   line-height: 1.7;
 }
 
 .hero__actions {
-  margin-top: 2rem;
+  margin-top: var(--space-8);
 }
 
 .foundation-card {
-  padding: 2rem;
+  padding: var(--space-8);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   background: var(--card);
-  box-shadow: 0 1.5rem 4rem oklch(0.19 0.018 257 / 0.08);
+  box-shadow: var(--elevation-xl);
 }
 
 .foundation-card__label {
   margin: 0;
   color: var(--muted-foreground);
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .foundation-card h2 {
-  margin: 0.5rem 0 1.5rem;
-  font-size: 1.5rem;
+  margin: var(--space-2) 0 var(--space-6);
+  font-size: var(--font-size-2xl);
 }
 
 .foundation-card ul {
   display: grid;
-  gap: 1rem;
+  gap: var(--space-4);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -203,31 +147,63 @@ a {
 .foundation-card li {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
   color: var(--muted-foreground);
-  font-size: 0.9rem;
+  font-size: var(--font-size-sm);
 }
 
 .foundation-card li svg {
   width: 1.125rem;
-  color: oklch(0.52 0.13 155);
+  color: var(--success);
+}
+
+.theme-control {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--border);
+}
+
+.theme-control label {
+  color: var(--muted-foreground);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.theme-control select {
+  width: 100%;
+  min-height: var(--space-10);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--input);
+  border-radius: var(--radius-md);
+  background: var(--background);
+  color: var(--foreground);
+  font: inherit;
+}
+
+.theme-control__status {
+  color: var(--muted-foreground);
+  font-size: var(--font-size-xs);
 }
 
 .placeholder-page {
   width: min(72rem, calc(100% - 2rem));
   margin: 0 auto;
-  padding: 6rem 0;
+  padding: var(--space-24) 0;
 }
 
 .placeholder-page h1 {
-  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  font-size: clamp(var(--font-size-3xl), 5vw, var(--font-size-6xl));
 }
 
 @media (max-width: 48rem) {
   .hero {
     grid-template-columns: 1fr;
     min-height: auto;
-    padding: 4rem 0;
+    padding: var(--space-16) 0;
   }
 
   .app-header {
