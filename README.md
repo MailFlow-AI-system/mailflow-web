@@ -43,6 +43,13 @@ bun run cf-typegen    # Generate types for Cloudflare bindings
 Before running the browser test for the first time, install its local browser and
 Linux dependencies with `bunx playwright install --with-deps chromium`.
 
+`test:e2e` starts Vite directly so it does not require Infisical. CI uses port
+3000. Override the port when another local service already uses it:
+
+```bash
+E2E_PORT=3001 bun run test:e2e
+```
+
 `deploy` is available for manual Cloudflare deployment, but CI/CD automation is
 intentionally outside this initialization task.
 
@@ -68,13 +75,32 @@ until a feature needs it.
 
 ```text
 e2e/                    Playwright browser tests
-src/components/ui/      shadcn/ui components backed by Base UI
 src/config/             Validated client configuration
 src/i18n/               Locale and timezone primitives
-src/lib/                Shared application adapters
 src/routes/             TanStack Router file-based routes
 src/test/               Shared test setup
 ```
+
+## Shared design system
+
+The application consumes `@mailflow/ui` from the coordinated design-system commit
+[`710545185e63c125ee634d3d557ec816851f81ca`](https://github.com/MailFlow-AI-system/mailflow-design-system/pull/1):
+
+```sh
+bun add '@mailflow/ui@git+https://github.com/MailFlow-AI-system/mailflow-design-system.git#710545185e63c125ee634d3d557ec816851f81ca'
+```
+
+The host imports Tailwind once and then the shared stylesheet from
+`@mailflow/ui/styles.css`. Shared Button, icon, token, font, and theme
+implementations stay in the package; page layouts and product behavior stay in
+this repository. Vite compiles the package source for SSR through
+`ssr.noExternal`.
+
+The document applies the stored preference before first paint, defaults to dark, and wraps the route tree
+with `ThemeProvider`. Users can select light, dark, or system preference from
+the foundation page. The selection is persisted per origin under
+`mailflow-theme`. The distributed font and component notices are available at
+`/third-party-notices.txt`.
 
 ## Frontend stack validation
 
@@ -109,11 +135,22 @@ Vite does not load `.env` files (`envDir: false`). Build validation reads
 `process.env` — the same process Infisical injects into. `.env.example`
 documents the contract only.
 
-Playwright starts the app with `bun run dev`, so `test:e2e` needs the Infisical
-CLI. `lint`, `test`, and `typecheck` do not.
+Playwright starts the app with direct Vite, so `test:e2e` does not need the
+Infisical CLI. `lint`, `test`, and `typecheck` do not.
 
 Local production-like builds (`VITE_*` from Infisical `dev`):
 
 ```bash
 bun run build:local
 ```
+
+## Listening
+
+This repository keeps application layouts, routing, environment validation, and
+Infisical wrappers local while consuming shared UI through a full Git SHA. The
+theme bootstrap is inline because it must run before first paint; its source is
+package-owned. E2E defaults to port 3000 and accepts an `E2E_PORT` override; local
+validation used 3001 to preserve an unrelated service.
+
+After the design-system pull request merges, update the dependency pin to its accepted
+`development` commit before merging this consumer pull request.

@@ -1,7 +1,8 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowRight, CheckCircle2 } from 'lucide-react'
+import { Button } from '@mailflow/ui/button'
+import { ArrowRight, CheckCircle2 } from '@mailflow/ui/icons'
+import { useTheme } from '@mailflow/ui/theme'
 
-import { Button } from '@/components/ui/button'
+import { createFileRoute, Link } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/')({ component: Home })
 
@@ -16,9 +17,9 @@ function Home() {
           server-state caching, and Cloudflare Workers support.
         </p>
         <div className="hero__actions">
-          <Button render={<Link to="/app" />} size="lg">
+          <Button nativeButton={false} render={<Link to="/app" />} size="lg">
             Open application shell
-            <ArrowRight data-icon="inline-end" />
+            <ArrowRight aria-hidden="true" data-icon="inline-end" />
           </Button>
         </div>
       </div>
@@ -39,7 +40,32 @@ function Home() {
             <CheckCircle2 aria-hidden="true" /> Base UI design foundation
           </li>
         </ul>
+        <ThemeControl />
       </aside>
     </section>
+  )
+}
+
+function ThemeControl() {
+  const { resolvedTheme, setTheme, theme } = useTheme()
+
+  return (
+    <div className="theme-control">
+      <label className="text-sm font-medium" htmlFor="theme-preference">
+        Theme preference
+      </label>
+      <select
+        id="theme-preference"
+        value={theme}
+        onChange={(event) => setTheme(event.target.value as typeof theme)}
+      >
+        <option value="dark">Dark</option>
+        <option value="light">Light</option>
+        <option value="system">System</option>
+      </select>
+      <span className="theme-control__status" aria-live="polite">
+        Using {resolvedTheme} palette
+      </span>
+    </div>
   )
 }

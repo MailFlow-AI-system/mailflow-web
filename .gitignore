@@ -16,3 +16,5 @@ todos.json
 coverage
 playwright-report
 test-results
+graphify-out/
+.codex/hooks.json

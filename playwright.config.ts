@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const e2ePort = Number(process.env.E2E_PORT ?? 3000)
+const e2eHost = '127.0.0.1'
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -7,7 +10,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: 'html',
   use: {
-    baseURL: 'http://127.0.0.1:3000',
+    baseURL: `http://${e2eHost}:${e2ePort}`,
     trace: 'on-first-retry',
   },
   projects: [
@@ -17,8 +20,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'bun run dev',
-    url: 'http://127.0.0.1:3000',
+    command: `bun run vite -- dev --port ${e2ePort} --host ${e2eHost}`,
+    url: `http://${e2eHost}:${e2ePort}`,
     reuseExistingServer: !process.env.CI,
   },
 })
