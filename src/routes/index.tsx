@@ -1,6 +1,5 @@
 import { Button } from '@mailflow/ui/button'
 import { ArrowRight, CheckCircle2 } from '@mailflow/ui/icons'
-import { Label } from '@mailflow/ui/label'
 import { useTheme } from '@mailflow/ui/theme'
 
 import { createFileRoute, Link } from '@tanstack/react-router'
@@ -52,7 +51,9 @@ function ThemeControl() {
 
   return (
     <div className="theme-control">
-      <Label htmlFor="theme-preference">Theme preference</Label>
+      <label className="text-sm font-medium" htmlFor="theme-preference">
+        Theme preference
+      </label>
       <select
         id="theme-preference"
         value={theme}

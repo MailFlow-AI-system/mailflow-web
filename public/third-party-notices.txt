@@ -1,6 +1,6 @@
 # Third-party notices
 
-The Button and Label styling is adapted from shadcn/ui and the MailFlow Lovable reference.
+The Button styling is adapted from shadcn/ui and the MailFlow Lovable reference.
 
 ## shadcn/ui
 

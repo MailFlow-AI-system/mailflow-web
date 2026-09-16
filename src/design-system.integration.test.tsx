@@ -1,5 +1,4 @@
 import { Button } from '@mailflow/ui/button'
-import { Label } from '@mailflow/ui/label'
 import { ThemeProvider, useTheme } from '@mailflow/ui/theme'
 import { act, cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -109,14 +108,16 @@ describe('shared design system integration', () => {
     expect(screen.getByTestId('resolved-theme')).toHaveTextContent('light')
   })
 
-  it('uses shared Button and Label components with native form controls', async () => {
+  it('uses the shared Button with native form controls', async () => {
     const user = userEvent.setup()
     const handleSubmit = vi.fn((event: FormEvent<HTMLFormElement>) => event.preventDefault())
 
     render(
       <ThemeProvider>
         <form onSubmit={handleSubmit}>
-          <Label htmlFor="recipient">Recipient</Label>
+          <label className="text-sm font-medium" htmlFor="recipient">
+            Recipient
+          </label>
           <input id="recipient" />
           <Button type="submit">Send</Button>
         </form>

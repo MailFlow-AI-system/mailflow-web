@@ -84,14 +84,14 @@ src/test/               Shared test setup
 ## Shared design system
 
 The application consumes `@mailflow/ui` from the coordinated design-system commit
-[`b418c12228a125a7be29095dd2f941857528a203`](https://github.com/MailFlow-AI-system/mailflow-design-system/pull/1):
+[`710545185e63c125ee634d3d557ec816851f81ca`](https://github.com/MailFlow-AI-system/mailflow-design-system/pull/1):
 
 ```sh
-bun add '@mailflow/ui@git+https://github.com/MailFlow-AI-system/mailflow-design-system.git#b418c12228a125a7be29095dd2f941857528a203'
+bun add '@mailflow/ui@git+https://github.com/MailFlow-AI-system/mailflow-design-system.git#710545185e63c125ee634d3d557ec816851f81ca'
 ```
 
 The host imports Tailwind once and then the shared stylesheet from
-`@mailflow/ui/styles.css`. Shared Button, Label, icon, token, font, and theme
+`@mailflow/ui/styles.css`. Shared Button, icon, token, font, and theme
 implementations stay in the package; page layouts and product behavior stay in
 this repository. Vite compiles the package source for SSR through
 `ssr.noExternal`.
