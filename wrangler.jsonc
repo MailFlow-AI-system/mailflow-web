@@ -6,5 +6,20 @@
   "main": "@tanstack/react-start/server-entry",
   "observability": {
     "enabled": true
+  },
+  "workers_dev": true,
+  "env": {
+    "development": {
+      "name": "mailflow-web-development",
+      "workers_dev": true
+    },
+    "staging": {
+      "name": "mailflow-web-staging",
+      "workers_dev": true
+    },
+    "production": {
+      "name": "mailflow-web-production",
+      "workers_dev": true
+    }
   }
 }

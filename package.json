@@ -21,7 +21,10 @@
     "format": "biome format --write .",
     "format:check": "biome format .",
     "check": "bun run lint && bun run format:check && bun run typecheck && bun run test && bun run build",
-    "deploy": "bun run build && wrangler deploy",
+    "deploy": "bun run deploy:development",
+    "deploy:development": "CLOUDFLARE_ENV=development bun run build && wrangler deploy --env development",
+    "deploy:staging": "CLOUDFLARE_ENV=staging bun run build && wrangler deploy --env staging",
+    "deploy:production": "CLOUDFLARE_ENV=production bun run build && wrangler deploy --env production",
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
