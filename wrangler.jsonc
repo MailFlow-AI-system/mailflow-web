@@ -18,7 +18,7 @@
       "workers_dev": true
     },
     "production": {
-      "name": "mailflow-web-production",
+      "name": "mailflow-web",
       "workers_dev": true
     }
   }
