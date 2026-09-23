@@ -28,7 +28,10 @@ The application is available at `http://127.0.0.1:3000`.
 ```bash
 bun run dev           # Start the local development server with Infisical
 bun run build         # Create the Cloudflare production build
-bun run build:local   # Same build, with Infisical `dev` env injected
+bun run build:development # Build with Infisical `dev` env injected
+bun run build:local   # Alias for build:development
+bun run build:staging # Build with Infisical `staging` env injected
+bun run build:production # Build with Infisical `prod` env injected
 bun run preview       # Preview the Worker build locally
 bun run typecheck     # Validate TypeScript
 bun run lint          # Run Biome checks
@@ -44,7 +47,10 @@ Before running the browser test for the first time, install its local browser an
 Linux dependencies with `bunx playwright install --with-deps chromium`.
 
 `deploy` is available for manual Cloudflare deployment, but CI/CD automation is
-intentionally outside this initialization task.
+intentionally outside this initialization task. Every `deploy:*` command requires
+`CLOUDFLARE_ACCOUNT_ID` to be set to the target Cloudflare account ID. The local
+guard validates that the variable is present and has the expected format; it does
+not verify that the ID belongs to the intended account.
 
 ## Architecture boundaries
 
@@ -109,10 +115,16 @@ Vite does not load `.env` files (`envDir: false`). Build validation reads
 `process.env` — the same process Infisical injects into. `.env.example`
 documents the contract only.
 
-Playwright starts the app with `bun run dev`, so `test:e2e` needs the Infisical
-CLI. `lint`, `test`, and `typecheck` do not.
+Playwright starts a local Vite server with test-only public values, so `test:e2e`
+does not need Infisical. The manual `dev` command still uses Infisical. `lint`,
+`test`, and `typecheck` do not need it either.
 
-Local production-like builds (`VITE_*` from Infisical `dev`):
+Environment-specific builds inject `/mailflow-web` before `vite build`. The
+Infisical environment slugs intentionally differ from the Cloudflare environment
+names: `dev` maps to Cloudflare `development`, `staging` maps to `staging`, and
+`prod` maps to Cloudflare `production`.
+
+Local production-like build (`VITE_*` from Infisical `dev`):
 
 ```bash
 bun run build:local
