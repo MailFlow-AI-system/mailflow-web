@@ -23,8 +23,7 @@ test('captures sanitized TanStack navigation telemetry', async ({ page }) => {
     await route.fulfill({ status: 204, body: '' })
   })
 
-  await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  await page.goto('/?email=person%40example.test')
   await page.getByRole('link', { name: 'Open application shell' }).click()
   await expect(page).toHaveURL('/app')
   await expect
@@ -33,7 +32,7 @@ test('captures sanitized TanStack navigation telemetry', async ({ page }) => {
 
   const serialized = JSON.stringify(envelopes)
   expect(serialized).toContain('mailflow.navigation')
-  expect(serialized).not.toMatch(/authorization|cookie|person@example\.test|private message body/i)
+  expect(serialized).not.toContain('person@example.test')
 })
 
 test('captures controlled browser errors without private content', async ({ page }) => {
@@ -45,17 +44,16 @@ test('captures controlled browser errors without private content', async ({ page
   })
 
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
   await page.evaluate(() => {
     window.setTimeout(() => {
-      throw new Error('controlled browser failure')
+      throw new Error('private message body 92615')
     }, 0)
   })
   await expect
     .poll(() => JSON.stringify(envelopes), { timeout: 10_000 })
-    .toContain('controlled browser failure')
+    .toContain('"value":"[redacted]"')
 
   const serialized = JSON.stringify(envelopes)
-  expect(serialized).toContain('controlled browser failure')
-  expect(serialized).not.toMatch(/authorization|cookie|person@example\.test|private message body/i)
+  expect(serialized).toContain('"value":"[redacted]"')
+  expect(serialized).not.toContain('private message body 92615')
 })

@@ -15,9 +15,6 @@ const config = defineConfig(({ command }) => {
   return {
     envDir: false,
     resolve: { tsconfigPaths: true },
-    build: {
-      sourcemap: process.env.FARO_SOURCE_MAPS === 'true' ? 'hidden' : false,
-    },
     plugins: [
       devtools(),
       cloudflare({ viteEnvironment: { name: 'ssr' } }),
