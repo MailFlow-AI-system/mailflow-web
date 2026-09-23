@@ -77,7 +77,7 @@ src/types/              Types shared by route infrastructure
 
 ## Design system
 
-The web app consumes `@mailflow/ui` from a full Git commit SHA pinned in `package.json` and `bun.lock`. The package supplies the dark palette, Inter font, tokens, Button, and shared icons. The shell stays on that dark theme. Application layout remains in the `app-shell` feature slice.
+The web app consumes `@mailflow/ui` from a full Git commit SHA pinned in `package.json` and `bun.lock`. The package supplies the light and dark palettes, Inter font, tokens, Button, theme management, and shared icons. The shell sidebar toggles between those themes. Application layout remains in the `app-shell` feature slice.
 
 The `/app` route owns the shell for future nested application pages. Add a route, navigation entry, and explicit breadcrumb when a product page is implemented. Until then, planned sidebar entries are visible but disabled. Authentication is not part of this shell.
 

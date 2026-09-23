@@ -1,7 +1,9 @@
-import { Sparkles } from '@mailflow/ui/icons'
+import { Button } from '@mailflow/ui/components'
+import { Moon, Sparkles, Sun } from '@mailflow/ui/icons'
+import { useTheme } from '@mailflow/ui/theme'
 import { Link, useRouterState } from '@tanstack/react-router'
 
-import { navigationSections, settingsItem, themeItem } from '../navigation'
+import { navigationSections, settingsItem } from '../navigation'
 import type { NavigationItem } from '../types'
 import {
   SidebarContent,
@@ -47,6 +49,11 @@ function NavigationItemButton({ item }: { item: NavigationItem }) {
 }
 
 function SidebarNavigation() {
+  const { resolvedTheme, setTheme } = useTheme()
+  const switchToLight = resolvedTheme === 'dark'
+  const ThemeIcon = switchToLight ? Sun : Moon
+  const themeLabel = switchToLight ? 'Light theme' : 'Dark theme'
+
   return (
     <>
       <SidebarHeader className="flex-row items-center justify-between group-data-[collapsible=icon]:justify-center">
@@ -85,7 +92,17 @@ function SidebarNavigation() {
             <NavigationItemButton item={settingsItem} />
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <NavigationItemButton item={themeItem} />
+            <Button
+              aria-label={switchToLight ? 'Switch to light theme' : 'Switch to dark theme'}
+              className="h-8 w-full min-w-0 justify-start gap-2 px-2 font-normal text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:p-2 [&_svg]:size-4"
+              onClick={() => setTheme(switchToLight ? 'light' : 'dark')}
+              title={themeLabel}
+              type="button"
+              variant="ghost"
+            >
+              <ThemeIcon aria-hidden="true" />
+              <span className="group-data-[collapsible=icon]:hidden">{themeLabel}</span>
+            </Button>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

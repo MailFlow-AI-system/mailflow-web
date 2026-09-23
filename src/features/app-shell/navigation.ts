@@ -7,7 +7,6 @@ import {
   Lightbulb,
   ListChecks,
   Megaphone,
-  Moon,
   Send,
   Settings,
   ShieldAlert,
@@ -56,8 +55,6 @@ export const navigationSections: readonly NavigationSection[] = [
 ]
 
 export const settingsItem: NavigationItem = { label: 'Settings', icon: Settings }
-
-export const themeItem: NavigationItem = { label: 'Theme', icon: Moon }
 
 export const breadcrumbsByPath: Readonly<Record<string, readonly BreadcrumbItem[]>> = {
   '/app': [{ label: 'Início' }],

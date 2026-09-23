@@ -1,3 +1,5 @@
+import { ThemeProvider } from '@mailflow/ui/theme'
+import { themeScript } from '@mailflow/ui/theme-script'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
@@ -20,12 +22,20 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootDocument({ children }: RootDocumentProps) {
   return (
-    <html className="dark" data-theme="dark" lang="en" style={{ colorScheme: 'dark' }}>
+    <html
+      className="dark"
+      data-theme="dark"
+      lang="en"
+      style={{ colorScheme: 'dark' }}
+      suppressHydrationWarning
+    >
       <head>
         <HeadContent />
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: package-owned theme bootstrap */}
+        <script data-mailflow-theme dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
         {import.meta.env.DEV ? (
           <TanStackDevtools
             config={{ position: 'bottom-right' }}
