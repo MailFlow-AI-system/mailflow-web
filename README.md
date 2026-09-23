@@ -47,10 +47,8 @@ Before running the browser test for the first time, install its local browser an
 Linux dependencies with `bunx playwright install --with-deps chromium`.
 
 `deploy` is available for manual Cloudflare deployment, but CI/CD automation is
-intentionally outside this initialization task. Every `deploy:*` command requires
-`CLOUDFLARE_ACCOUNT_ID` to be set to the target Cloudflare account ID. The local
-guard validates that the variable is present and has the expected format; it does
-not verify that the ID belongs to the intended account.
+intentionally outside this initialization task. Wrangler uses your authenticated
+Cloudflare account for manual deployments and prompts for an account when needed.
 
 ## Architecture boundaries
 
