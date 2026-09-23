@@ -58,9 +58,8 @@ Cloudflare account for manual deployments and prompts for an account when needed
 - The authenticated application is expected to be client-heavy.
 - TanStack Query owns backend server state and its cache.
 - URL-visible navigation and filter state belongs in router search parameters.
-- React state is the default for simple local component state.
-- Zustand is available for shared client-only state that does not belong in the URL
-  or TanStack Query.
+- React state is the default for simple local component state. The application
+  shell keeps its open and collapsed state inside the sidebar.
 - Server functions are presentation-edge adapters only: session bootstrap,
   backend API calls, locale, CSP, and correlation concerns. They must not contain
   domain rules or access PostgreSQL or R2 directly.
@@ -76,12 +75,14 @@ Other features should adopt it through their own feature boundaries.
 e2e/                    Playwright browser tests
 src/features/auth/       Login, logout, and session adapters, schemas, and types
 src/config/             Validated client configuration
+src/features/app-shell/ Reusable application layout and navigation
 src/i18n/               Locale and timezone primitives
 src/routes/             TanStack Router file-based routes
 src/routes/_public/     Public page layout and routes
 src/routes/_authenticated/  Session-guarded pathless layout
 src/routes/_authenticated/_mail/  Mail navigation layout and routes
 src/test/               Shared test setup
+src/types/              Types shared by route infrastructure
 ```
 
 ## Routing
@@ -102,6 +103,17 @@ The mail pages identify their folders only; message data and actions are not par
 of this routing foundation. The authentication proxy at `/api/auth/*` is a server
 route outside the page layouts. Session lookup errors remain errors rather than
 being treated as signed-out sessions.
+
+## Design system
+
+The web app consumes the published `@mailflow/ui` tag pinned in `package.json`
+and `bun.lock`. The package supplies the dark palette, Inter font, tokens,
+Button, and shared icons. The shell stays on that dark theme. Application layout
+remains in the `app-shell` feature slice.
+
+The authenticated mail layout owns the shell. Add a route, navigation entry, and
+explicit breadcrumb when a product page is implemented. Authentication remains
+in the route layer, while the shell stays focused on layout and navigation.
 
 ## Frontend stack validation
 
