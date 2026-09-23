@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!src/routeTree.gen.ts"]
+    "includes": ["**", "!src/routeTree.gen.ts", "!**/.codex/hooks.json"]
   },
   "formatter": {
     "enabled": true,
