@@ -1,2 +1,29 @@
 @import "tailwindcss";
 @import "@mailflow/ui/styles.css";
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  text-rendering: optimizeLegibility;
+}
+
+@layer base {
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  a {
+    color: inherit;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+}
