@@ -11,7 +11,6 @@ import {
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { useEffect } from 'react'
 
-import { BrowserErrorBoundary } from '../observability/BrowserErrorBoundary'
 import { BrowserObservability } from '../observability/BrowserObservability'
 import { captureBrowserError } from '../observability/faro'
 import appCss from '../styles.css?url'
@@ -45,18 +44,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       },
     ],
   }),
-  component: RootComponent,
+  component: AppShell,
   errorComponent: RootErrorComponent,
   shellComponent: RootDocument,
 })
-
-function RootComponent() {
-  return (
-    <BrowserErrorBoundary>
-      <AppShell />
-    </BrowserErrorBoundary>
-  )
-}
 
 function AppShell() {
   return (
@@ -78,7 +69,6 @@ function AppShell() {
       <main>
         <Outlet />
       </main>
-      <BrowserObservability />
     </div>
   )
 }
@@ -106,6 +96,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <BrowserObservability />
         {children}
         {import.meta.env.DEV ? (
           <TanStackDevtools

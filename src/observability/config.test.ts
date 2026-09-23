@@ -47,7 +47,8 @@ describe('observability route helpers', () => {
       normalizeRoute(
         '/app/workspaces/123/campaigns/550e8400-e29b-41d4-a716-446655440000?email=a@b.test',
       ),
-    ).toBe('/app/workspaces/:id/campaigns/:id')
+    ).toBe('/app/:path')
+    expect(normalizeRoute('/app/messages/private-letter')).toBe('/app/:path')
   })
 
   it('limits trace propagation to the configured API path', () => {
@@ -56,5 +57,14 @@ describe('observability route helpers', () => {
     expect(pattern.test('https://api.example.test/v1')).toBe(true)
     expect(pattern.test('https://api.example.test/v10')).toBe(false)
     expect(pattern.test('https://api.example.test/other')).toBe(false)
+  })
+
+  it('propagates trace headers when the API base is an origin or site root', () => {
+    const externalRoot = createTracePropagationPattern('http://localhost:8080')
+    expect(externalRoot.test('http://localhost:8080/messages')).toBe(true)
+    expect(externalRoot.test('http://localhost:8081/messages')).toBe(false)
+
+    const sameOriginRoot = createTracePropagationPattern('/')
+    expect(sameOriginRoot.test(`${window.location.origin}/messages`)).toBe(true)
   })
 })
