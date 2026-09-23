@@ -2,13 +2,18 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import type { QueryClient } from '@tanstack/react-query'
 import {
   createRootRouteWithContext,
+  type ErrorComponentProps,
   HeadContent,
   Link,
   Outlet,
   Scripts,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
+import { useEffect } from 'react'
 
+import { BrowserErrorBoundary } from '../observability/BrowserErrorBoundary'
+import { BrowserObservability } from '../observability/BrowserObservability'
+import { captureBrowserError } from '../observability/faro'
 import appCss from '../styles.css?url'
 
 type RouterContext = {
@@ -40,9 +45,18 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       },
     ],
   }),
-  component: AppShell,
+  component: RootComponent,
+  errorComponent: RootErrorComponent,
   shellComponent: RootDocument,
 })
+
+function RootComponent() {
+  return (
+    <BrowserErrorBoundary>
+      <AppShell />
+    </BrowserErrorBoundary>
+  )
+}
 
 function AppShell() {
   return (
@@ -64,7 +78,24 @@ function AppShell() {
       <main>
         <Outlet />
       </main>
+      <BrowserObservability />
     </div>
+  )
+}
+
+export function RootErrorComponent({ error, reset }: ErrorComponentProps) {
+  useEffect(() => {
+    captureBrowserError(error)
+  }, [error])
+
+  return (
+    <section role="alert" aria-live="assertive">
+      <h1>Something went wrong</h1>
+      <p>Reload the page or try again.</p>
+      <button type="button" onClick={reset}>
+        Try again
+      </button>
+    </section>
   )
 }
 
