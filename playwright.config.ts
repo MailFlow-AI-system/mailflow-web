@@ -17,8 +17,15 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'bun run dev',
+    command: 'bun run vite dev --port 3000 --host 127.0.0.1',
     url: 'http://127.0.0.1:3000',
     reuseExistingServer: !process.env.CI,
+    env: {
+      VITE_API_BASE_URL: '/api',
+      VITE_FARO_COLLECTOR_URL: 'http://127.0.0.1:4318/collect',
+      VITE_FARO_APP_NAME: 'mailflow-web',
+      VITE_FARO_APP_ENVIRONMENT: 'test',
+      VITE_FARO_APP_VERSION: 'e2e',
+    },
   },
 })
