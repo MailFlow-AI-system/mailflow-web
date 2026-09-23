@@ -15,6 +15,7 @@ const config = defineConfig(({ command }) => {
   return {
     envDir: false,
     resolve: { tsconfigPaths: true },
+    ssr: { noExternal: ['@mailflow/ui'] },
     plugins: [
       devtools(),
       cloudflare({ viteEnvironment: { name: 'ssr' } }),
