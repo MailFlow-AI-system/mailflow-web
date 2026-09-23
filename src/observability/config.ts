@@ -71,32 +71,22 @@ export function createTracePropagationPattern(apiBaseUrl: string): RegExp {
     throw new Error('Invalid API base URL')
   }
 
-  if (normalized.startsWith('/')) {
-    const origin = typeof window === 'undefined' ? '' : window.location.origin
-    return new RegExp(`^${escapeRegExp(origin)}${escapeRegExp(normalized)}(?:/|$)`)
-  }
-
-  const url = new URL(normalized)
-  return new RegExp(`^${escapeRegExp(url.origin)}${escapeRegExp(url.pathname)}(?:/|$)`)
+  const absoluteUrl = normalized.startsWith('/') ? undefined : new URL(normalized)
+  const origin = !absoluteUrl
+    ? typeof window === 'undefined'
+      ? ''
+      : window.location.origin
+    : absoluteUrl.origin
+  const pathname = absoluteUrl?.pathname ?? normalized
+  const suffix = pathname === '/' ? '' : '(?:/|$)'
+  return new RegExp(`^${escapeRegExp(origin)}${escapeRegExp(pathname)}${suffix}`)
 }
 
 export function normalizeRoute(pathname: string): string {
   const path = pathname.split(/[?#]/, 1)[0] || '/'
-  const normalized = path
-    .split('/')
-    .map((segment) => {
-      if (!segment) return ''
-      if (/^\d{1,18}$/.test(segment) || /^[0-9a-f]{8}-[0-9a-f-]{27,36}$/i.test(segment)) {
-        return ':id'
-      }
-      if (/^[^/\s@]+@[^/\s@]+\.[^/\s@]+$/.test(segment)) {
-        return ':id'
-      }
-      return segment.length > 64 ? ':segment' : segment
-    })
-    .join('/')
-
-  return normalized.startsWith('/') ? normalized : `/${normalized}`
+  if (path === '/' || path === '/app') return path
+  if (path.startsWith('/app/')) return '/app/:path'
+  return '/:path'
 }
 
 function parseApiBaseUrl(value: unknown): string | undefined {
