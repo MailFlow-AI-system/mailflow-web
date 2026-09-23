@@ -8,22 +8,15 @@ type RuntimeEnvironment = Record<string, unknown>
 type RouterLike = Pick<AnyRouter, 'subscribe'>
 
 let browserFaro: Faro | undefined
-let initialization: Promise<(() => void) | undefined> | undefined
+let initialization: Promise<Faro> | undefined
+const pendingErrors: Error[] = []
 
-export async function initializeBrowserObservability(
+export function initializeBrowserObservability(
   router: RouterLike,
   runtimeEnv: RuntimeEnvironment,
-): Promise<(() => void) | undefined> {
+): (() => void) | undefined {
   if (typeof window === 'undefined') {
     return undefined
-  }
-
-  if (browserFaro) {
-    return () => undefined
-  }
-
-  if (initialization) {
-    return initialization
   }
 
   const config = createFaroConfig(runtimeEnv)
@@ -31,29 +24,9 @@ export async function initializeBrowserObservability(
     return undefined
   }
 
-  initialization = initialize(config, router)
-
-  try {
-    return await initialization
-  } catch {
-    initialization = undefined
-    return undefined
-  }
-}
-
-export function captureBrowserError(error: unknown): void {
-  if (!browserFaro) return
-
-  const normalizedError = error instanceof Error ? error : new Error('Unhandled route error')
-  browserFaro.api.pushError(normalizedError)
-}
-
-async function initialize(
-  config: NonNullable<ReturnType<typeof createFaroConfig>>,
-  router: RouterLike,
-): Promise<() => void> {
   const pendingNavigations: Array<Parameters<Parameters<RouterLike['subscribe']>[1]>[0]> = []
-  let faroInstance: Faro | undefined
+  let faroInstance = browserFaro
+  let active = true
   const unsubscribe = router.subscribe('onResolved', (event) => {
     if (faroInstance) {
       recordNavigation(faroInstance, event)
@@ -62,6 +35,45 @@ async function initialize(
     }
   })
 
+  if (!faroInstance) {
+    initialization ??= initialize(config).catch((error: unknown) => {
+      initialization = undefined
+      throw error
+    })
+    void initialization
+      .then((faro) => {
+        if (!active) return
+        faroInstance = faro
+        for (const event of pendingNavigations) recordNavigation(faro, event)
+        pendingNavigations.length = 0
+      })
+      .catch(() => {
+        cleanup()
+      })
+  }
+
+  return cleanup
+
+  function cleanup(): void {
+    if (!active) return
+    active = false
+    pendingNavigations.length = 0
+    unsubscribe()
+  }
+}
+
+export function captureBrowserError(error: unknown): void {
+  const normalizedError = error instanceof Error ? error : new Error('Unhandled route error')
+  if (browserFaro) {
+    browserFaro.api.pushError(normalizedError)
+    return
+  }
+
+  pendingErrors.push(normalizedError)
+  if (pendingErrors.length > 10) pendingErrors.shift()
+}
+
+async function initialize(config: NonNullable<ReturnType<typeof createFaroConfig>>): Promise<Faro> {
   const [sdk, tracing] = await Promise.all([
     import('@grafana/faro-web-sdk'),
     import('@grafana/faro-web-tracing'),
@@ -116,14 +128,8 @@ async function initialize(
   })
 
   browserFaro = faro
-  faroInstance = faro
-  pendingNavigations.forEach((event) => {
-    recordNavigation(faro, event)
-  })
-
-  return () => {
-    unsubscribe()
-  }
+  for (const error of pendingErrors.splice(0)) faro.api.pushError(error)
+  return faro
 }
 
 function recordNavigation(
