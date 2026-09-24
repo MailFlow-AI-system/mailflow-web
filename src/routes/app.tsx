@@ -1,16 +1,21 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Outlet } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/app')({ component: ApplicationShell })
+import { AppShell } from '../features/app-shell'
 
-function ApplicationShell() {
+export const Route = createFileRoute('/app')({ component: ApplicationLayout })
+
+function ApplicationLayout() {
   return (
-    <section className="placeholder-page">
-      <p className="eyebrow">Authenticated application</p>
-      <h1>Application shell</h1>
-      <p>
-        Authentication and product capabilities will be introduced by their own vertical feature
-        slices.
-      </p>
-    </section>
+    <AppShell.Root>
+      <AppShell.Sidebar />
+      <AppShell.Main>
+        <AppShell.Header>
+          <AppShell.Breadcrumbs />
+        </AppShell.Header>
+        <AppShell.Content>
+          <Outlet />
+        </AppShell.Content>
+      </AppShell.Main>
+    </AppShell.Root>
   )
 }

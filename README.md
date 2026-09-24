@@ -52,9 +52,8 @@ intentionally outside this initialization task.
 - The authenticated application is expected to be client-heavy.
 - TanStack Query owns backend server state and its cache.
 - URL-visible navigation and filter state belongs in router search parameters.
-- React state is the default for simple local component state.
-- Zustand is available for shared client-only state that does not belong in the URL
-  or TanStack Query.
+- React state is the default for simple local component state. The application
+  shell keeps its open and collapsed state inside the sidebar.
 - Server functions are presentation-edge adapters only: session bootstrap,
   backend API calls, locale, CSP, and correlation concerns. They must not contain
   domain rules or access PostgreSQL or R2 directly.
@@ -68,13 +67,19 @@ until a feature needs it.
 
 ```text
 e2e/                    Playwright browser tests
-src/components/ui/      shadcn/ui components backed by Base UI
 src/config/             Validated client configuration
+src/features/app-shell/ Reusable application layout and navigation
 src/i18n/               Locale and timezone primitives
-src/lib/                Shared application adapters
 src/routes/             TanStack Router file-based routes
 src/test/               Shared test setup
+src/types/              Types shared by route infrastructure
 ```
+
+## Design system
+
+The web app consumes `@mailflow/ui` from a full Git commit SHA pinned in `package.json` and `bun.lock`. The package supplies the dark palette, Inter font, tokens, Button, and shared icons. The shell stays on that dark theme. Application layout remains in the `app-shell` feature slice.
+
+The `/app` route owns the shell for future nested application pages. Add a route, navigation entry, and explicit breadcrumb when a product page is implemented. Until then, planned sidebar entries are visible but disabled. Authentication is not part of this shell.
 
 ## Frontend stack validation
 
