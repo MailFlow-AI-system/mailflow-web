@@ -1,7 +1,6 @@
 import {
   ChartColumn,
   FilePenLine,
-  House,
   Inbox,
   LayoutTemplate,
   Lightbulb,
@@ -25,7 +24,6 @@ export const navigationSections: readonly NavigationSection[] = [
   {
     label: 'Mail',
     items: [
-      { label: 'Início', icon: House, to: '/app' },
       { label: 'Inbox', icon: Inbox },
       { label: 'Sent', icon: Send },
       { label: 'Drafts', icon: FilePenLine },
