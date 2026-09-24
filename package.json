@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
-    "@mailflow/ui": "git+https://github.com/MailFlow-AI-system/mailflow-design-system.git#679f67b2f69f761ddf5dbf00a59a135ebfef9c24",
+    "@mailflow/ui": "git+https://github.com/MailFlow-AI-system/mailflow-design-system.git#a495d23ec7dad0bc65efe7fd2d5ede7b9cd14d50",
     "@t3-oss/env-core": "^0.13.11",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "^0.10.12",
