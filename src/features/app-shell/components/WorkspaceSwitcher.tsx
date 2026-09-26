@@ -1,7 +1,8 @@
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@mailflow/ui/components'
 import { ChevronUp } from '@mailflow/ui/icons'
 import { useState } from 'react'
 
-import { Select, SelectContent, SelectItem, SelectTrigger } from './ui/select.tsx'
+import type { WorkspaceLabelProps, WorkspaceMarkProps } from '../types'
 
 const workspaces = [
   { value: 'acme', initials: 'AC', name: 'Acme Corp' },
@@ -9,7 +10,7 @@ const workspaces = [
   { value: 'globex', initials: 'GX', name: 'Globex' },
 ]
 
-function WorkspaceMark({ initials }: { initials: string }) {
+function WorkspaceMark({ initials }: WorkspaceMarkProps) {
   return (
     <span className="grid size-6 shrink-0 place-items-center rounded-full bg-sidebar-accent text-[10px] font-semibold leading-none text-sidebar-primary">
       {initials}
@@ -17,7 +18,7 @@ function WorkspaceMark({ initials }: { initials: string }) {
   )
 }
 
-function WorkspaceLabel({ name }: { name: string }) {
+function WorkspaceLabel({ name }: WorkspaceLabelProps) {
   return (
     <span className="min-w-0">
       <span className="block truncate text-xs font-semibold leading-4">{name}</span>

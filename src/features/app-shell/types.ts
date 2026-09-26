@@ -17,6 +17,18 @@ export type NavigationSection = {
   items: readonly NavigationItem[]
 }
 
+export type NavigationItemButtonProps = {
+  item: NavigationItem
+}
+
+export type WorkspaceMarkProps = {
+  initials: string
+}
+
+export type WorkspaceLabelProps = {
+  name: string
+}
+
 export type AppShellRootProps = {
   children: ReactNode
 }

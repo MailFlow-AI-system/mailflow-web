@@ -1,5 +1,6 @@
+import { SidebarTrigger } from '@mailflow/ui/components'
+
 import type { AppShellHeaderProps } from '../types'
-import { SidebarTrigger } from './ui/sidebar'
 
 export function Header({ children, actions }: AppShellHeaderProps) {
   return (
