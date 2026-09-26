@@ -1,10 +1,3 @@
-import { Sparkles } from '@mailflow/ui/icons'
-import { Link, useRouterState } from '@tanstack/react-router'
-
-import { navigationSections, settingsItem, themeItem } from '../navigation'
-import type { NavigationItem } from '../types'
-import { SidebarSearch } from './SidebarSearch'
-import { SidebarUser } from './SidebarUser'
 import {
   SidebarContent,
   SidebarFooter,
@@ -16,10 +9,17 @@ import {
   SidebarMenuItem,
   Sidebar as SidebarRoot,
   SidebarTrigger,
-} from './ui/sidebar'
+} from '@mailflow/ui/components'
+import { Sparkles } from '@mailflow/ui/icons'
+import { Link, useRouterState } from '@tanstack/react-router'
+
+import { navigationSections, settingsItem, themeItem } from '../navigation'
+import type { NavigationItemButtonProps } from '../types'
+import { SidebarSearch } from './SidebarSearch'
+import { SidebarUser } from './SidebarUser'
 import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 
-function NavigationItemButton({ item }: { item: NavigationItem }) {
+function NavigationItemButton({ item }: NavigationItemButtonProps) {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const Icon = item.icon
   const active = Boolean(item.to && (pathname === item.to || pathname === `${item.to}/`))
