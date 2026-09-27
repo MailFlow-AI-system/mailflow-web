@@ -1,6 +1,10 @@
 import { expect, test } from '@playwright/test'
 
-test('renders the public foundation and opens the application shell', async ({ page }) => {
+test('redirects an unauthenticated visitor from the app to login', async ({ page }) => {
+  const consoleWarnings: string[] = []
+  page.on('console', (message) => {
+    if (message.type() === 'warning') consoleWarnings.push(message.text())
+  })
   await page.goto('/')
 
   await expect(
@@ -11,8 +15,9 @@ test('renders the public foundation and opens the application shell', async ({ p
 
   await page.getByRole('link', { name: 'Open application shell' }).click()
 
-  await expect(page).toHaveURL('/app')
-  await expect(page.getByRole('heading', { name: 'Application shell' })).toBeVisible()
+  await expect(page).toHaveURL('/login')
+  await expect(page.getByRole('heading', { name: 'Sign in to MailFlow' })).toBeVisible()
+  expect(consoleWarnings.join('\n')).not.toContain('nativeButton')
 })
 
 test('captures sanitized TanStack navigation telemetry', async ({ page }) => {
@@ -23,9 +28,12 @@ test('captures sanitized TanStack navigation telemetry', async ({ page }) => {
     await route.fulfill({ status: 204, body: '' })
   })
 
-  await page.goto('/?email=person%40example.test')
-  await page.getByRole('link', { name: 'Open application shell' }).click()
-  await expect(page).toHaveURL('/app')
+  await page.goto('/login?email=person%40example.test')
+  await expect
+    .poll(() => JSON.stringify(envelopes), { timeout: 10_000 })
+    .toMatch(/"name":"session_(start|resume)"/)
+  await page.getByRole('link', { name: 'Forgot password?' }).click()
+  await expect(page).toHaveURL('/forgot-password')
   await expect
     .poll(() => JSON.stringify(envelopes), { timeout: 10_000 })
     .toContain('mailflow.navigation')
@@ -44,6 +52,9 @@ test('captures controlled browser errors without private content', async ({ page
   })
 
   await page.goto('/')
+  await expect
+    .poll(() => JSON.stringify(envelopes), { timeout: 10_000 })
+    .toMatch(/"name":"session_(start|resume)"/)
   await page.evaluate(() => {
     window.setTimeout(() => {
       throw new Error('private message body 92615')
