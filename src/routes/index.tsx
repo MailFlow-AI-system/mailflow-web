@@ -1,7 +1,6 @@
+import { buttonVariants } from '@mailflow/ui/components'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowRight, CheckCircle2 } from 'lucide-react'
-
-import { Button } from '@/components/ui/button'
 
 export const Route = createFileRoute('/')({ component: Home })
 
@@ -16,10 +15,10 @@ function Home() {
           server-state caching, and Cloudflare Workers support.
         </p>
         <div className="hero__actions">
-          <Button render={<Link to="/app" />} size="lg">
+          <Link className={buttonVariants({ size: 'lg' })} to="/app">
             Open application shell
             <ArrowRight data-icon="inline-end" />
-          </Button>
+          </Link>
         </div>
       </div>
       <aside className="foundation-card" aria-label="Foundation status">
