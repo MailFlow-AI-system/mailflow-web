@@ -21,7 +21,9 @@ bun run dev
 
 Select `MailFlow-AI` when prompted. Development commands read the `dev` environment and `/mailflow-web` secret path. `.infisical.json` contains project-link metadata, never secret values, and should be committed.
 
-The application is available at `http://127.0.0.1:3000`.
+The application is available at `http://localhost:3000`. Keep `localhost` for
+the site (`:4321`) and Core API (`:8080`) during authentication testing; the
+Better Auth cookie is host-scoped and shared across these ports.
 
 ## Commands
 
@@ -72,10 +74,9 @@ until a feature needs it.
 
 ```text
 e2e/                    Playwright browser tests
-src/components/ui/      shadcn/ui components backed by Base UI
+src/features/auth/       Login, logout, and session adapters
 src/config/             Validated client configuration
 src/i18n/               Locale and timezone primitives
-src/lib/                Shared application adapters
 src/routes/             TanStack Router file-based routes
 src/test/               Shared test setup
 ```
@@ -101,10 +102,19 @@ React Router with Vite. That fallback is not active in this repository.
 Infisical injects environment variables before a process starts. Application
 code does not use the Infisical SDK or load `.env` files.
 
-`VITE_API_BASE_URL` is the public base URL for the MailFlow backend. It defaults
-to `/api` when unset and is validated with T3 Env when the router boots and
-during production builds. Local development uses `http://localhost:8080` from
-the `/mailflow-web` Infisical path.
+`VITE_API_BASE_URL` is the required public API origin, without a path. It is
+validated with T3 Env when the router boots and during production builds. Local
+development uses `http://localhost:8080` from the `/mailflow-web` Infisical
+path. The browser Better Auth client sends credentialed requests directly to
+this origin. The Web server forwards the request cookie to Core's session
+endpoint before rendering protected routes. Protected pages use
+`Cache-Control: private, no-store`.
+
+This host-scoped cookie arrangement works locally because Site, Web, and Core
+all use `localhost`. Production Web and Core domains must share a deliberate
+session cookie topology or use a same-origin auth proxy before protected SSR
+can work across distinct hosts. Do not deploy the current host-only setup to
+separate production hosts without resolving that boundary.
 
 Only variables prefixed with `VITE_` are exposed to browser code. Never place
 secrets in them.
@@ -127,3 +137,14 @@ Local production-like build (`VITE_*` from Infisical `dev`):
 ```bash
 bun run build:local
 ```
+
+## Listening
+
+- The browser uses Better Auth directly against Core, while the protected Web
+  route forwards the same host-scoped cookie to Core during SSR. This preserves
+  one revocable session authority and avoids a second Web session store.
+- A same-origin Web proxy was deferred because the approved local topology uses
+  `localhost` across all services. Separate production hosts need an explicit
+  cookie-domain or proxy decision before rollout.
+- Password recovery renders an unavailable state until email delivery exists;
+  submitting a request without a backend would mislead users.

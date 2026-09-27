@@ -7,7 +7,7 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "infisical run --env=dev --path=/mailflow-web -- vite dev --port 3000 --host 127.0.0.1",
+    "dev": "infisical run --env=dev --path=/mailflow-web -- vite dev --port 3000 --host localhost",
     "generate-routes": "tsr generate",
     "build": "vite build",
     "build:development": "infisical run --env=dev --path=/mailflow-web -- vite build",
@@ -31,10 +31,10 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
-    "@base-ui/react": "^1.8.0",
     "@grafana/faro-web-sdk": "2.12.0",
     "@grafana/faro-web-tracing": "2.12.0",
     "@hookform/resolvers": "^5.2.2",
+    "@mailflow/ui": "git+https://github.com/MailFlow-AI-system/mailflow-design-system.git#v0.3.0",
     "@t3-oss/env-core": "^0.13.11",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "^0.10.12",
@@ -43,8 +43,7 @@
     "@tanstack/react-router-devtools": "^1.167.1",
     "@tanstack/react-router-ssr-query": "^1.167.2",
     "@tanstack/react-start": "^1.168.50",
-    "class-variance-authority": "^0.7.1",
-    "cn": "^0.2.6",
+    "better-auth": "1.7.6",
     "lucide-react": "^1.43.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
