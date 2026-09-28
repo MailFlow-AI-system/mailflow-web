@@ -2,7 +2,12 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { createAuthProxyHandler } from './authProxy'
 
-const apiBaseUrl = 'https://mailflow-core-api.up.railway.app'
+const testOrigin = window.location.origin
+const apiOrigin = new URL(testOrigin)
+apiOrigin.hostname = `api.${apiOrigin.hostname}`
+const apiBaseUrl = apiOrigin.origin
+
+const webUrl = (path: string) => new URL(path, testOrigin).toString()
 
 describe('createAuthProxyHandler', () => {
   it('forwards the email sign-in path, query, credentials, trace context, and body', async () => {
@@ -14,36 +19,33 @@ describe('createAuthProxyHandler', () => {
       return Response.json({ user: { id: 'user-1' } })
     })
     const requestBody = JSON.stringify({ email: 'ada@example.test', password: 'password' })
-    const request = new Request(
-      'https://mailflow-web.workers.dev/api/auth/sign-in/email?callbackURL=%2Fapp',
-      {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          Cookie: 'analytics=discard; __Secure-better-auth.session_token=opaque',
-          Origin: 'https://mailflow-web.workers.dev',
-          Referer: 'https://mailflow-web.workers.dev/login?email=private@example.test',
-          Authorization: 'Bearer unrelated-token',
-          'X-Internal-Secret': 'unrelated-secret',
-          traceparent: '00-11111111111111111111111111111111-2222222222222222-01',
-          tracestate: 'vendor=value',
-        },
-        body: requestBody,
+    const request = new Request(webUrl('/api/auth/sign-in/email?callbackURL=%2Fapp'), {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Cookie: 'analytics=discard; __Secure-better-auth.session_token=opaque',
+        Origin: testOrigin,
+        Referer: webUrl('/login?email=private@example.test'),
+        Authorization: 'Bearer unrelated-token',
+        'X-Internal-Secret': 'unrelated-secret',
+        traceparent: '00-11111111111111111111111111111111-2222222222222222-01',
+        tracestate: 'vendor=value',
       },
-    )
+      body: requestBody,
+    })
 
     const response = await createAuthProxyHandler(apiBaseUrl, fetcher)(request)
 
     expect(response.status).toBe(200)
     expect(String(forwardedInput)).toBe(
-      'https://mailflow-core-api.up.railway.app/api/auth/sign-in/email?callbackURL=%2Fapp',
+      new URL('/api/auth/sign-in/email?callbackURL=%2Fapp', apiBaseUrl).toString(),
     )
     expect(forwardedInit?.method).toBe('POST')
     const forwardedHeaders = new Headers(forwardedInit?.headers)
     expect(forwardedHeaders.get('cookie')).toBe('__Secure-better-auth.session_token=opaque')
-    expect(forwardedHeaders.get('origin')).toBe('https://mailflow-web.workers.dev')
-    expect(forwardedHeaders.get('referer')).toBe('https://mailflow-web.workers.dev')
+    expect(forwardedHeaders.get('origin')).toBe(testOrigin)
+    expect(forwardedHeaders.get('referer')).toBe(testOrigin)
     expect(forwardedHeaders.get('authorization')).toBeNull()
     expect(forwardedHeaders.get('x-internal-secret')).toBeNull()
     expect(forwardedHeaders.get('traceparent')).toBe(
@@ -57,7 +59,7 @@ describe('createAuthProxyHandler', () => {
 
   it('preserves redirects and every Set-Cookie header for the Web origin', async () => {
     const upstreamHeaders = new Headers({
-      Location: 'https://mailflow-web.workers.dev/app',
+      Location: webUrl('/app'),
     })
     upstreamHeaders.append(
       'Set-Cookie',
@@ -70,7 +72,7 @@ describe('createAuthProxyHandler', () => {
       forwardedInit = init
       return upstreamResponse
     })
-    const request = new Request('https://mailflow-web.workers.dev/api/auth/sign-in/email', {
+    const request = new Request(webUrl('/api/auth/sign-in/email'), {
       method: 'POST',
       body: '{}',
     })
@@ -79,7 +81,7 @@ describe('createAuthProxyHandler', () => {
 
     expect(response.status).toBe(302)
     expect(forwardedInit?.redirect).toBe('manual')
-    expect(response.headers.get('location')).toBe('https://mailflow-web.workers.dev/app')
+    expect(response.headers.get('location')).toBe(webUrl('/app'))
     expect(response.headers.getSetCookie()).toEqual([
       'better-auth.session_token=opaque; Path=/; HttpOnly; Secure; SameSite=Lax',
       'better-auth.session_data=cache; Path=/; HttpOnly; Secure',
@@ -91,7 +93,7 @@ describe('createAuthProxyHandler', () => {
     const fetcher = vi.fn(async () =>
       Response.json({ code: 'INVALID_EMAIL_OR_PASSWORD' }, { status: 401 }),
     )
-    const request = new Request('https://mailflow-web.workers.dev/api/auth/sign-in/email', {
+    const request = new Request(webUrl('/api/auth/sign-in/email'), {
       method: 'POST',
       body: '{}',
     })
@@ -108,7 +110,7 @@ describe('createAuthProxyHandler', () => {
       forwardedInit = init
       return Response.json(null)
     })
-    const request = new Request('https://mailflow-web.workers.dev/api/auth/sign-in/email', {
+    const request = new Request(webUrl('/api/auth/sign-in/email'), {
       method: 'POST',
       headers: { Referer: 'not a URL' },
       body: '{}',
@@ -123,7 +125,7 @@ describe('createAuthProxyHandler', () => {
     const fetcher = vi.fn(async () => {
       throw new Error('sensitive upstream detail')
     })
-    const request = new Request('https://mailflow-web.workers.dev/api/auth/get-session')
+    const request = new Request(webUrl('/api/auth/get-session'))
 
     const response = await createAuthProxyHandler(apiBaseUrl, fetcher)(request)
 
@@ -142,17 +144,15 @@ describe('createAuthProxyHandler', () => {
     const proxy = createAuthProxyHandler(apiBaseUrl, fetcher)
 
     const signup = await proxy(
-      new Request('https://mailflow-web.workers.dev/api/auth/sign-up/email', {
+      new Request(webUrl('/api/auth/sign-up/email'), {
         method: 'POST',
         body: '{}',
       }),
     )
     const unknownPath = await proxy(
-      new Request('https://mailflow-web.workers.dev/api/auth/delete-user', { method: 'POST' }),
+      new Request(webUrl('/api/auth/delete-user'), { method: 'POST' }),
     )
-    const unsupportedMethod = await proxy(
-      new Request('https://mailflow-web.workers.dev/api/auth/sign-in/email'),
-    )
+    const unsupportedMethod = await proxy(new Request(webUrl('/api/auth/sign-in/email')))
 
     expect(signup.status).toBe(404)
     expect(unknownPath.status).toBe(404)
@@ -169,11 +169,11 @@ describe('createAuthProxyHandler', () => {
       forwardedInput = input
       return Response.json({ session: null })
     })
-    const request = new Request(`https://mailflow-web.workers.dev${path}`, { method })
+    const request = new Request(webUrl(path), { method })
 
     const response = await createAuthProxyHandler(apiBaseUrl, fetcher)(request)
 
     expect(response.status).toBe(200)
-    expect(String(forwardedInput)).toBe(`${apiBaseUrl}${path}`)
+    expect(String(forwardedInput)).toBe(new URL(path, apiBaseUrl).toString())
   })
 })
