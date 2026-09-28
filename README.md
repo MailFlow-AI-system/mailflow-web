@@ -103,19 +103,26 @@ React Router with Vite. That fallback is not active in this repository.
 Infisical injects environment variables before a process starts. Application
 code does not use the Infisical SDK or load `.env` files.
 
-`VITE_API_BASE_URL` is the required public API origin, without a path. It is
+`VITE_API_BASE_URL` is the required Core API origin, without a path. It is
 validated with T3 Env when the router boots and during production builds. Local
 development uses `http://localhost:8080` from the `/mailflow-web` Infisical
-path. The browser Better Auth client sends credentialed requests directly to
-this origin. The Web server forwards the request cookie to Core's session
-endpoint before rendering protected routes. Protected pages use
+path. The Web server uses this origin to read the current session during SSR.
+The browser Better Auth client uses the Web origin, and the Web Worker forwards
+authentication requests to Core. Protected pages use
 `Cache-Control: private, no-store`.
 
-This host-scoped cookie arrangement works locally because Site, Web, and Core
-all use `localhost`. Production Web and Core domains must share a deliberate
-session cookie topology or use a same-origin auth proxy before protected SSR
-can work across distinct hosts. Do not deploy the current host-only setup to
-separate production hosts without resolving that boundary.
+The Web auth proxy supports email sign-in, session lookup, and sign-out only.
+It forwards only Better Auth cookies and required auth and trace headers,
+normalizes the `Referer` to its origin, streams request and response bodies,
+preserves redirects and all `Set-Cookie` headers, and disables caching.
+Registration remains on Site and is not available through the Web proxy. Site
+redirects new users to Web login after registration.
+
+Core's host-only session cookie reaches the browser on the Web origin through
+the proxy, so Web SSR can forward that cookie to Core even when Core runs on
+Railway and Web runs on a separate `workers.dev` host. No shared cookie domain
+is required. Site registration calls Core directly and does not rely on that
+response's cookie; users sign in on Web to establish a Web-scoped session.
 
 Only variables prefixed with `VITE_` are exposed to browser code. Never place
 secrets in them.
@@ -141,11 +148,9 @@ bun run build:local
 
 ## Listening
 
-- The browser uses Better Auth directly against Core, while the protected Web
-  route forwards the same host-scoped cookie to Core during SSR. This preserves
-  one revocable session authority and avoids a second Web session store.
-- A same-origin Web proxy was deferred because the approved local topology uses
-  `localhost` across all services. Separate production hosts need an explicit
-  cookie-domain or proxy decision before rollout.
+- Browser sign-in, session lookup, and sign-out use a same-origin Web proxy;
+  Core remains the only session authority and database store.
+- Site registration stays on Site and redirects users to Web login. The Web
+  proxy rejects registration and every unsupported Better Auth path.
 - Password recovery renders an unavailable state until email delivery exists;
   submitting a request without a backend would mislead users.
