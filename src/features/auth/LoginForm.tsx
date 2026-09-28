@@ -44,7 +44,7 @@ export function LoginForm() {
         )
       }
       await router.invalidate()
-      await navigate({ to: '/app' })
+      await navigate({ to: '/inbox' })
     } catch (error) {
       if (!authRequestReturned && error instanceof TypeError) {
         recordAuthTransportFailure('sign_in', performance.now() - authStartedAt)

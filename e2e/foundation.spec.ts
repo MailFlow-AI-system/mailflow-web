@@ -1,23 +1,27 @@
 import { expect, test } from '@playwright/test'
 
-test('redirects an unauthenticated visitor from the app to login', async ({ page }) => {
+test('redirects an unauthenticated visitor to login', async ({ page }) => {
   const consoleWarnings: string[] = []
   page.on('console', (message) => {
     if (message.type() === 'warning') consoleWarnings.push(message.text())
   })
   await page.goto('/')
-
-  await expect(
-    page.getByRole('heading', {
-      name: 'Email workflows, built on a dependable foundation.',
-    }),
-  ).toBeVisible()
-
-  await page.getByRole('link', { name: 'Open application shell' }).click()
-
   await expect(page).toHaveURL('/login')
   await expect(page.getByRole('heading', { name: 'Sign in to MailFlow' })).toBeVisible()
+  await page.goto('/inbox')
+  await expect(page).toHaveURL('/login')
   expect(consoleWarnings.join('\n')).not.toContain('nativeButton')
+})
+
+test('shows a 404 for an unknown route', async ({ page }) => {
+  const response = await page.goto('/does-not-exist')
+
+  expect(response?.status()).toBe(404)
+  await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible()
+
+  const removedRoute = await page.goto('/app')
+  expect(removedRoute?.status()).toBe(404)
+  await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible()
 })
 
 test('captures sanitized TanStack navigation telemetry', async ({ page }) => {

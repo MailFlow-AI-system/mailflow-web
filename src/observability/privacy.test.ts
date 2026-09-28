@@ -10,26 +10,26 @@ describe('sanitizeTelemetryItem', () => {
       payload: {
         name: 'mailflow.navigation',
         attributes: {
-          route: '/app/workspaces/123',
+          route: '/inbox/workspaces/123',
           email: 'person@example.test',
           authorization: 'Bearer secret',
           content: 'private message body',
         },
-        url: 'https://app.example.test/app?email=person@example.test',
+        url: 'https://app.example.test/inbox?email=person@example.test',
       },
       meta: {
         user: { email: 'person@example.test', id: 'user-123' },
-        page: { url: 'https://app.example.test/app?token=secret' },
+        page: { url: 'https://app.example.test/inbox?token=secret' },
       },
     } as unknown as TransportItem)
 
     expect(item).not.toBeNull()
     expect(item?.payload).toEqual({
       name: 'mailflow.navigation',
-      attributes: { route: '/app/:path' },
-      url: 'https://app.example.test/app',
+      attributes: { route: '/:path' },
+      url: 'https://app.example.test/inbox',
     })
-    expect(item?.meta).toEqual({ page: { url: 'https://app.example.test/app' } })
+    expect(item?.meta).toEqual({ page: { url: 'https://app.example.test/inbox' } })
   })
 
   it('preserves bounded auth failure dimensions while removing sensitive attributes', () => {
@@ -106,7 +106,7 @@ describe('sanitizeTelemetryItem', () => {
       },
       meta: {
         page: {
-          url: 'https://app.example.test/app/messages/person@example.test',
+          url: 'https://app.example.test/inbox/messages/person@example.test',
         },
       },
     } as unknown as TransportItem)
@@ -118,7 +118,7 @@ describe('sanitizeTelemetryItem', () => {
         duration: '12',
       },
     })
-    expect(item?.meta).toEqual({ page: { url: 'https://app.example.test/app/:path' } })
+    expect(item?.meta).toEqual({ page: { url: 'https://app.example.test/:path' } })
     expect(JSON.stringify(item)).not.toMatch(/private-message|private123|person@example/)
   })
 
