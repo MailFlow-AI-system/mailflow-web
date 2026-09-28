@@ -5,7 +5,8 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 
 import { authClient } from './client'
-import { type LoginValues, loginSchema } from './loginSchema'
+import { loginSchema } from './schemas/loginSchema'
+import type { LoginValues } from './types/LoginValues'
 
 export function LoginForm() {
   const navigate = useNavigate()
@@ -37,9 +38,11 @@ export function LoginForm() {
   })
 
   return (
-    <form className="auth-form" onSubmit={submit} noValidate>
-      <div className="auth-field">
-        <label htmlFor="login-email">Email</label>
+    <form className="mt-6 grid gap-5" onSubmit={submit} noValidate>
+      <div className="grid gap-2">
+        <label className="font-semibold" htmlFor="login-email">
+          Email
+        </label>
         <Input
           id="login-email"
           type="email"
@@ -49,13 +52,15 @@ export function LoginForm() {
           {...register('email')}
         />
         {errors.email ? (
-          <p id="login-email-error" role="alert">
+          <p className="m-0 text-sm text-destructive" id="login-email-error" role="alert">
             {errors.email.message}
           </p>
         ) : null}
       </div>
-      <div className="auth-field">
-        <label htmlFor="login-password">Password</label>
+      <div className="grid gap-2">
+        <label className="font-semibold" htmlFor="login-password">
+          Password
+        </label>
         <Input
           id="login-password"
           type="password"
@@ -65,20 +70,25 @@ export function LoginForm() {
           {...register('password')}
         />
         {errors.password ? (
-          <p id="login-password-error" role="alert">
+          <p className="m-0 text-sm text-destructive" id="login-password-error" role="alert">
             {errors.password.message}
           </p>
         ) : null}
       </div>
       {error ? (
-        <p className="auth-error" role="alert">
+        <p className="m-0 text-sm text-destructive" role="alert">
           {error}
         </p>
       ) : null}
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? 'Signing in…' : 'Sign in'}
       </Button>
-      <Link to="/forgot-password">Forgot password?</Link>
+      <Link
+        className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+        to="/forgot-password"
+      >
+        Forgot password?
+      </Link>
     </form>
   )
 }

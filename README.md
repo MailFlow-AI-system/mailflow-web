@@ -74,10 +74,11 @@ until a feature needs it.
 
 ```text
 e2e/                    Playwright browser tests
-src/features/auth/       Login, logout, and session adapters
+src/features/auth/       Login, logout, and session adapters, schemas, and types
 src/config/             Validated client configuration
 src/i18n/               Locale and timezone primitives
 src/routes/             TanStack Router file-based routes
+src/routes/_protected/  Authenticated routes guarded by the pathless layout
 src/test/               Shared test setup
 ```
 
