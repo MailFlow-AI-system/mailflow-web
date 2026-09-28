@@ -1,19 +1,5 @@
-import { z } from 'zod'
-
-const authSessionSchema = z.object({
-  session: z.object({ id: z.string() }),
-  user: z.object({
-    id: z.string(),
-    name: z.string(),
-    email: z.string(),
-  }),
-})
-
-export type AuthUser = {
-  id: string
-  name: string
-  email: string
-}
+import { authSessionSchema } from './schemas/authSessionSchema'
+import type { AuthUser } from './types/AuthUser'
 
 export async function readAuthSession(
   apiBaseUrl: string,

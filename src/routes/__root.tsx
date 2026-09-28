@@ -51,17 +51,35 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function AppShell() {
   return (
-    <div className="app-shell">
-      <header className="app-header">
-        <Link className="brand" to="/" aria-label="MailFlow home">
-          <span aria-hidden="true">M·F</span>
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="mx-auto flex min-h-18 w-[min(72rem,calc(100%_-_2rem))] items-center justify-between border-b border-border">
+        <Link
+          className="inline-flex items-center gap-2.5 font-bold no-underline"
+          to="/"
+          aria-label="MailFlow home"
+        >
+          <span
+            className="grid size-8 place-items-center rounded-lg bg-primary text-xs text-primary-foreground"
+            aria-hidden="true"
+          >
+            M·F
+          </span>
           <span>MailFlow</span>
         </Link>
-        <nav aria-label="Primary navigation">
-          <Link to="/" activeOptions={{ exact: true }} activeProps={{ 'aria-current': 'page' }}>
+        <nav className="flex gap-5" aria-label="Primary navigation">
+          <Link
+            className="text-sm font-semibold text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground"
+            to="/"
+            activeOptions={{ exact: true }}
+            activeProps={{ 'aria-current': 'page' }}
+          >
             Home
           </Link>
-          <Link to="/app" activeProps={{ 'aria-current': 'page' }}>
+          <Link
+            className="text-sm font-semibold text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground"
+            to="/app"
+            activeProps={{ 'aria-current': 'page' }}
+          >
             App
           </Link>
         </nav>
