@@ -34,6 +34,23 @@ vi.mock('#/features/auth/LogoutButton', () => ({
   LogoutButton: () => <button type="button">Sign out</button>,
 }))
 
+vi.mock('@/features/email-composer', () => ({
+  EmailComposer: {
+    Root: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    Trigger: () => <button type="button">Compose</button>,
+    Content: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    Header: () => null,
+    Layout: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    Fields: () => null,
+    Editor: () => null,
+    Attachments: () => null,
+    Toolbar: () => null,
+    Footer: () => null,
+    Minimized: () => null,
+    CloseConfirmation: () => null,
+  },
+}))
+
 import { Route } from './route'
 
 const MailLayout = Route.options.component
@@ -65,6 +82,7 @@ describe('MailLayout', () => {
 
     expect(within(screen.getByRole('main')).getByTestId('route-outlet')).toBeInTheDocument()
     expect(within(navigation).getByRole('button', { name: 'Sign out' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Compose' })).toBeInTheDocument()
   })
 
   it('marks only the current folder as the active page', () => {
