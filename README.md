@@ -67,8 +67,8 @@ Cloudflare account for manual deployments and prompts for an account when needed
 - UI and persisted application content start in English. Locale configuration is
   centralized in `src/i18n`, and timestamps are formatted in the user's timezone.
 
-Tiptap is approved for future rich-text features and is deliberately deferred
-until a feature needs it.
+Tiptap is used by the Email Composer for client-side rich-text editing.
+Other features should adopt it through their own feature boundaries.
 
 ## Project structure
 
