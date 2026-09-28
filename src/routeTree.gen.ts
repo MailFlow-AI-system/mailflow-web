@@ -10,17 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ProtectedRouteImport } from './routes/_protected'
+import { Route as ProtectedRouteRouteImport } from './routes/_protected/route'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as ProtectedAppRouteImport } from './routes/_protected.app'
+import { Route as ProtectedAppRouteImport } from './routes/_protected/app'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProtectedRoute = ProtectedRouteImport.update({
+const ProtectedRouteRoute = ProtectedRouteRouteImport.update({
   id: '/_protected',
   getParentRoute: () => rootRouteImport,
 } as any)
@@ -37,7 +37,7 @@ const LoginRoute = LoginRouteImport.update({
 const ProtectedAppRoute = ProtectedAppRouteImport.update({
   id: '/app',
   path: '/app',
-  getParentRoute: () => ProtectedRoute,
+  getParentRoute: () => ProtectedRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -55,7 +55,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_protected': typeof ProtectedRouteWithChildren
+  '/_protected': typeof ProtectedRouteRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/_protected/app': typeof ProtectedAppRoute
@@ -76,7 +76,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ProtectedRoute: typeof ProtectedRouteWithChildren
+  ProtectedRouteRoute: typeof ProtectedRouteRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
 }
@@ -94,7 +94,7 @@ declare module '@tanstack/react-router' {
       id: '/_protected'
       path: ''
       fullPath: '/'
-      preLoaderRoute: typeof ProtectedRouteImport
+      preLoaderRoute: typeof ProtectedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -116,26 +116,26 @@ declare module '@tanstack/react-router' {
       path: '/app'
       fullPath: '/app'
       preLoaderRoute: typeof ProtectedAppRouteImport
-      parentRoute: typeof ProtectedRoute
+      parentRoute: typeof ProtectedRouteRoute
     }
   }
 }
 
-interface ProtectedRouteChildren {
+interface ProtectedRouteRouteChildren {
   ProtectedAppRoute: typeof ProtectedAppRoute
 }
 
-const ProtectedRouteChildren: ProtectedRouteChildren = {
+const ProtectedRouteRouteChildren: ProtectedRouteRouteChildren = {
   ProtectedAppRoute: ProtectedAppRoute,
 }
 
-const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
-  ProtectedRouteChildren,
+const ProtectedRouteRouteWithChildren = ProtectedRouteRoute._addFileChildren(
+  ProtectedRouteRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ProtectedRoute: ProtectedRouteWithChildren,
+  ProtectedRouteRoute: ProtectedRouteRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
 }
