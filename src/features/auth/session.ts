@@ -1,3 +1,4 @@
+import { filterBetterAuthCookies } from './authCookies'
 import { authSessionSchema } from './schemas/authSessionSchema'
 import type { AuthUser } from './types/AuthUser'
 
@@ -6,10 +7,11 @@ export async function readAuthSession(
   cookie: string | undefined,
   fetcher: typeof fetch = fetch,
 ): Promise<AuthUser | null> {
-  if (!cookie) return null
+  const authCookies = filterBetterAuthCookies(cookie)
+  if (!authCookies) return null
 
   const response = await fetcher(`${apiBaseUrl.replace(/\/$/, '')}/api/auth/get-session`, {
-    headers: { Cookie: cookie },
+    headers: { Cookie: authCookies },
     cache: 'no-store',
   })
 

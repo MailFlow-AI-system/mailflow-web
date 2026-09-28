@@ -100,4 +100,20 @@ describe('initializeBrowserObservability', () => {
     )
     cleanup?.()
   })
+
+  it('flushes a bounded auth transport failure captured before Faro initializes', async () => {
+    vi.resetModules()
+    sdk.initializeFaro.mockClear()
+    const { initializeBrowserObservability: initializeFresh, recordAuthTransportFailure } =
+      await import('./faro')
+    const cleanup = initializeFresh({ subscribe: vi.fn(() => vi.fn()) }, environment)
+    recordAuthTransportFailure('sign_in', 123)
+
+    await vi.waitFor(() => expect(sdk.initializeFaro).toHaveBeenCalledTimes(1))
+    expect(sdk.initializeFaro.mock.results[0]?.value.api.pushEvent).toHaveBeenCalledWith(
+      'mailflow.auth.operation',
+      { operation: 'sign_in', result: 'unavailable', durationBucket: '100_499ms' },
+    )
+    cleanup?.()
+  })
 })
