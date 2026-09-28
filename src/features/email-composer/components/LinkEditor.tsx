@@ -1,15 +1,16 @@
 import { Button, Input } from '@mailflow/ui/components'
-import { useCallback, useId, useState } from 'react'
-import { normalizeLink } from '../editor/links'
+import { useCallback, useId } from 'react'
+import { useLinkForm } from '../hooks/useLinkForm'
 import type { LinkEditorProps } from '../types/editor'
 
 export function LinkEditor({ editor, onClose }: LinkEditorProps) {
-  const [url, setUrl] = useState<string>(editor.getAttributes('link').href ?? '')
-  const [error, setError] = useState('')
+  const { register, errors, submit } = useLinkForm(editor, onClose)
   const id = useId()
+  const error = errors.url?.message
   const focusInput = useCallback((element: HTMLInputElement | null) => {
     element?.focus()
   }, [])
+  const urlField = register('url')
   return (
     <form
       aria-label="Editar link"
@@ -22,32 +23,20 @@ export function LinkEditor({ editor, onClose }: LinkEditorProps) {
           editor.commands.focus()
         }
       }}
-      onSubmit={(event) => {
-        event.preventDefault()
-        const href = normalizeLink(url)
-        if (!href) {
-          setError('Informe um endereço HTTP, HTTPS ou mailto válido.')
-          return
-        }
-        const chain = editor.chain().focus().extendMarkRange('link')
-        if (editor.state.selection.empty && !editor.isActive('link')) {
-          chain
-            .insertContent({ type: 'text', text: href, marks: [{ type: 'link', attrs: { href } }] })
-            .run()
-        } else chain.setLink({ href }).run()
-        onClose()
-      }}
+      onSubmit={submit}
     >
       <label htmlFor={id} className="text-xs">
         Link
       </label>
       <Input
         id={id}
-        ref={focusInput}
-        value={url}
-        onChange={(event) => setUrl(event.target.value)}
+        {...urlField}
+        ref={(node) => {
+          urlField.ref(node)
+          focusInput(node)
+        }}
         placeholder="https://exemplo.com"
-        aria-invalid={!!error}
+        aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
         className="h-8 min-w-0 flex-1 border-0 bg-transparent shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent"
       />
@@ -76,11 +65,11 @@ export function LinkEditor({ editor, onClose }: LinkEditorProps) {
       >
         Cancelar
       </Button>
-      {error && (
+      {error ? (
         <p role="alert" id={`${id}-error`} className="w-full text-xs text-destructive">
           {error}
         </p>
-      )}
+      ) : null}
     </form>
   )
 }
