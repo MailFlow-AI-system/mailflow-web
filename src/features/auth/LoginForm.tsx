@@ -11,19 +11,23 @@ import { authClient } from './client'
 import { loginSchema } from './schemas/loginSchema'
 import type { LoginValues } from './types/LoginValues'
 
+const INVALID_CREDENTIALS_MESSAGE = 'Email or password is incorrect.'
+const SIGN_IN_ERROR_MESSAGE = 'Unable to sign in. Please try again.'
+
 export function LoginForm() {
   const navigate = useNavigate()
   const router = useRouter()
-  const [error, setError] = useState<string | null>(null)
   const [passwordVisible, setPasswordVisible] = useState(false)
   const {
     register,
     handleSubmit,
+    setError: setFormError,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<LoginValues>({ resolver: zodResolver(loginSchema) })
 
   const submit = handleSubmit(async ({ email, password }) => {
-    setError(null)
+    clearErrors('root.server')
     const authStartedAt = performance.now()
     let authRequestReturned = false
     try {
@@ -33,12 +37,11 @@ export function LoginForm() {
         if (result.error.code === AUTH_UPSTREAM_UNAVAILABLE) {
           recordAuthTransportFailure('sign_in', performance.now() - authStartedAt)
         }
-        setError(
+        throw new Error(
           result.error.status === 401 || result.error.code === 'INVALID_EMAIL_OR_PASSWORD'
-            ? 'Email or password is incorrect.'
-            : 'Unable to sign in. Please try again.',
+            ? INVALID_CREDENTIALS_MESSAGE
+            : SIGN_IN_ERROR_MESSAGE,
         )
-        return
       }
       await router.invalidate()
       await navigate({ to: '/app' })
@@ -46,7 +49,12 @@ export function LoginForm() {
       if (!authRequestReturned && error instanceof TypeError) {
         recordAuthTransportFailure('sign_in', performance.now() - authStartedAt)
       }
-      setError('Unable to sign in. Please try again.')
+      const message =
+        error instanceof Error &&
+        (error.message === INVALID_CREDENTIALS_MESSAGE || error.message === SIGN_IN_ERROR_MESSAGE)
+          ? error.message
+          : SIGN_IN_ERROR_MESSAGE
+      setFormError('root.server', { type: 'server', message })
     }
   })
 
@@ -102,9 +110,9 @@ export function LoginForm() {
           </p>
         ) : null}
       </div>
-      {error ? (
+      {errors.root?.server?.message ? (
         <p className="m-0 text-sm text-destructive" role="alert">
-          {error}
+          {errors.root.server.message}
         </p>
       ) : null}
       <Button type="submit" disabled={isSubmitting}>
