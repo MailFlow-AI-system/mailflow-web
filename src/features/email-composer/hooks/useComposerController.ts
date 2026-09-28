@@ -4,14 +4,19 @@ import { cn } from 'cn'
 import { useRef, useState } from 'react'
 import { draftSignature, emptyBody, emptyFields } from '../draft'
 import { composerExtensions } from '../editor/extensions'
-import type { Attachment, ComposerController, DraftFields, RecipientField } from '../types/composer'
+import type { ComposerController, DraftFields } from '../types/composer'
+import type { DraftValues } from '../types/DraftValues'
+import { emptyDraft, useDraftForm } from './useDraftForm'
+
+function recipientFields(values: DraftValues): DraftFields {
+  return { to: values.to, cc: values.cc, bcc: values.bcc, subject: values.subject }
+}
 
 export function useComposerController(theme: 'dark' | 'light'): ComposerController {
+  const draft = useDraftForm()
+  const values = draft.watch()
   const [open, setOpen] = useState(false)
   const [state, setState] = useState<WindowState>('normal')
-  const [fields, setFields] = useState<DraftFields>(emptyFields)
-  const [body, setBody] = useState(emptyBody)
-  const [attachments, setAttachments] = useState<Attachment[]>([])
   const [baseline, setBaseline] = useState(() => draftSignature(emptyFields, emptyBody, []))
   const [saved, setSaved] = useState(false)
   const [confirm, setConfirm] = useState(false)
@@ -45,23 +50,20 @@ export function useComposerController(theme: 'dark' | 'light'): ComposerControll
           ),
         },
       },
-      onUpdate: ({ editor }) => setBody(editor.getHTML()),
+      onUpdate: ({ editor }) => {
+        draft.setValue('body', editor.getHTML())
+      },
     },
     [session],
   )
-  const dirty = draftSignature(fields, body, attachments) !== baseline
-
-  function setField(field: RecipientField, value: string) {
-    setFields((previous) => ({ ...previous, [field]: value }))
-  }
+  const fields = recipientFields(values)
+  const dirty = draftSignature(fields, values.body, values.attachments) !== baseline
 
   function discard() {
     sessionRef.current += 1
     setSession((previous) => previous + 1)
     editor?.commands.clearContent()
-    setFields(emptyFields)
-    setBody(emptyBody)
-    setAttachments([])
+    draft.reset(emptyDraft)
     setBaseline(draftSignature(emptyFields, emptyBody, []))
     setSaved(false)
     setConfirm(false)
@@ -69,24 +71,28 @@ export function useComposerController(theme: 'dark' | 'light'): ComposerControll
   }
 
   return {
+    draft,
     context: {
       sessionRef,
       revision: session,
       editor,
       fields,
-      setField,
-      attachments,
+      attachments: values.attachments,
       addAttachments: (files) =>
-        setAttachments((previous) => [
-          ...previous,
+        draft.setValue('attachments', [
+          ...draft.getValues('attachments'),
           ...files.map((file) => ({ id: crypto.randomUUID(), file })),
         ]),
       removeAttachment: (id) =>
-        setAttachments((previous) => previous.filter((item) => item.id !== id)),
+        draft.setValue(
+          'attachments',
+          draft.getValues('attachments').filter((item) => item.id !== id),
+        ),
       dirty,
       saved,
       saveDraft: () => {
-        setBaseline(draftSignature(fields, editor?.getHTML() ?? body, attachments))
+        const current = draft.getValues()
+        setBaseline(draftSignature(recipientFields(current), current.body, current.attachments))
         setSaved(true)
       },
       confirm,

@@ -1,4 +1,5 @@
-import type { Attachment, DraftFields } from './types/composer'
+import type { DraftFields } from './types/composer'
+import type { Attachment } from './types/DraftValues'
 
 export const emptyFields: DraftFields = { to: '', cc: '', bcc: '', subject: '' }
 export const emptyBody = '<p></p>'
