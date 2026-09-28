@@ -1,7 +1,9 @@
 import { Button, Input } from '@mailflow/ui/components'
 import { createFileRoute, Link } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/forgot-password')({ component: ForgotPasswordPage })
+export const Route = createFileRoute('/_public/forgot-password')({
+  component: ForgotPasswordPage,
+})
 
 function ForgotPasswordPage() {
   return (

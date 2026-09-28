@@ -46,48 +46,25 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   }),
   component: AppShell,
   errorComponent: RootErrorComponent,
+  notFoundComponent: RootNotFoundComponent,
   shellComponent: RootDocument,
 })
 
 function AppShell() {
+  return <Outlet />
+}
+
+export function RootNotFoundComponent() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="mx-auto flex min-h-18 w-[min(72rem,calc(100%_-_2rem))] items-center justify-between border-b border-border">
-        <Link
-          className="inline-flex items-center gap-2.5 font-bold no-underline"
-          to="/"
-          aria-label="MailFlow home"
-        >
-          <span
-            className="grid size-8 place-items-center rounded-lg bg-primary text-xs text-primary-foreground"
-            aria-hidden="true"
-          >
-            M·F
-          </span>
-          <span>MailFlow</span>
-        </Link>
-        <nav className="flex gap-5" aria-label="Primary navigation">
-          <Link
-            className="text-sm font-semibold text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground"
-            to="/"
-            activeOptions={{ exact: true }}
-            activeProps={{ 'aria-current': 'page' }}
-          >
-            Home
-          </Link>
-          <Link
-            className="text-sm font-semibold text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground"
-            to="/app"
-            activeProps={{ 'aria-current': 'page' }}
-          >
-            App
-          </Link>
-        </nav>
-      </header>
-      <main>
-        <Outlet />
-      </main>
-    </div>
+    <section className="mx-auto grid min-h-screen w-[min(36rem,calc(100%_-_2rem))] content-center gap-4">
+      <h1 className="m-0 text-4xl">Page not found</h1>
+      <p className="m-0 text-muted-foreground">
+        The page you requested does not exist or may have moved.
+      </p>
+      <Link className="font-medium text-primary underline-offset-4 hover:underline" to="/">
+        Go to MailFlow
+      </Link>
+    </section>
   )
 }
 

@@ -74,13 +74,13 @@ describe('LoginForm', () => {
     expect(recordAuthTransportFailure).not.toHaveBeenCalled()
   })
 
-  it('navigates to the dashboard after successful login', async () => {
+  it('navigates to the inbox after successful login', async () => {
     signIn.mockResolvedValue({ data: { user: { id: '1' } } })
     render(<LoginForm />)
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'ada@example.test' } })
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } })
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: '/app' }))
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: '/inbox' }))
     expect(invalidate).toHaveBeenCalledOnce()
   })
 

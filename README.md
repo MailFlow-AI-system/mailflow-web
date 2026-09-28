@@ -78,9 +78,30 @@ src/features/auth/       Login, logout, and session adapters, schemas, and types
 src/config/             Validated client configuration
 src/i18n/               Locale and timezone primitives
 src/routes/             TanStack Router file-based routes
-src/routes/_protected/  Authenticated routes guarded by the pathless layout
+src/routes/_public/     Public page layout and routes
+src/routes/_authenticated/  Session-guarded pathless layout
+src/routes/_authenticated/_mail/  Mail navigation layout and routes
 src/test/               Shared test setup
 ```
+
+## Routing
+
+TanStack Router generates the route tree from `src/routes/`. Leading `_` segments
+define pathless layouts: `_public` provides the public page shell,
+`_authenticated` checks the session, and its nested `_mail` layout provides the
+mail menu. Neither layout name appears in the browser URL.
+
+- `/` checks the session and redirects to `/inbox` or `/login`.
+- `/login` and `/forgot-password` are public. An authenticated visit to `/login`
+  redirects to `/inbox`.
+- `/inbox`, `/sent`, `/drafts`, `/starred`, `/spam`, and `/trash` require a session.
+  The menu links between these routes and supports browser history.
+- Unknown paths render the global 404 page. `/app` is no longer a route.
+
+The mail pages identify their folders only; message data and actions are not part
+of this routing foundation. The authentication proxy at `/api/auth/*` is a server
+route outside the page layouts. Session lookup errors remain errors rather than
+being treated as signed-out sessions.
 
 ## Frontend stack validation
 
@@ -90,8 +111,8 @@ MailFlow architecture:
 - the official TanStack Start Cloudflare adapter builds for Workers;
 - the generated Worker uses `@tanstack/react-start/server-entry`;
 - static assets are emitted alongside the server bundle;
-- the root public route is server-rendered;
-- client navigation hydrates and opens the application shell;
+- the root route redirects according to the server-checked session;
+- client navigation hydrates and opens the mail layout;
 - TanStack Query uses the official Router SSR integration with a request-local
   `QueryClient`.
 
