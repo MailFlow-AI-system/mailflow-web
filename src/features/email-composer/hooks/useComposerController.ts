@@ -1,5 +1,6 @@
 import type { WindowOpenChangeDetails, WindowState } from '@mailflow/ui/components'
 import { useEditor } from '@tiptap/react'
+import { cn } from 'cn'
 import { useRef, useState } from 'react'
 import { draftSignature, emptyBody, emptyFields } from '../draft'
 import { composerExtensions } from '../editor/extensions'
@@ -29,8 +30,19 @@ export function useComposerController(theme: 'dark' | 'light'): ComposerControll
           role: 'textbox',
           'aria-label': 'Corpo da mensagem',
           'aria-multiline': 'true',
-          class:
-            'composer-editor min-h-[280px] rounded-md p-2 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring',
+          class: cn(
+            'min-h-[280px] wrap-anywhere p-2 text-sm outline-none',
+            '[&_p]:m-0 [&_p+p]:mt-2',
+            '[&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6',
+            '[&_strong]:font-bold [&_em]:italic [&_u]:underline',
+            '[&_a]:text-primary [&_a]:underline',
+            '[&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-md',
+            '[&_p.is-editor-empty]:before:float-left',
+            '[&_p.is-editor-empty]:before:h-0',
+            '[&_p.is-editor-empty]:before:pointer-events-none',
+            '[&_p.is-editor-empty]:before:text-foreground',
+            '[&_p.is-editor-empty]:before:content-[attr(data-placeholder)]',
+          ),
         },
       },
       onUpdate: ({ editor }) => setBody(editor.getHTML()),
