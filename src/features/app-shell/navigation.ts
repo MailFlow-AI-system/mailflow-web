@@ -18,18 +18,18 @@ import {
   Workflow,
 } from '@mailflow/ui/icons'
 
-import type { BreadcrumbItem, NavigationItem, NavigationSection } from './types'
+import type { BreadcrumbItem, MailRoutePath, NavigationItem, NavigationSection } from './types'
 
 export const navigationSections: readonly NavigationSection[] = [
   {
     label: 'Mail',
     items: [
-      { label: 'Inbox', icon: Inbox },
-      { label: 'Sent', icon: Send },
-      { label: 'Drafts', icon: FilePenLine },
-      { label: 'Starred', icon: Star },
-      { label: 'Spam', icon: ShieldAlert },
-      { label: 'Trash', icon: Trash2 },
+      { label: 'Inbox', icon: Inbox, to: '/inbox' },
+      { label: 'Sent', icon: Send, to: '/sent' },
+      { label: 'Drafts', icon: FilePenLine, to: '/drafts' },
+      { label: 'Starred', icon: Star, to: '/starred' },
+      { label: 'Spam', icon: ShieldAlert, to: '/spam' },
+      { label: 'Trash', icon: Trash2, to: '/trash' },
     ],
   },
   {
@@ -57,7 +57,16 @@ export const settingsItem: NavigationItem = { label: 'Settings', icon: Settings 
 
 export const themeItem: NavigationItem = { label: 'Theme', icon: Moon }
 
+const mailBreadcrumb = (label: string, to: MailRoutePath): readonly BreadcrumbItem[] => [
+  { label: 'Mail', to: '/inbox' },
+  { label, to },
+]
+
 export const breadcrumbsByPath: Readonly<Record<string, readonly BreadcrumbItem[]>> = {
-  '/app': [{ label: 'Início' }],
-  '/app/': [{ label: 'Início' }],
+  '/inbox': mailBreadcrumb('Inbox', '/inbox'),
+  '/sent': mailBreadcrumb('Sent', '/sent'),
+  '/drafts': mailBreadcrumb('Drafts', '/drafts'),
+  '/starred': mailBreadcrumb('Starred', '/starred'),
+  '/spam': mailBreadcrumb('Spam', '/spam'),
+  '/trash': mailBreadcrumb('Trash', '/trash'),
 }

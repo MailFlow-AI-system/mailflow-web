@@ -27,7 +27,7 @@ export function Trigger() {
       disabled={!editor}
       render={<Button size="sm" />}
       data-theme={theme}
-      className="fixed bottom-6 left-6 z-30 h-8 gap-1.5 px-3"
+      className="h-8 gap-1.5 px-3"
     >
       <SquarePen aria-hidden="true" className="size-3.5" /> Compose
     </WindowTrigger>
