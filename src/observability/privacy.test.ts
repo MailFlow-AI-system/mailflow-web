@@ -32,6 +32,33 @@ describe('sanitizeTelemetryItem', () => {
     expect(item?.meta).toEqual({ page: { url: 'https://app.example.test/app' } })
   })
 
+  it('preserves bounded auth failure dimensions while removing sensitive attributes', () => {
+    const item = sanitizeTelemetryItem({
+      type: 'event',
+      payload: {
+        name: 'mailflow.auth.operation',
+        attributes: {
+          operation: 'sign_in',
+          result: 'unavailable',
+          durationBucket: '100_499ms',
+          email: 'person@example.test',
+          token: 'private-token',
+        },
+      },
+      meta: {},
+    } as unknown as TransportItem)
+
+    expect(item?.payload).toEqual({
+      name: 'mailflow.auth.operation',
+      attributes: {
+        operation: 'sign_in',
+        result: 'unavailable',
+        durationBucket: '100_499ms',
+      },
+    })
+    expect(JSON.stringify(item)).not.toMatch(/person@example\.test|private-token/)
+  })
+
   it('preserves safe technical error fields while removing user metadata', () => {
     const item = sanitizeTelemetryItem({
       type: 'exception',

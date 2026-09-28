@@ -5,6 +5,8 @@ import { Link, useNavigate, useRouter } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 
+import { recordAuthTransportFailure } from '../../observability/faro'
+import { AUTH_UPSTREAM_UNAVAILABLE } from './authErrorCodes'
 import { authClient } from './client'
 import { loginSchema } from './schemas/loginSchema'
 import type { LoginValues } from './types/LoginValues'
@@ -22,9 +24,15 @@ export function LoginForm() {
 
   const submit = handleSubmit(async ({ email, password }) => {
     setError(null)
+    const authStartedAt = performance.now()
+    let authRequestReturned = false
     try {
       const result = await authClient.signIn.email({ email, password })
+      authRequestReturned = true
       if (result.error) {
+        if (result.error.code === AUTH_UPSTREAM_UNAVAILABLE) {
+          recordAuthTransportFailure('sign_in', performance.now() - authStartedAt)
+        }
         setError(
           result.error.status === 401 || result.error.code === 'INVALID_EMAIL_OR_PASSWORD'
             ? 'Email or password is incorrect.'
@@ -34,7 +42,10 @@ export function LoginForm() {
       }
       await router.invalidate()
       await navigate({ to: '/app' })
-    } catch {
+    } catch (error) {
+      if (!authRequestReturned && error instanceof TypeError) {
+        recordAuthTransportFailure('sign_in', performance.now() - authStartedAt)
+      }
       setError('Unable to sign in. Please try again.')
     }
   })
