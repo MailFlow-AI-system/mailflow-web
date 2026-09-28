@@ -34,7 +34,7 @@
     "@grafana/faro-web-sdk": "2.12.0",
     "@grafana/faro-web-tracing": "2.12.0",
     "@hookform/resolvers": "^5.2.2",
-    "@mailflow/ui": "git+https://github.com/MailFlow-AI-system/mailflow-design-system.git#v0.3.0",
+    "@mailflow/ui": "git+https://github.com/MailFlow-AI-system/mailflow-design-system.git#v0.4.0",
     "@t3-oss/env-core": "^0.13.11",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "^0.10.12",
@@ -43,6 +43,11 @@
     "@tanstack/react-router-devtools": "^1.167.1",
     "@tanstack/react-router-ssr-query": "^1.167.2",
     "@tanstack/react-start": "^1.168.50",
+    "@tiptap/extension-image": "3.31.3",
+    "@tiptap/extension-placeholder": "3.31.3",
+    "@tiptap/pm": "3.31.3",
+    "@tiptap/react": "3.31.3",
+    "@tiptap/starter-kit": "3.31.3",
     "better-auth": "1.7.6",
     "lucide-react": "^1.43.0",
     "react": "^19.2.0",
@@ -53,6 +58,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@biomejs/biome": "^2.5.12",
     "@cloudflare/vite-plugin": "^1.26.0",
     "@playwright/test": "^1.63.0",
