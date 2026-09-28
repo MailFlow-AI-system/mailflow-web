@@ -3,7 +3,7 @@ import type { Editor } from '@tiptap/react'
 import type { ReactNode, RefObject } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 
-import type { Attachment, DraftValues } from './DraftValues'
+import type { DraftValues } from './DraftValues'
 
 export type { Attachment } from './DraftValues'
 export type RecipientField = 'to' | 'cc' | 'bcc' | 'subject'
@@ -14,11 +14,10 @@ export type ComposerContextValue = {
   revision: number
   sessionRef: RefObject<number>
   editor: Editor | null
-  fields: DraftFields
-  attachments: Attachment[]
   addAttachments: (files: File[]) => void
   removeAttachment: (id: string) => void
-  dirty: boolean
+  bodyDirty: boolean
+  baselineFieldsRef: RefObject<string>
   saved: boolean
   saveDraft: () => void
   confirm: boolean
