@@ -3,14 +3,16 @@ import type { ReactNode } from 'react'
 
 export type BreadcrumbItem = {
   label: string
-  to?: '/app'
+  to?: MailRoutePath
 }
 
 export type NavigationItem = {
   label: string
   icon: LucideIcon
-  to?: '/app'
+  to?: MailRoutePath
 }
+
+export type MailRoutePath = '/inbox' | '/sent' | '/drafts' | '/starred' | '/spam' | '/trash'
 
 export type NavigationSection = {
   label: string
@@ -33,9 +35,16 @@ export type AppShellRootProps = {
   children: ReactNode
 }
 
+export type AppShellSidebarProps = {
+  footer?: ReactNode
+}
+
 export type AppShellHeaderProps = {
   children: ReactNode
-  actions?: ReactNode
+}
+
+export type AppShellHeaderActionsProps = {
+  children: ReactNode
 }
 
 export type AppShellContentProps = {
