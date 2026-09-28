@@ -1,8 +1,15 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
-test.beforeEach(async ({ page }) => {
-  await page.goto('/')
+test.beforeEach(async ({ context, page }) => {
+  await context.addCookies([
+    {
+      name: 'better-auth.session_token',
+      value: 'e2e',
+      url: `http://127.0.0.1:${process.env.E2E_PORT ?? '3000'}`,
+    },
+  ])
+  await page.goto('/inbox')
   await page.getByRole('button', { name: 'Compose', exact: true }).click()
   await expect(page.getByRole('textbox', { name: 'Para', exact: true })).toBeFocused()
 })
