@@ -14,7 +14,7 @@ import { Sparkles } from '@mailflow/ui/icons'
 import { Link, useRouterState } from '@tanstack/react-router'
 
 import { navigationSections, settingsItem, themeItem } from '../navigation'
-import type { NavigationItemButtonProps } from '../types'
+import type { AppShellSidebarProps, NavigationItemButtonProps } from '../types'
 import { SidebarSearch } from './SidebarSearch'
 import { SidebarUser } from './SidebarUser'
 import { WorkspaceSwitcher } from './WorkspaceSwitcher'
@@ -49,15 +49,15 @@ function NavigationItemButton({ item }: NavigationItemButtonProps) {
   )
 }
 
-function SidebarNavigation() {
+function SidebarNavigation({ footer }: AppShellSidebarProps) {
   return (
     <>
       <SidebarHeader>
         <div className="flex items-center justify-between px-2 gap-2 group-data-[collapsible=icon]:justify-center">
           <Link
-            aria-label="MailFlow AI — Início"
+            aria-label="MailFlow AI — Inbox"
             className="flex min-w-0 items-center gap-2 text-sidebar-foreground no-underline group-data-[collapsible=icon]:hidden"
-            to="/app"
+            to="/inbox"
           >
             <span
               aria-hidden="true"
@@ -100,16 +100,17 @@ function SidebarNavigation() {
             <NavigationItemButton item={themeItem} />
           </SidebarMenuItem>
         </SidebarMenu>
+        {footer}
         <SidebarUser />
       </SidebarFooter>
     </>
   )
 }
 
-export function Sidebar() {
+export function Sidebar({ footer }: AppShellSidebarProps) {
   return (
     <SidebarRoot collapsible="icon">
-      <SidebarNavigation />
+      <SidebarNavigation footer={footer} />
     </SidebarRoot>
   )
 }
