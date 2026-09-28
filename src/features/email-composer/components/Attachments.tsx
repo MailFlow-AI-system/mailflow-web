@@ -1,9 +1,13 @@
 import { Button } from '@mailflow/ui/components'
 import { Paperclip, X } from '@mailflow/ui/icons'
+import { useFormContext, useWatch } from 'react-hook-form'
 import { useComposer } from '../context'
+import type { DraftValues } from '../types/DraftValues'
 
 export function Attachments() {
-  const { attachments, removeAttachment } = useComposer()
+  const { removeAttachment } = useComposer()
+  const { control } = useFormContext<DraftValues>()
+  const attachments = useWatch({ control, name: 'attachments' })
   if (!attachments.length) return null
   return (
     <ul aria-label="Arquivos anexados" className="flex list-none flex-wrap gap-2 px-4 pb-3">

@@ -1,18 +1,8 @@
 import { Button } from '@mailflow/ui/components'
 import { useCallback } from 'react'
 import { useComposer } from '../context'
+import { composerEmojis } from '../editor/emojis'
 import type { LinkEditorProps } from '../types/editor'
-
-const emojis = [
-  ['😀', 'Sorriso'],
-  ['😊', 'Feliz'],
-  ['👍', 'Positivo'],
-  ['❤️', 'Coração'],
-  ['🎉', 'Celebração'],
-  ['✅', 'Concluído'],
-  ['🙏', 'Obrigado'],
-  ['🚀', 'Foguete'],
-]
 
 export function EmojiPicker({ onClose }: Pick<LinkEditorProps, 'onClose'>) {
   const { editor } = useComposer()
@@ -30,15 +20,15 @@ export function EmojiPicker({ onClose }: Pick<LinkEditorProps, 'onClose'>) {
         }
       }}
       aria-label="Escolher emoji"
-      className="flex flex-wrap items-center gap-1 border-t border-border px-4 py-2"
+      className="flex max-h-36 flex-wrap items-center gap-1 overflow-y-auto border-t border-border px-4 py-2"
     >
-      {emojis.map(([emoji, name], index) => (
+      {composerEmojis.map(({ emoji, label }, index) => (
         <Button
-          key={name}
+          key={label}
           ref={index === 0 ? focusFirst : undefined}
           variant="ghost"
           size="icon"
-          aria-label={name}
+          aria-label={label}
           onClick={() => {
             editor?.chain().focus().insertContent({ type: 'text', text: emoji }).run()
             onClose()
