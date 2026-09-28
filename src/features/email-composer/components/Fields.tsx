@@ -30,7 +30,7 @@ export function Fields() {
             ref={field === 'to' ? recipientRef : undefined}
             value={fields[field]}
             onChange={(event) => setField(field, event.target.value)}
-            className="h-8 min-w-0 flex-1 border-0 bg-transparent px-0 shadow-none"
+            className="h-8 min-w-0 flex-1 border-0 bg-transparent px-0 shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent"
             placeholder={
               field === 'to'
                 ? 'destinatario@email.com'

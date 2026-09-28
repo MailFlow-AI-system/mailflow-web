@@ -49,6 +49,7 @@
     "@tiptap/react": "3.31.3",
     "@tiptap/starter-kit": "3.31.3",
     "better-auth": "1.7.6",
+    "cn": "^0.2.6",
     "lucide-react": "^1.43.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
