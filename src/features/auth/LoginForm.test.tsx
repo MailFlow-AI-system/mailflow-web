@@ -51,4 +51,18 @@ describe('LoginForm', () => {
     await waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: '/app' }))
     expect(invalidate).toHaveBeenCalledOnce()
   })
+
+  it('reveals and hides the password when the visibility toggle is clicked', () => {
+    render(<LoginForm />)
+    const password = screen.getByLabelText('Password')
+    expect(password).toHaveAttribute('type', 'password')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show password' }))
+    expect(password).toHaveAttribute('type', 'text')
+    expect(screen.getByRole('button', { name: 'Hide password' })).toBeVisible()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide password' }))
+    expect(password).toHaveAttribute('type', 'password')
+    expect(screen.getByRole('button', { name: 'Show password' })).toBeVisible()
+  })
 })
