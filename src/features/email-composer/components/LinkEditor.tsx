@@ -49,7 +49,7 @@ export function LinkEditor({ editor, onClose }: LinkEditorProps) {
         placeholder="https://exemplo.com"
         aria-invalid={!!error}
         aria-describedby={error ? `${id}-error` : undefined}
-        className="h-8 min-w-0 flex-1"
+        className="h-8 min-w-0 flex-1 border-0 bg-transparent shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent"
       />
       <Button size="sm" type="submit">
         Aplicar
