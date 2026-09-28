@@ -1,8 +1,8 @@
 import type { WindowOpenChangeDetails, WindowState } from '@mailflow/ui/components'
 import { useEditor } from '@tiptap/react'
 import { cn } from 'cn'
-import { useRef, useState } from 'react'
-import { draftSignature, emptyBody, emptyFields } from '../draft'
+import { useCallback, useRef, useState } from 'react'
+import { draftFieldsSignature, emptyBody, emptyFields } from '../draft'
 import { composerExtensions } from '../editor/extensions'
 import type { ComposerController, DraftFields } from '../types/composer'
 import type { DraftValues } from '../types/DraftValues'
@@ -14,16 +14,24 @@ function recipientFields(values: DraftValues): DraftFields {
 
 export function useComposerController(theme: 'dark' | 'light'): ComposerController {
   const draft = useDraftForm()
-  const values = draft.watch()
   const [open, setOpen] = useState(false)
   const [state, setState] = useState<WindowState>('normal')
-  const [baseline, setBaseline] = useState(() => draftSignature(emptyFields, emptyBody, []))
   const [saved, setSaved] = useState(false)
   const [confirm, setConfirm] = useState(false)
+  const [bodyDirty, setBodyDirty] = useState(false)
+  const baselineFieldsRef = useRef(draftFieldsSignature(emptyFields, []))
+  const baselineBodyRef = useRef(emptyBody)
+  const bodyDirtyRef = useRef(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const recipientRef = useRef<HTMLInputElement>(null)
   const sessionRef = useRef(0)
   const [session, setSession] = useState(0)
+  const editorRef = useRef<ReturnType<typeof useEditor>>(null)
+  const markBodyDirty = useCallback((dirty: boolean) => {
+    if (bodyDirtyRef.current === dirty) return
+    bodyDirtyRef.current = dirty
+    setBodyDirty(dirty)
+  }, [])
   const editor = useEditor(
     {
       immediatelyRender: false,
@@ -50,25 +58,63 @@ export function useComposerController(theme: 'dark' | 'light'): ComposerControll
           ),
         },
       },
-      onUpdate: ({ editor }) => {
-        draft.setValue('body', editor.getHTML())
+      onUpdate: ({ transaction }) => {
+        if (transaction.docChanged) markBodyDirty(true)
       },
     },
-    [session],
+    [session, markBodyDirty],
   )
-  const fields = recipientFields(values)
-  const dirty = draftSignature(fields, values.body, values.attachments) !== baseline
+  editorRef.current = editor
 
-  function discard() {
+  const readFieldsSignature = useCallback(() => {
+    const current = draft.getValues()
+    return draftFieldsSignature(recipientFields(current), current.attachments)
+  }, [draft])
+
+  const isDirty = useCallback(() => {
+    const body = editorRef.current?.getHTML() ?? emptyBody
+    return readFieldsSignature() !== baselineFieldsRef.current || body !== baselineBodyRef.current
+  }, [readFieldsSignature])
+
+  const discard = useCallback(() => {
     sessionRef.current += 1
     setSession((previous) => previous + 1)
-    editor?.commands.clearContent()
+    editorRef.current?.commands.clearContent()
     draft.reset(emptyDraft)
-    setBaseline(draftSignature(emptyFields, emptyBody, []))
+    baselineFieldsRef.current = draftFieldsSignature(emptyFields, [])
+    baselineBodyRef.current = emptyBody
+    markBodyDirty(false)
     setSaved(false)
     setConfirm(false)
     setOpen(false)
-  }
+  }, [draft, markBodyDirty])
+
+  const saveDraft = useCallback(() => {
+    baselineFieldsRef.current = readFieldsSignature()
+    baselineBodyRef.current = editorRef.current?.getHTML() ?? emptyBody
+    markBodyDirty(false)
+    setSaved(true)
+  }, [markBodyDirty, readFieldsSignature])
+
+  const addAttachments = useCallback(
+    (files: File[]) => {
+      draft.setValue('attachments', [
+        ...draft.getValues('attachments'),
+        ...files.map((file) => ({ id: crypto.randomUUID(), file })),
+      ])
+    },
+    [draft],
+  )
+
+  const removeAttachment = useCallback(
+    (id: string) => {
+      draft.setValue(
+        'attachments',
+        draft.getValues('attachments').filter((item) => item.id !== id),
+      )
+    },
+    [draft],
+  )
 
   return {
     draft,
@@ -76,25 +122,12 @@ export function useComposerController(theme: 'dark' | 'light'): ComposerControll
       sessionRef,
       revision: session,
       editor,
-      fields,
-      attachments: values.attachments,
-      addAttachments: (files) =>
-        draft.setValue('attachments', [
-          ...draft.getValues('attachments'),
-          ...files.map((file) => ({ id: crypto.randomUUID(), file })),
-        ]),
-      removeAttachment: (id) =>
-        draft.setValue(
-          'attachments',
-          draft.getValues('attachments').filter((item) => item.id !== id),
-        ),
-      dirty,
+      addAttachments,
+      removeAttachment,
+      bodyDirty,
+      baselineFieldsRef,
       saved,
-      saveDraft: () => {
-        const current = draft.getValues()
-        setBaseline(draftSignature(recipientFields(current), current.body, current.attachments))
-        setSaved(true)
-      },
+      saveDraft,
       confirm,
       setConfirm,
       discard,
@@ -107,7 +140,7 @@ export function useComposerController(theme: 'dark' | 'light'): ComposerControll
     state,
     setState,
     onOpenChange: (next: boolean, details: WindowOpenChangeDetails) => {
-      if (!next && dirty) {
+      if (!next && isDirty()) {
         details.cancel()
         setConfirm(true)
         return

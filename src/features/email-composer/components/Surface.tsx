@@ -14,8 +14,10 @@ import {
 } from '@mailflow/ui/components'
 import { Maximize2, SquarePen, X } from '@mailflow/ui/icons'
 import { useRef } from 'react'
+import { useFormContext, useWatch } from 'react-hook-form'
 import { useComposer } from '../context'
 import type { ComposerFocusMemory, ComposerLayoutProps, ComposerRootProps } from '../types/composer'
+import type { DraftValues } from '../types/DraftValues'
 
 export function Trigger() {
   const { triggerRef, theme, editor } = useComposer()
@@ -98,7 +100,9 @@ export function Layout({ children, assistant }: ComposerLayoutProps) {
 }
 
 export function Minimized() {
-  const { theme, fields } = useComposer()
+  const { theme } = useComposer()
+  const { control } = useFormContext<DraftValues>()
+  const subject = useWatch({ control, name: 'subject' })
   return (
     <WindowMinimized
       lang="pt-BR"
@@ -108,7 +112,7 @@ export function Minimized() {
     >
       <WindowRestore aria-label="Restaurar mensagem" className="max-w-60 gap-2">
         <Maximize2 aria-hidden="true" className="size-3.5 shrink-0" />
-        <span className="truncate">{fields.subject || 'Nova mensagem'}</span>
+        <span className="truncate">{subject || 'Nova mensagem'}</span>
       </WindowRestore>
       <WindowClose aria-label="Fechar janela" render={<Button variant="ghost" size="icon" />}>
         <X aria-hidden="true" className="size-3.5" />
