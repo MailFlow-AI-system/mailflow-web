@@ -84,8 +84,12 @@ export function createTracePropagationPattern(apiBaseUrl: string): RegExp {
 
 export function normalizeRoute(pathname: string): string {
   const path = pathname.split(/[?#]/, 1)[0] || '/'
-  if (path === '/' || path === '/app') return path
-  if (path.startsWith('/app/')) return '/app/:path'
+  if (
+    path === '/' ||
+    /^\/(?:login|forgot-password|inbox|sent|drafts|starred|spam|trash)$/.test(path)
+  ) {
+    return path
+  }
   return '/:path'
 }
 

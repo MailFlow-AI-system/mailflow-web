@@ -51,14 +51,14 @@ describe('initializeBrowserObservability', () => {
     const secondCleanup = initializeBrowserObservability(router as never, environment)
     callbacks[1]?.({
       fromLocation: { pathname: '/' },
-      toLocation: { pathname: '/app' },
+      toLocation: { pathname: '/inbox' },
       pathChanged: true,
     })
 
     expect(sdk.initializeFaro).toHaveBeenCalledTimes(1)
     expect(sdk.initializeFaro.mock.results[0]?.value.api.pushEvent).toHaveBeenCalledWith(
       'mailflow.navigation',
-      { fromRoute: '/', toRoute: '/app', pathChanged: 'true' },
+      { fromRoute: '/', toRoute: '/inbox', pathChanged: 'true' },
     )
     secondCleanup?.()
     expect(unsubscribers[1]).toHaveBeenCalledTimes(1)
