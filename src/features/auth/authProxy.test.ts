@@ -59,7 +59,7 @@ describe('createAuthProxyHandler', () => {
 
   it('preserves redirects and every Set-Cookie header for the Web origin', async () => {
     const upstreamHeaders = new Headers({
-      Location: webUrl('/app'),
+      Location: webUrl('/inbox'),
     })
     upstreamHeaders.append(
       'Set-Cookie',
@@ -81,7 +81,7 @@ describe('createAuthProxyHandler', () => {
 
     expect(response.status).toBe(302)
     expect(forwardedInit?.redirect).toBe('manual')
-    expect(response.headers.get('location')).toBe(webUrl('/app'))
+    expect(response.headers.get('location')).toBe(webUrl('/inbox'))
     expect(response.headers.getSetCookie()).toEqual([
       'better-auth.session_token=opaque; Path=/; HttpOnly; Secure; SameSite=Lax',
       'better-auth.session_data=cache; Path=/; HttpOnly; Secure',

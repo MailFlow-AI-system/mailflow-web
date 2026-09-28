@@ -9,36 +9,77 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as ProtectedRouteRouteImport } from './routes/_protected/route'
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as ProtectedAppRouteImport } from './routes/_protected/app'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as PublicRouteRouteImport } from './routes/_public/route'
+import { Route as AuthenticatedMailRouteRouteImport } from './routes/_authenticated/_mail/route'
+import { Route as PublicIndexRouteImport } from './routes/_public/index'
+import { Route as PublicForgotPasswordRouteImport } from './routes/_public/forgot-password'
+import { Route as PublicLoginRouteImport } from './routes/_public/login'
+import { Route as AuthenticatedMailDraftsRouteImport } from './routes/_authenticated/_mail/drafts'
+import { Route as AuthenticatedMailInboxRouteImport } from './routes/_authenticated/_mail/inbox'
+import { Route as AuthenticatedMailSentRouteImport } from './routes/_authenticated/_mail/sent'
+import { Route as AuthenticatedMailSpamRouteImport } from './routes/_authenticated/_mail/spam'
+import { Route as AuthenticatedMailStarredRouteImport } from './routes/_authenticated/_mail/starred'
+import { Route as AuthenticatedMailTrashRouteImport } from './routes/_authenticated/_mail/trash'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
-const IndexRoute = IndexRouteImport.update({
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublicRouteRoute = PublicRouteRouteImport.update({
+  id: '/_public',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedMailRouteRoute = AuthenticatedMailRouteRouteImport.update({
+  id: '/_mail',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const PublicIndexRoute = PublicIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => PublicRouteRoute,
 } as any)
-const ProtectedRouteRoute = ProtectedRouteRouteImport.update({
-  id: '/_protected',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+const PublicForgotPasswordRoute = PublicForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => PublicRouteRoute,
 } as any)
-const LoginRoute = LoginRouteImport.update({
+const PublicLoginRoute = PublicLoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => PublicRouteRoute,
 } as any)
-const ProtectedAppRoute = ProtectedAppRouteImport.update({
-  id: '/app',
-  path: '/app',
-  getParentRoute: () => ProtectedRouteRoute,
+const AuthenticatedMailDraftsRoute = AuthenticatedMailDraftsRouteImport.update({
+  id: '/drafts',
+  path: '/drafts',
+  getParentRoute: () => AuthenticatedMailRouteRoute,
+} as any)
+const AuthenticatedMailInboxRoute = AuthenticatedMailInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => AuthenticatedMailRouteRoute,
+} as any)
+const AuthenticatedMailSentRoute = AuthenticatedMailSentRouteImport.update({
+  id: '/sent',
+  path: '/sent',
+  getParentRoute: () => AuthenticatedMailRouteRoute,
+} as any)
+const AuthenticatedMailSpamRoute = AuthenticatedMailSpamRouteImport.update({
+  id: '/spam',
+  path: '/spam',
+  getParentRoute: () => AuthenticatedMailRouteRoute,
+} as any)
+const AuthenticatedMailStarredRoute =
+  AuthenticatedMailStarredRouteImport.update({
+    id: '/starred',
+    path: '/starred',
+    getParentRoute: () => AuthenticatedMailRouteRoute,
+  } as any)
+const AuthenticatedMailTrashRoute = AuthenticatedMailTrashRouteImport.update({
+  id: '/trash',
+  path: '/trash',
+  getParentRoute: () => AuthenticatedMailRouteRoute,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
@@ -47,87 +88,178 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/forgot-password': typeof ForgotPasswordRoute
-  '/login': typeof LoginRoute
-  '/app': typeof ProtectedAppRoute
+  '/': typeof PublicIndexRoute
+  '/forgot-password': typeof PublicForgotPasswordRoute
+  '/login': typeof PublicLoginRoute
+  '/drafts': typeof AuthenticatedMailDraftsRoute
+  '/inbox': typeof AuthenticatedMailInboxRoute
+  '/sent': typeof AuthenticatedMailSentRoute
+  '/spam': typeof AuthenticatedMailSpamRoute
+  '/starred': typeof AuthenticatedMailStarredRoute
+  '/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/forgot-password': typeof ForgotPasswordRoute
-  '/login': typeof LoginRoute
-  '/app': typeof ProtectedAppRoute
+  '/': typeof PublicIndexRoute
+  '/forgot-password': typeof PublicForgotPasswordRoute
+  '/login': typeof PublicLoginRoute
+  '/drafts': typeof AuthenticatedMailDraftsRoute
+  '/inbox': typeof AuthenticatedMailInboxRoute
+  '/sent': typeof AuthenticatedMailSentRoute
+  '/spam': typeof AuthenticatedMailSpamRoute
+  '/starred': typeof AuthenticatedMailStarredRoute
+  '/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/_protected': typeof ProtectedRouteRouteWithChildren
-  '/forgot-password': typeof ForgotPasswordRoute
-  '/login': typeof LoginRoute
-  '/_protected/app': typeof ProtectedAppRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/_public': typeof PublicRouteRouteWithChildren
+  '/_authenticated/_mail': typeof AuthenticatedMailRouteRouteWithChildren
+  '/_public/forgot-password': typeof PublicForgotPasswordRoute
+  '/_public/login': typeof PublicLoginRoute
+  '/_public/': typeof PublicIndexRoute
+  '/_authenticated/_mail/drafts': typeof AuthenticatedMailDraftsRoute
+  '/_authenticated/_mail/inbox': typeof AuthenticatedMailInboxRoute
+  '/_authenticated/_mail/sent': typeof AuthenticatedMailSentRoute
+  '/_authenticated/_mail/spam': typeof AuthenticatedMailSpamRoute
+  '/_authenticated/_mail/starred': typeof AuthenticatedMailStarredRoute
+  '/_authenticated/_mail/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/forgot-password' | '/login' | '/app' | '/api/auth/$'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/forgot-password' | '/login' | '/app' | '/api/auth/$'
-  id:
-    | '__root__'
+  fullPaths:
     | '/'
-    | '/_protected'
     | '/forgot-password'
     | '/login'
-    | '/_protected/app'
+    | '/drafts'
+    | '/inbox'
+    | '/sent'
+    | '/spam'
+    | '/starred'
+    | '/trash'
+    | '/api/auth/$'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/forgot-password'
+    | '/login'
+    | '/drafts'
+    | '/inbox'
+    | '/sent'
+    | '/spam'
+    | '/starred'
+    | '/trash'
+    | '/api/auth/$'
+  id:
+    | '__root__'
+    | '/_authenticated'
+    | '/_public'
+    | '/_authenticated/_mail'
+    | '/_public/forgot-password'
+    | '/_public/login'
+    | '/_public/'
+    | '/_authenticated/_mail/drafts'
+    | '/_authenticated/_mail/inbox'
+    | '/_authenticated/_mail/sent'
+    | '/_authenticated/_mail/spam'
+    | '/_authenticated/_mail/starred'
+    | '/_authenticated/_mail/trash'
     | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  ProtectedRouteRoute: typeof ProtectedRouteRouteWithChildren
-  ForgotPasswordRoute: typeof ForgotPasswordRoute
-  LoginRoute: typeof LoginRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  PublicRouteRoute: typeof PublicRouteRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_protected': {
-      id: '/_protected'
+    '/_authenticated': {
+      id: '/_authenticated'
       path: ''
       fullPath: '/'
-      preLoaderRoute: typeof ProtectedRouteRouteImport
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/forgot-password': {
-      id: '/forgot-password'
+    '/_public': {
+      id: '/_public'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PublicRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/_mail': {
+      id: '/_authenticated/_mail'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedMailRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_public/': {
+      id: '/_public/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof PublicIndexRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/forgot-password': {
+      id: '/_public/forgot-password'
       path: '/forgot-password'
       fullPath: '/forgot-password'
-      preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof PublicForgotPasswordRouteImport
+      parentRoute: typeof PublicRouteRoute
     }
-    '/login': {
-      id: '/login'
+    '/_public/login': {
+      id: '/_public/login'
       path: '/login'
       fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof PublicLoginRouteImport
+      parentRoute: typeof PublicRouteRoute
     }
-    '/_protected/app': {
-      id: '/_protected/app'
-      path: '/app'
-      fullPath: '/app'
-      preLoaderRoute: typeof ProtectedAppRouteImport
-      parentRoute: typeof ProtectedRouteRoute
+    '/_authenticated/_mail/drafts': {
+      id: '/_authenticated/_mail/drafts'
+      path: '/drafts'
+      fullPath: '/drafts'
+      preLoaderRoute: typeof AuthenticatedMailDraftsRouteImport
+      parentRoute: typeof AuthenticatedMailRouteRoute
+    }
+    '/_authenticated/_mail/inbox': {
+      id: '/_authenticated/_mail/inbox'
+      path: '/inbox'
+      fullPath: '/inbox'
+      preLoaderRoute: typeof AuthenticatedMailInboxRouteImport
+      parentRoute: typeof AuthenticatedMailRouteRoute
+    }
+    '/_authenticated/_mail/sent': {
+      id: '/_authenticated/_mail/sent'
+      path: '/sent'
+      fullPath: '/sent'
+      preLoaderRoute: typeof AuthenticatedMailSentRouteImport
+      parentRoute: typeof AuthenticatedMailRouteRoute
+    }
+    '/_authenticated/_mail/spam': {
+      id: '/_authenticated/_mail/spam'
+      path: '/spam'
+      fullPath: '/spam'
+      preLoaderRoute: typeof AuthenticatedMailSpamRouteImport
+      parentRoute: typeof AuthenticatedMailRouteRoute
+    }
+    '/_authenticated/_mail/starred': {
+      id: '/_authenticated/_mail/starred'
+      path: '/starred'
+      fullPath: '/starred'
+      preLoaderRoute: typeof AuthenticatedMailStarredRouteImport
+      parentRoute: typeof AuthenticatedMailRouteRoute
+    }
+    '/_authenticated/_mail/trash': {
+      id: '/_authenticated/_mail/trash'
+      path: '/trash'
+      fullPath: '/trash'
+      preLoaderRoute: typeof AuthenticatedMailTrashRouteImport
+      parentRoute: typeof AuthenticatedMailRouteRoute
     }
     '/api/auth/$': {
       id: '/api/auth/$'
@@ -139,23 +271,60 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface ProtectedRouteRouteChildren {
-  ProtectedAppRoute: typeof ProtectedAppRoute
+interface AuthenticatedMailRouteRouteChildren {
+  AuthenticatedMailDraftsRoute: typeof AuthenticatedMailDraftsRoute
+  AuthenticatedMailInboxRoute: typeof AuthenticatedMailInboxRoute
+  AuthenticatedMailSentRoute: typeof AuthenticatedMailSentRoute
+  AuthenticatedMailSpamRoute: typeof AuthenticatedMailSpamRoute
+  AuthenticatedMailStarredRoute: typeof AuthenticatedMailStarredRoute
+  AuthenticatedMailTrashRoute: typeof AuthenticatedMailTrashRoute
 }
 
-const ProtectedRouteRouteChildren: ProtectedRouteRouteChildren = {
-  ProtectedAppRoute: ProtectedAppRoute,
+const AuthenticatedMailRouteRouteChildren: AuthenticatedMailRouteRouteChildren =
+  {
+    AuthenticatedMailDraftsRoute: AuthenticatedMailDraftsRoute,
+    AuthenticatedMailInboxRoute: AuthenticatedMailInboxRoute,
+    AuthenticatedMailSentRoute: AuthenticatedMailSentRoute,
+    AuthenticatedMailSpamRoute: AuthenticatedMailSpamRoute,
+    AuthenticatedMailStarredRoute: AuthenticatedMailStarredRoute,
+    AuthenticatedMailTrashRoute: AuthenticatedMailTrashRoute,
+  }
+
+const AuthenticatedMailRouteRouteWithChildren =
+  AuthenticatedMailRouteRoute._addFileChildren(
+    AuthenticatedMailRouteRouteChildren,
+  )
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedMailRouteRoute: typeof AuthenticatedMailRouteRouteWithChildren
 }
 
-const ProtectedRouteRouteWithChildren = ProtectedRouteRoute._addFileChildren(
-  ProtectedRouteRouteChildren,
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedMailRouteRoute: AuthenticatedMailRouteRouteWithChildren,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
+interface PublicRouteRouteChildren {
+  PublicForgotPasswordRoute: typeof PublicForgotPasswordRoute
+  PublicLoginRoute: typeof PublicLoginRoute
+  PublicIndexRoute: typeof PublicIndexRoute
+}
+
+const PublicRouteRouteChildren: PublicRouteRouteChildren = {
+  PublicForgotPasswordRoute: PublicForgotPasswordRoute,
+  PublicLoginRoute: PublicLoginRoute,
+  PublicIndexRoute: PublicIndexRoute,
+}
+
+const PublicRouteRouteWithChildren = PublicRouteRoute._addFileChildren(
+  PublicRouteRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  ProtectedRouteRoute: ProtectedRouteRouteWithChildren,
-  ForgotPasswordRoute: ForgotPasswordRoute,
-  LoginRoute: LoginRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  PublicRouteRoute: PublicRouteRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport

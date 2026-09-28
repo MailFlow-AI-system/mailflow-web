@@ -42,13 +42,25 @@ describe('createFaroConfig', () => {
 })
 
 describe('observability route helpers', () => {
-  it('normalizes query strings and unbounded path segments', () => {
+  it('keeps known static routes and masks unknown paths or details', () => {
+    for (const path of [
+      '/login',
+      '/forgot-password',
+      '/inbox',
+      '/sent',
+      '/drafts',
+      '/starred',
+      '/spam',
+      '/trash',
+    ]) {
+      expect(normalizeRoute(path)).toBe(path)
+    }
     expect(
       normalizeRoute(
-        '/app/workspaces/123/campaigns/550e8400-e29b-41d4-a716-446655440000?email=a@b.test',
+        '/inbox/messages/123/campaigns/550e8400-e29b-41d4-a716-446655440000?email=a@b.test',
       ),
-    ).toBe('/app/:path')
-    expect(normalizeRoute('/app/messages/private-letter')).toBe('/app/:path')
+    ).toBe('/:path')
+    expect(normalizeRoute('/unknown')).toBe('/:path')
   })
 
   it('limits trace propagation to the configured API path', () => {
