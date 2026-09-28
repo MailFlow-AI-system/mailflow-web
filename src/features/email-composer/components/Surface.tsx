@@ -25,11 +25,11 @@ export function Trigger() {
     <WindowTrigger
       ref={triggerRef}
       disabled={!editor}
-      render={<Button />}
+      render={<Button size="sm" />}
       data-theme={theme}
-      className="fixed bottom-6 left-6 z-30 gap-2 shadow-lg"
+      className="fixed bottom-6 left-6 z-30 h-8 gap-1.5 px-3"
     >
-      <SquarePen aria-hidden="true" className="size-4" /> Compose
+      <SquarePen aria-hidden="true" className="size-3.5" /> Compose
     </WindowTrigger>
   )
 }
