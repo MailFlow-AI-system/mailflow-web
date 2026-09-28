@@ -1,9 +1,11 @@
 import { Button } from '@mailflow/ui/components'
 import { Clock, Save, Send } from '@mailflow/ui/icons'
 import { useComposer } from '../context'
+import { useDraftStatus } from '../hooks/useDraftStatus'
 
 export function Footer() {
-  const { dirty, saved, saveDraft } = useComposer()
+  const { saveDraft } = useComposer()
+  const { dirty, saved } = useDraftStatus()
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-background px-4 py-3">
       <div className="flex items-center gap-2">
