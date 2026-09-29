@@ -1,0 +1,1 @@
+export const RECOVERY_COOLDOWN_SECONDS = 60

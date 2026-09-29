@@ -11,6 +11,19 @@ vi.mock('@tanstack/react-router', () => ({
 }))
 
 import { ForgotPasswordForm, ResetPasswordForm } from './PasswordRecoveryForms'
+import { passwordRecoveryClient } from './passwordRecoveryClient'
+
+function renderForgotPasswordForm() {
+  return render(
+    <ForgotPasswordForm requestPasswordReset={passwordRecoveryClient.requestPasswordReset} />,
+  )
+}
+
+function renderResetPasswordForm(token?: string) {
+  return render(
+    <ResetPasswordForm token={token} resetPassword={passwordRecoveryClient.resetPassword} />,
+  )
+}
 
 describe('ForgotPasswordForm', () => {
   const fetcher = vi.fn<typeof fetch>()
@@ -27,9 +40,19 @@ describe('ForgotPasswordForm', () => {
     vi.stubGlobal('fetch', fetcher)
   })
 
+  it('validates email with the form schema before requesting a reset', async () => {
+    renderForgotPasswordForm()
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'not-an-email' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Send recovery link' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Enter a valid email address.')
+    expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'true')
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
   it('requests a reset through the same-origin proxy and confirms accepted delivery', async () => {
     fetcher.mockResolvedValue(Response.json({ status: true }))
-    render(<ForgotPasswordForm />)
+    renderForgotPasswordForm()
     fireEvent.change(screen.getByLabelText('Email'), {
       target: { value: 'ada@example.test' },
     })
@@ -51,6 +74,44 @@ describe('ForgotPasswordForm', () => {
     })
   })
 
+  it('clears delivery confirmation when a later request finds no account', async () => {
+    vi.useFakeTimers()
+    fetcher
+      .mockResolvedValueOnce(Response.json({ status: true }))
+      .mockResolvedValueOnce(Response.json({ code: 'ACCOUNT_NOT_FOUND' }, { status: 404 }))
+    renderForgotPasswordForm()
+    fireEvent.change(screen.getByLabelText('Email'), {
+      target: { value: 'ada@example.test' },
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Send recovery link' }))
+      await Promise.resolve()
+    })
+    expect(
+      screen.getByText('Recovery instructions were sent to the email address on your account.'),
+    ).toBeInTheDocument()
+
+    for (let second = 0; second < 61; second += 1) {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1_000)
+      })
+    }
+    fireEvent.change(screen.getByLabelText('Email'), {
+      target: { value: 'unknown@example.test' },
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Send recovery link' }))
+      await Promise.resolve()
+    })
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'No account is registered with that email address.',
+    )
+    expect(
+      screen.queryByText('Recovery instructions were sent to the email address on your account.'),
+    ).not.toBeInTheDocument()
+  })
+
   it('explains that the email has no registered account without reflecting API text', async () => {
     fetcher
       .mockResolvedValueOnce(
@@ -60,7 +121,7 @@ describe('ForgotPasswordForm', () => {
         ),
       )
       .mockResolvedValueOnce(Response.json({ status: true }))
-    render(<ForgotPasswordForm />)
+    renderForgotPasswordForm()
     fireEvent.change(screen.getByLabelText('Email'), {
       target: { value: 'ada@example.test' },
     })
@@ -97,7 +158,7 @@ describe('ForgotPasswordForm', () => {
         { status: 503 },
       ),
     )
-    render(<ForgotPasswordForm />)
+    renderForgotPasswordForm()
     fireEvent.change(screen.getByLabelText('Email'), {
       target: { value: 'ada@example.test' },
     })
@@ -119,7 +180,7 @@ describe('ForgotPasswordForm', () => {
         { status: 502 },
       ),
     )
-    render(<ForgotPasswordForm />)
+    renderForgotPasswordForm()
     fireEvent.change(screen.getByLabelText('Email'), {
       target: { value: 'ada@example.test' },
     })
@@ -139,7 +200,7 @@ describe('ForgotPasswordForm', () => {
         { status: 429, headers: { 'X-Retry-After': '12' } },
       ),
     )
-    const firstRender = render(<ForgotPasswordForm />)
+    const firstRender = renderForgotPasswordForm()
     fireEvent.change(screen.getByLabelText('Email'), {
       target: { value: 'ada@example.test' },
     })
@@ -154,7 +215,7 @@ describe('ForgotPasswordForm', () => {
     expect(screen.getByRole('button', { name: 'Try again in 12 seconds' })).toBeDisabled()
 
     firstRender.unmount()
-    render(<ForgotPasswordForm />)
+    renderForgotPasswordForm()
     expect(screen.getByRole('button', { name: 'Try again in 12 seconds' })).toBeDisabled()
 
     for (let second = 0; second < 12; second += 1) {
@@ -172,7 +233,7 @@ describe('ForgotPasswordForm', () => {
         { status: 429, headers: { 'Retry-After': '9' } },
       ),
     )
-    render(<ForgotPasswordForm />)
+    renderForgotPasswordForm()
     fireEvent.change(screen.getByLabelText('Email'), {
       target: { value: 'ada@example.test' },
     })
@@ -198,7 +259,7 @@ describe('ResetPasswordForm', () => {
   })
 
   it('requires matching passwords before sending the token to Core', async () => {
-    render(<ResetPasswordForm token="reset-token" />)
+    renderResetPasswordForm('reset-token')
     fireEvent.change(screen.getByLabelText('New password'), {
       target: { value: 'new-password-1' },
     })
@@ -208,12 +269,28 @@ describe('ResetPasswordForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reset password' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Passwords do not match.')
+    expect(screen.getByLabelText('Confirm new password')).toHaveAttribute('aria-invalid', 'true')
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
+  it('rejects a password shorter than eight characters before resetting', async () => {
+    renderResetPasswordForm('reset-token')
+    fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'short' } })
+    fireEvent.change(screen.getByLabelText('Confirm new password'), {
+      target: { value: 'short' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Reset password' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Password must be at least 8 characters.',
+    )
+    expect(screen.getByLabelText('New password')).toHaveAttribute('aria-invalid', 'true')
     expect(fetcher).not.toHaveBeenCalled()
   })
 
   it('posts the token and new password, then returns to login without signing in', async () => {
     fetcher.mockResolvedValue(Response.json({ status: true }))
-    render(<ResetPasswordForm token="reset-token" />)
+    renderResetPasswordForm('reset-token')
     fireEvent.change(screen.getByLabelText('New password'), {
       target: { value: 'new-password-123' },
     })
@@ -232,7 +309,7 @@ describe('ResetPasswordForm', () => {
 
   it('explains when a reset token is invalid or expired without exposing it', async () => {
     fetcher.mockResolvedValue(Response.json({ code: 'INVALID_TOKEN' }, { status: 400 }))
-    render(<ResetPasswordForm token="private-reset-token" />)
+    renderResetPasswordForm('private-reset-token')
     fireEvent.change(screen.getByLabelText('New password'), {
       target: { value: 'new-password-123' },
     })
@@ -255,7 +332,7 @@ describe('ResetPasswordForm', () => {
         { status: 400 },
       ),
     )
-    render(<ResetPasswordForm token="private-reset-token" />)
+    renderResetPasswordForm('private-reset-token')
     fireEvent.change(screen.getByLabelText('New password'), {
       target: { value: 'safe-current-password-123' },
     })
@@ -272,7 +349,7 @@ describe('ResetPasswordForm', () => {
   })
 
   it('does not submit when the reset token is missing', async () => {
-    render(<ResetPasswordForm />)
+    renderResetPasswordForm()
 
     expect(screen.getByRole('alert')).toHaveTextContent(
       'This reset link is invalid or has expired. Request a new one.',
@@ -281,7 +358,7 @@ describe('ResetPasswordForm', () => {
   })
 
   it('reveals and hides each password when its visibility toggle is clicked', () => {
-    render(<ResetPasswordForm token="reset-token" />)
+    renderResetPasswordForm('reset-token')
     const newPassword = screen.getByLabelText('New password')
     const confirmation = screen.getByLabelText('Confirm new password')
     expect(newPassword).toHaveAttribute('type', 'password')
