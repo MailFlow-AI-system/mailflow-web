@@ -1,3 +1,4 @@
+import { toast } from '@mailflow/ui/components'
 import { useNavigate, useRouter } from '@tanstack/react-router'
 import { useState } from 'react'
 
@@ -8,11 +9,9 @@ import { authClient } from '../client'
 export function useLogout() {
   const navigate = useNavigate()
   const router = useRouter()
-  const [error, setError] = useState(false)
   const [pending, setPending] = useState(false)
 
   async function logout() {
-    setError(false)
     setPending(true)
     const authStartedAt = performance.now()
     let authRequestReturned = false
@@ -23,7 +22,7 @@ export function useLogout() {
         if (result.error.code === AUTH_UPSTREAM_UNAVAILABLE) {
           recordAuthTransportFailure('sign_out', performance.now() - authStartedAt)
         }
-        setError(true)
+        toast.error('Unable to sign out. Please try again.')
         return
       }
       await router.invalidate()
@@ -32,11 +31,11 @@ export function useLogout() {
       if (!authRequestReturned && error instanceof TypeError) {
         recordAuthTransportFailure('sign_out', performance.now() - authStartedAt)
       }
-      setError(true)
+      toast.error('Unable to sign out. Please try again.')
     } finally {
       setPending(false)
     }
   }
 
-  return { error, logout, pending }
+  return { logout, pending }
 }
