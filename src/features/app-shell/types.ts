@@ -44,6 +44,17 @@ export type AppShellSidebarProps = {
   userMenu: ReactNode
 }
 
+export const sidebarSearchTextSize = {
+  xs: 'text-xs',
+  compact: 'text-xs md:text-xs',
+} as const
+
+export type SidebarSearchTextSize = keyof typeof sidebarSearchTextSize
+
+export type SidebarSearchProps = {
+  textSize?: SidebarSearchTextSize
+}
+
 export type SidebarUserProps = {
   user: ShellUser
   signOutAction: ReactNode
