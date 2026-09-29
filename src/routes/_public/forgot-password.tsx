@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-
-import { ForgotPasswordForm } from '#/features/auth/PasswordRecoveryForms'
-import { passwordRecoveryClient } from '#/features/auth/passwordRecoveryClient'
+import { passwordRecoveryClient } from '#/features/auth/clients/passwordRecoveryClient'
+import { ForgotPasswordForm } from '#/features/auth/components/PasswordRecoveryForms'
 
 export const Route = createFileRoute('/_public/forgot-password')({
   component: ForgotPasswordPage,

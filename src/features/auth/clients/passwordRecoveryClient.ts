@@ -3,9 +3,9 @@ import {
   AUTH_UPSTREAM_UNAVAILABLE,
   PASSWORD_ALREADY_IN_USE,
   PASSWORD_RESET_EMAIL_DELIVERY_FAILED,
-} from './authErrorCodes'
-import { RECOVERY_COOLDOWN_SECONDS } from './passwordRecoveryConstants'
-import type { PasswordRecoveryClient } from './types/PasswordRecoveryClient'
+} from '../authErrorCodes'
+import { RECOVERY_COOLDOWN_SECONDS } from '../passwordRecoveryConstants'
+import type { PasswordRecoveryClient } from '../types/PasswordRecoveryClient'
 
 export const passwordRecoveryClient: PasswordRecoveryClient = {
   async requestPasswordReset(email) {

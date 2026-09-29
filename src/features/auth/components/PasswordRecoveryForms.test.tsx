@@ -10,8 +10,8 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => navigate,
 }))
 
+import { passwordRecoveryClient } from '../clients/passwordRecoveryClient'
 import { ForgotPasswordForm, ResetPasswordForm } from './PasswordRecoveryForms'
-import { passwordRecoveryClient } from './passwordRecoveryClient'
 
 function renderForgotPasswordForm() {
   return render(

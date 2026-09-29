@@ -1,11 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button, Input } from '@mailflow/ui/components'
 import { useForm } from 'react-hook-form'
-import { usePasswordRecoveryCooldown } from './hooks/usePasswordRecoveryCooldown'
-import { RECOVERY_COOLDOWN_SECONDS } from './passwordRecoveryConstants'
-import { forgotPasswordSchema } from './schemas/passwordRecoverySchema'
-import type { PasswordRecoveryClient } from './types/PasswordRecoveryClient'
-import type { ForgotPasswordValues } from './types/PasswordRecoveryValues'
+import { usePasswordRecoveryCooldown } from '../hooks/usePasswordRecoveryCooldown'
+import { RECOVERY_COOLDOWN_SECONDS } from '../passwordRecoveryConstants'
+import { forgotPasswordSchema } from '../schemas/passwordRecoverySchema'
+import type { PasswordRecoveryClient } from '../types/PasswordRecoveryClient'
+import type { ForgotPasswordValues } from '../types/PasswordRecoveryValues'
 
 const RATE_LIMITED_MESSAGE = 'Please wait before requesting another recovery link.'
 const EMAIL_DELIVERY_FAILED_MESSAGE =

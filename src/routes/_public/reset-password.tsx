@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-
-import { ResetPasswordForm } from '#/features/auth/PasswordRecoveryForms'
-import { passwordRecoveryClient } from '#/features/auth/passwordRecoveryClient'
+import { passwordRecoveryClient } from '#/features/auth/clients/passwordRecoveryClient'
+import { ResetPasswordForm } from '#/features/auth/components/PasswordRecoveryForms'
 
 export const Route = createFileRoute('/_public/reset-password')({
   validateSearch: (search: Record<string, unknown>) => ({
