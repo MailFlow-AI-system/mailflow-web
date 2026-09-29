@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 
-import { LogoutButton } from '#/features/auth/LogoutButton'
+import { LogoutMenuItem } from '#/features/auth/LogoutMenuItem'
 import { AppShell } from '@/features/app-shell'
 import { EmailComposer } from '@/features/email-composer'
 
@@ -10,13 +10,7 @@ function MailLayout() {
   return (
     <EmailComposer.Root>
       <AppShell.Root>
-        <AppShell.Sidebar
-          footer={
-            <div className="group-data-[collapsible=icon]:hidden">
-              <LogoutButton />
-            </div>
-          }
-        />
+        <AppShell.Sidebar userMenu={<LogoutMenuItem />} />
         <AppShell.Main>
           <AppShell.Header>
             <AppShell.Breadcrumbs />
