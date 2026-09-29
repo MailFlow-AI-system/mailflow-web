@@ -30,14 +30,14 @@ function useIsClient() {
 export function Trigger() {
   const { triggerRef, theme } = useComposer()
   const isClient = useIsClient()
-  if (!isClient) return null
 
   return (
     <WindowTrigger
       ref={triggerRef}
       render={<Button size="sm" />}
       data-theme={theme}
-      className="h-8 gap-1.5 px-3"
+      className="h-8 gap-1.5 px-3 disabled:opacity-100"
+      disabled={!isClient}
     >
       <SquarePen aria-hidden="true" className="size-3.5" /> Compose
     </WindowTrigger>
