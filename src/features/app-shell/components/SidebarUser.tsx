@@ -2,13 +2,17 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@mailflo
 
 import type { SidebarUserProps } from '../types'
 
-const user = {
-  initials: 'JD',
-  name: 'João Dev',
-  email: 'joao@mailflow.ai',
+export function userInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return ''
+  const first = Array.from(parts[0])[0] ?? ''
+  const last = parts.length > 1 ? (Array.from(parts[parts.length - 1])[0] ?? '') : ''
+  return (first + last).toLocaleUpperCase()
 }
 
-export function SidebarUser({ signOutAction }: SidebarUserProps) {
+export function SidebarUser({ user, signOutAction }: SidebarUserProps) {
+  const initials = userInitials(user.name)
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -16,7 +20,7 @@ export function SidebarUser({ signOutAction }: SidebarUserProps) {
         className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-1 focus-visible:ring-sidebar-ring group-data-[collapsible=icon]:hidden"
       >
         <span className="grid size-7 shrink-0 place-items-center rounded-full bg-sidebar-primary/20 text-[10px] font-medium text-sidebar-primary">
-          {user.initials}
+          {initials}
         </span>
         <span className="min-w-0">
           <span className="block truncate text-xs font-medium leading-4 text-sidebar-foreground">

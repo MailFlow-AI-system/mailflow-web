@@ -1,6 +1,8 @@
 import type { LucideIcon } from '@mailflow/ui/icons'
 import type { ReactNode } from 'react'
 
+import type { User } from '#/types/User'
+
 export type BreadcrumbItem = {
   label: string
   to?: MailRoutePath
@@ -35,11 +37,15 @@ export type AppShellRootProps = {
   children: ReactNode
 }
 
+export type ShellUser = Pick<User, 'name' | 'email'>
+
 export type AppShellSidebarProps = {
+  user: ShellUser
   userMenu: ReactNode
 }
 
 export type SidebarUserProps = {
+  user: ShellUser
   signOutAction: ReactNode
 }
 
