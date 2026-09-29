@@ -1,5 +1,6 @@
 import { Button } from '@mailflow/ui/components'
-import { useLogout } from './hooks/useLogout'
+
+import { useLogout } from '../hooks/useLogout'
 
 export function LogoutButton() {
   const { logout, pending } = useLogout()

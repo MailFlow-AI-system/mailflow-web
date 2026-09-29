@@ -1,5 +1,5 @@
+import { AUTH_UPSTREAM_UNAVAILABLE } from '../authErrorCodes'
 import { filterBetterAuthCookies } from './authCookies'
-import { AUTH_UPSTREAM_UNAVAILABLE } from './authErrorCodes'
 
 const allowedAuthRequests = new Set([
   'GET /api/auth/get-session',

@@ -5,7 +5,7 @@ const { getCurrentSession, redirect } = vi.hoisted(() => ({
   redirect: vi.fn((options: unknown) => ({ isRedirect: true, options })),
 }))
 
-vi.mock('./server', () => ({ getCurrentSession }))
+vi.mock('./adapters/getCurrentSession', () => ({ getCurrentSession }))
 vi.mock('@tanstack/react-router', () => ({ redirect }))
 
 import {

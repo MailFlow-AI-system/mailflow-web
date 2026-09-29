@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 
 import { clientEnvironment } from '#/config/env'
-import { createAuthProxyHandler } from '#/features/auth/authProxy'
+import { createAuthProxyHandler } from '#/features/auth/adapters/authProxy'
 
 const proxyAuthRequest = createAuthProxyHandler(clientEnvironment.VITE_API_BASE_URL)
 
