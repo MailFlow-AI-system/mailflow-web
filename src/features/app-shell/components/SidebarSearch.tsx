@@ -1,7 +1,7 @@
 import { Input } from '@mailflow/ui/components'
 import { Command, Search } from '@mailflow/ui/icons'
 
-import { sidebarSearchTextSize, type SidebarSearchProps } from '../types'
+import { type SidebarSearchProps, sidebarSearchTextSize } from '../types'
 
 export function SidebarSearch({ textSize = 'xs' }: SidebarSearchProps) {
   return (
@@ -16,10 +16,7 @@ export function SidebarSearch({ textSize = 'xs' }: SidebarSearchProps) {
         placeholder="Buscar tudo..."
         type="search"
       />
-      <kbd
-        aria-hidden="true"
-        className="pointer-events-none absolute top-1/2 right-2 inline-flex -translate-y-1/2 items-center gap-0.5 rounded border border-sidebar-border px-1.5 py-0.5 font-sans text-[10px] leading-4 font-medium text-muted-foreground"
-      >
+      <kbd className="pointer-events-none absolute top-1/2 right-2 inline-flex -translate-y-1/2 items-center gap-0.5 rounded border border-sidebar-border px-1.5 py-0.5 font-sans text-[10px] leading-4 font-medium text-muted-foreground">
         <Command aria-hidden="true" className="size-2.5" />K
       </kbd>
     </div>
