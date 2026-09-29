@@ -6,7 +6,11 @@ export function LogoutMenuItem() {
   const { logout, pending } = useLogout()
 
   return (
-    <DropdownMenuItem disabled={pending} onClick={() => void logout()}>
+    <DropdownMenuItem
+      className="cursor-pointer data-[disabled]:cursor-not-allowed"
+      disabled={pending}
+      onClick={() => void logout()}
+    >
       {pending ? 'Signing out…' : 'Sign out'}
     </DropdownMenuItem>
   )

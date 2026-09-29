@@ -13,7 +13,7 @@ export function SidebarUser({ signOutAction }: SidebarUserProps) {
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={`Abrir menu de ${user.name}`}
-        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-1 focus-visible:ring-sidebar-ring group-data-[collapsible=icon]:hidden"
+        className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-1 focus-visible:ring-sidebar-ring group-data-[collapsible=icon]:hidden"
       >
         <span className="grid size-7 shrink-0 place-items-center rounded-full bg-sidebar-primary/20 text-[10px] font-medium text-sidebar-primary">
           {user.initials}
