@@ -86,7 +86,7 @@ export function normalizeRoute(pathname: string): string {
   const path = pathname.split(/[?#]/, 1)[0] || '/'
   if (
     path === '/' ||
-    /^\/(?:login|forgot-password|inbox|sent|drafts|starred|spam|trash)$/.test(path)
+    /^\/(?:login|forgot-password|reset-password|inbox|sent|drafts|starred|spam|trash)$/.test(path)
   ) {
     return path
   }

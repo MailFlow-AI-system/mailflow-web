@@ -3,6 +3,8 @@ import { AUTH_UPSTREAM_UNAVAILABLE } from './authErrorCodes'
 
 const allowedAuthRequests = new Set([
   'GET /api/auth/get-session',
+  'POST /api/auth/request-password-reset',
+  'POST /api/auth/reset-password',
   'POST /api/auth/sign-in/email',
   'POST /api/auth/sign-out',
 ])

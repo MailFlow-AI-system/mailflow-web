@@ -29,6 +29,8 @@ describe('createAuthProxyHandler', () => {
         Referer: webUrl('/login?email=private@example.test'),
         Authorization: 'Bearer unrelated-token',
         'X-Internal-Secret': 'unrelated-secret',
+        'CF-Connecting-IP': '203.0.113.27',
+        'X-Forwarded-For': '198.51.100.66',
         traceparent: '00-11111111111111111111111111111111-2222222222222222-01',
         tracestate: 'vendor=value',
       },
@@ -48,6 +50,8 @@ describe('createAuthProxyHandler', () => {
     expect(forwardedHeaders.get('referer')).toBe(testOrigin)
     expect(forwardedHeaders.get('authorization')).toBeNull()
     expect(forwardedHeaders.get('x-internal-secret')).toBeNull()
+    expect(forwardedHeaders.get('x-forwarded-for')).toBeNull()
+    expect(forwardedHeaders.get('x-real-ip')).toBeNull()
     expect(forwardedHeaders.get('traceparent')).toBe(
       '00-11111111111111111111111111111111-2222222222222222-01',
     )
@@ -104,6 +108,24 @@ describe('createAuthProxyHandler', () => {
     await expect(response.json()).resolves.toEqual({ code: 'INVALID_EMAIL_OR_PASSWORD' })
   })
 
+  it('preserves the Core rate limit retry header', async () => {
+    const fetcher = vi.fn(async () =>
+      Response.json(
+        { message: 'Too many requests. Please try again later.' },
+        { status: 429, headers: { 'X-Retry-After': '59' } },
+      ),
+    )
+    const request = new Request(webUrl('/api/auth/request-password-reset'), {
+      method: 'POST',
+      body: '{}',
+    })
+
+    const response = await createAuthProxyHandler(apiBaseUrl, fetcher)(request)
+
+    expect(response.status).toBe(429)
+    expect(response.headers.get('x-retry-after')).toBe('59')
+  })
+
   it('drops an invalid Referer instead of forwarding it to Core', async () => {
     let forwardedInit: RequestInit | undefined
     const fetcher = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
@@ -152,10 +174,14 @@ describe('createAuthProxyHandler', () => {
     const unknownPath = await proxy(
       new Request(webUrl('/api/auth/delete-user'), { method: 'POST' }),
     )
+    const unsupportedResetRoute = await proxy(
+      new Request(webUrl('/api/auth/reset-password/reset-token'), { method: 'GET' }),
+    )
     const unsupportedMethod = await proxy(new Request(webUrl('/api/auth/sign-in/email')))
 
     expect(signup.status).toBe(404)
     expect(unknownPath.status).toBe(404)
+    expect(unsupportedResetRoute.status).toBe(404)
     expect(unsupportedMethod.status).toBe(404)
     expect(fetcher).not.toHaveBeenCalled()
   })
@@ -163,6 +189,8 @@ describe('createAuthProxyHandler', () => {
   it.each([
     ['GET', '/api/auth/get-session'],
     ['POST', '/api/auth/sign-out'],
+    ['POST', '/api/auth/request-password-reset'],
+    ['POST', '/api/auth/reset-password'],
   ])('proxies the supported %s %s operation', async (method, path) => {
     let forwardedInput: RequestInfo | URL | undefined
     const fetcher = vi.fn(async (input: RequestInfo | URL) => {
