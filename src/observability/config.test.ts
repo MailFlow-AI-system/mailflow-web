@@ -46,6 +46,7 @@ describe('observability route helpers', () => {
     for (const path of [
       '/login',
       '/forgot-password',
+      '/reset-password',
       '/inbox',
       '/sent',
       '/drafts',

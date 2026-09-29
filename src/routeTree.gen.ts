@@ -15,6 +15,7 @@ import { Route as AuthenticatedMailRouteRouteImport } from './routes/_authentica
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as PublicForgotPasswordRouteImport } from './routes/_public/forgot-password'
 import { Route as PublicLoginRouteImport } from './routes/_public/login'
+import { Route as PublicResetPasswordRouteImport } from './routes/_public/reset-password'
 import { Route as AuthenticatedMailDraftsRouteImport } from './routes/_authenticated/_mail/drafts'
 import { Route as AuthenticatedMailInboxRouteImport } from './routes/_authenticated/_mail/inbox'
 import { Route as AuthenticatedMailSentRouteImport } from './routes/_authenticated/_mail/sent'
@@ -48,6 +49,11 @@ const PublicForgotPasswordRoute = PublicForgotPasswordRouteImport.update({
 const PublicLoginRoute = PublicLoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
+const PublicResetPasswordRoute = PublicResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => PublicRouteRoute,
 } as any)
 const AuthenticatedMailDraftsRoute = AuthenticatedMailDraftsRouteImport.update({
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
   '/forgot-password': typeof PublicForgotPasswordRoute
   '/login': typeof PublicLoginRoute
+  '/reset-password': typeof PublicResetPasswordRoute
   '/drafts': typeof AuthenticatedMailDraftsRoute
   '/inbox': typeof AuthenticatedMailInboxRoute
   '/sent': typeof AuthenticatedMailSentRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
   '/forgot-password': typeof PublicForgotPasswordRoute
   '/login': typeof PublicLoginRoute
+  '/reset-password': typeof PublicResetPasswordRoute
   '/drafts': typeof AuthenticatedMailDraftsRoute
   '/inbox': typeof AuthenticatedMailInboxRoute
   '/sent': typeof AuthenticatedMailSentRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/_authenticated/_mail': typeof AuthenticatedMailRouteRouteWithChildren
   '/_public/forgot-password': typeof PublicForgotPasswordRoute
   '/_public/login': typeof PublicLoginRoute
+  '/_public/reset-password': typeof PublicResetPasswordRoute
   '/_public/': typeof PublicIndexRoute
   '/_authenticated/_mail/drafts': typeof AuthenticatedMailDraftsRoute
   '/_authenticated/_mail/inbox': typeof AuthenticatedMailInboxRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
     | '/'
     | '/forgot-password'
     | '/login'
+    | '/reset-password'
     | '/drafts'
     | '/inbox'
     | '/sent'
@@ -145,6 +155,7 @@ export interface FileRouteTypes {
     | '/'
     | '/forgot-password'
     | '/login'
+    | '/reset-password'
     | '/drafts'
     | '/inbox'
     | '/sent'
@@ -159,6 +170,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_mail'
     | '/_public/forgot-password'
     | '/_public/login'
+    | '/_public/reset-password'
     | '/_public/'
     | '/_authenticated/_mail/drafts'
     | '/_authenticated/_mail/inbox'
@@ -217,6 +229,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof PublicLoginRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/reset-password': {
+      id: '/_public/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof PublicResetPasswordRouteImport
       parentRoute: typeof PublicRouteRoute
     }
     '/_authenticated/_mail/drafts': {
@@ -309,12 +328,14 @@ const AuthenticatedRouteRouteWithChildren =
 interface PublicRouteRouteChildren {
   PublicForgotPasswordRoute: typeof PublicForgotPasswordRoute
   PublicLoginRoute: typeof PublicLoginRoute
+  PublicResetPasswordRoute: typeof PublicResetPasswordRoute
   PublicIndexRoute: typeof PublicIndexRoute
 }
 
 const PublicRouteRouteChildren: PublicRouteRouteChildren = {
   PublicForgotPasswordRoute: PublicForgotPasswordRoute,
   PublicLoginRoute: PublicLoginRoute,
+  PublicResetPasswordRoute: PublicResetPasswordRoute,
   PublicIndexRoute: PublicIndexRoute,
 }
 
