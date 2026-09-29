@@ -13,14 +13,25 @@ import {
   WindowTrigger,
 } from '@mailflow/ui/components'
 import { Maximize2, SquarePen, X } from '@mailflow/ui/icons'
-import { useRef } from 'react'
+import { useRef, useSyncExternalStore } from 'react'
 import { useFormContext, useWatch } from 'react-hook-form'
 import { useComposer } from '../context'
 import type { ComposerFocusMemory, ComposerLayoutProps, ComposerRootProps } from '../types/composer'
 import type { DraftValues } from '../types/DraftValues'
 
+function useIsClient() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  )
+}
+
 export function Trigger() {
   const { triggerRef, theme } = useComposer()
+  const isClient = useIsClient()
+  if (!isClient) return null
+
   return (
     <WindowTrigger
       ref={triggerRef}

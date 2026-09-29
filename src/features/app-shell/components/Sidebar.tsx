@@ -75,7 +75,7 @@ function SidebarNavigation({ user, userMenu }: AppShellSidebarProps) {
           <SidebarTrigger className="hidden shrink-0 md:inline-flex" />
         </div>
         <WorkspaceSwitcher />
-        <SidebarSearch />
+        <SidebarSearch textSize="compact" />
       </SidebarHeader>
       <SidebarContent>
         {navigationSections.map((section) => (
