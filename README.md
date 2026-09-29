@@ -58,8 +58,8 @@ Cloudflare account for manual deployments and prompts for an account when needed
 - The authenticated application is expected to be client-heavy.
 - TanStack Query owns backend server state and its cache.
 - URL-visible navigation and filter state belongs in router search parameters.
-- React state is the default for simple local component state. The application
-  shell keeps its open and collapsed state inside the sidebar.
+- React state is the default for simple local component state.
+- Shared sidebar open and collapsed state lives in `@mailflow/ui`'s `SidebarProvider`.
 - Server functions are presentation-edge adapters only: session bootstrap,
   backend API calls, locale, CSP, and correlation concerns. They must not contain
   domain rules or access PostgreSQL or R2 directly.
@@ -74,23 +74,22 @@ Other features should adopt it through their own feature boundaries.
 ```text
 e2e/                    Playwright browser tests
 src/features/auth/       Login, logout, and session adapters, schemas, and types
+src/features/app-shell/ Application shell: sidebar, header, and content layout
 src/config/             Validated client configuration
-src/features/app-shell/ Reusable application layout and navigation
 src/i18n/               Locale and timezone primitives
 src/routes/             TanStack Router file-based routes
 src/routes/_public/     Public page layout and routes
 src/routes/_authenticated/  Session-guarded pathless layout
 src/routes/_authenticated/_mail/  Mail navigation layout and routes
 src/test/               Shared test setup
-src/types/              Types shared by route infrastructure
 ```
 
 ## Routing
 
 TanStack Router generates the route tree from `src/routes/`. Leading `_` segments
 define pathless layouts: `_public` provides the public page shell,
-`_authenticated` checks the session, and its nested `_mail` layout provides the
-mail menu. Neither layout name appears in the browser URL.
+`_authenticated` checks the session, and its nested `_mail` layout renders the
+application shell. Neither layout name appears in the browser URL.
 
 - `/` checks the session and redirects to `/inbox` or `/login`.
 - `/login` and `/forgot-password` are public. An authenticated visit to `/login`
@@ -106,14 +105,11 @@ being treated as signed-out sessions.
 
 ## Design system
 
-The web app consumes the published `@mailflow/ui` tag pinned in `package.json`
-and `bun.lock`. The package supplies the dark palette, Inter font, tokens,
-Button, and shared icons. The shell stays on that dark theme. Application layout
-remains in the `app-shell` feature slice.
-
-The authenticated mail layout owns the shell. Add a route, navigation entry, and
-explicit breadcrumb when a product page is implemented. Authentication remains
-in the route layer, while the shell stays focused on layout and navigation.
+The authenticated mail layout renders `AppShell` from `src/features/app-shell`.
+That slice composes `@mailflow/ui` for the sidebar, header, and icons, and the
+document root stays on the dark theme. Mail folder links live in the sidebar.
+Entries without a route stay visible and disabled. Authentication stays in the
+route layer; logout is passed into the shell as the user menu.
 
 ## Frontend stack validation
 
