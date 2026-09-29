@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 
 import { ForgotPasswordForm } from '#/features/auth/PasswordRecoveryForms'
+import { passwordRecoveryClient } from '#/features/auth/passwordRecoveryClient'
 
 export const Route = createFileRoute('/_public/forgot-password')({
   component: ForgotPasswordPage,
@@ -13,7 +14,7 @@ function ForgotPasswordPage() {
       <p className="text-muted-foreground">
         Enter your account email. If it is registered, we will send a recovery link.
       </p>
-      <ForgotPasswordForm />
+      <ForgotPasswordForm requestPasswordReset={passwordRecoveryClient.requestPasswordReset} />
       <Link
         className="mt-5 inline-block text-sm font-medium text-primary underline-offset-4 hover:underline"
         to="/login"
