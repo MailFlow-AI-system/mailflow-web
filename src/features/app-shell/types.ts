@@ -36,7 +36,11 @@ export type AppShellRootProps = {
 }
 
 export type AppShellSidebarProps = {
-  footer?: ReactNode
+  userMenu: ReactNode
+}
+
+export type SidebarUserProps = {
+  signOutAction: ReactNode
 }
 
 export type AppShellHeaderProps = {

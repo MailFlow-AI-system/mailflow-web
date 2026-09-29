@@ -20,11 +20,10 @@ import type { ComposerFocusMemory, ComposerLayoutProps, ComposerRootProps } from
 import type { DraftValues } from '../types/DraftValues'
 
 export function Trigger() {
-  const { triggerRef, theme, editor } = useComposer()
+  const { triggerRef, theme } = useComposer()
   return (
     <WindowTrigger
       ref={triggerRef}
-      disabled={!editor}
       render={<Button size="sm" />}
       data-theme={theme}
       className="h-8 gap-1.5 px-3"
