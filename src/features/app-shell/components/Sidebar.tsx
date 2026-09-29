@@ -49,7 +49,7 @@ function NavigationItemButton({ item }: NavigationItemButtonProps) {
   )
 }
 
-function SidebarNavigation({ userMenu }: AppShellSidebarProps) {
+function SidebarNavigation({ user, userMenu }: AppShellSidebarProps) {
   return (
     <>
       <SidebarHeader>
@@ -100,16 +100,16 @@ function SidebarNavigation({ userMenu }: AppShellSidebarProps) {
             <NavigationItemButton item={themeItem} />
           </SidebarMenuItem>
         </SidebarMenu>
-        <SidebarUser signOutAction={userMenu} />
+        <SidebarUser user={user} signOutAction={userMenu} />
       </SidebarFooter>
     </>
   )
 }
 
-export function Sidebar({ userMenu }: AppShellSidebarProps) {
+export function Sidebar({ user, userMenu }: AppShellSidebarProps) {
   return (
     <SidebarRoot collapsible="icon">
-      <SidebarNavigation userMenu={userMenu} />
+      <SidebarNavigation user={user} userMenu={userMenu} />
     </SidebarRoot>
   )
 }
