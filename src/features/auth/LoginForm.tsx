@@ -1,13 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button, Input } from '@mailflow/ui/components'
-import { Eye, EyeOff } from '@mailflow/ui/icons'
 import { Link, useNavigate, useRouter } from '@tanstack/react-router'
-import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 
 import { recordAuthTransportFailure } from '../../observability/faro'
 import { AUTH_UPSTREAM_UNAVAILABLE } from './authErrorCodes'
 import { authClient } from './client'
+import { PasswordInput } from './PasswordInput'
 import { loginSchema } from './schemas/loginSchema'
 import type { LoginValues } from './types/LoginValues'
 
@@ -17,7 +16,6 @@ const SIGN_IN_ERROR_MESSAGE = 'Unable to sign in. Please try again.'
 export function LoginForm() {
   const navigate = useNavigate()
   const router = useRouter()
-  const [passwordVisible, setPasswordVisible] = useState(false)
   const {
     register,
     handleSubmit,
@@ -82,28 +80,13 @@ export function LoginForm() {
         <label className="font-semibold" htmlFor="login-password">
           Password
         </label>
-        <div className="relative">
-          <Input
-            id="login-password"
-            type={passwordVisible ? 'text' : 'password'}
-            autoComplete="current-password"
-            className="pr-10"
-            aria-invalid={Boolean(errors.password)}
-            aria-describedby={errors.password ? 'login-password-error' : undefined}
-            {...register('password')}
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="absolute top-0 right-0 text-muted-foreground hover:text-foreground"
-            aria-label={passwordVisible ? 'Hide password' : 'Show password'}
-            aria-pressed={passwordVisible}
-            onClick={() => setPasswordVisible((visible) => !visible)}
-          >
-            {passwordVisible ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
-          </Button>
-        </div>
+        <PasswordInput
+          id="login-password"
+          autoComplete="current-password"
+          aria-invalid={Boolean(errors.password)}
+          aria-describedby={errors.password ? 'login-password-error' : undefined}
+          {...register('password')}
+        />
         {errors.password ? (
           <p className="m-0 text-sm text-destructive" id="login-password-error" role="alert">
             {errors.password.message}

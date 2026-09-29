@@ -4,6 +4,20 @@ import { describe, expect, it } from 'vitest'
 import { sanitizeTelemetryItem } from './privacy'
 
 describe('sanitizeTelemetryItem', () => {
+  it('removes reset tokens from page URLs before transport', () => {
+    const item = sanitizeTelemetryItem({
+      type: 'view',
+      payload: {
+        view: { url: 'https://app.example.test/reset-password?token=private-reset-token' },
+      },
+      meta: { page: { url: 'https://app.example.test/reset-password?token=private-reset-token' } },
+    } as unknown as TransportItem)
+
+    expect(item?.payload).toEqual({ view: { url: 'https://app.example.test/reset-password' } })
+    expect(item?.meta).toEqual({ page: { url: 'https://app.example.test/reset-password' } })
+    expect(JSON.stringify(item)).not.toContain('private-reset-token')
+  })
+
   it('removes sensitive fields and normalizes URLs before transport', () => {
     const item = sanitizeTelemetryItem({
       type: 'event',
