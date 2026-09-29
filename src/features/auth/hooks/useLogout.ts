@@ -4,7 +4,7 @@ import { useState } from 'react'
 
 import { recordAuthTransportFailure } from '../../../observability/faro'
 import { AUTH_UPSTREAM_UNAVAILABLE } from '../authErrorCodes'
-import { authClient } from '../client'
+import { authClient } from '../clients/authClient'
 
 export function useLogout() {
   const navigate = useNavigate()
