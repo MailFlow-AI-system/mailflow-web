@@ -5,6 +5,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: unknown) => ({ options }),
   Outlet: () => <div data-testid="route-outlet" />,
+  getRouteApi: () => ({
+    useRouteContext: () => ({
+      user: { id: 'user-1', name: 'Ada Lovelace', email: 'ada@example.test' },
+    }),
+  }),
 }))
 
 vi.mock('@/features/app-shell', () => {
