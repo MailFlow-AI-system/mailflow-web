@@ -2,11 +2,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@mailflow/ui/components'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
-
+import { resetPasswordSchema } from '../schemas/passwordRecoverySchema'
+import type { PasswordRecoveryClient } from '../types/PasswordRecoveryClient'
+import type { ResetPasswordValues } from '../types/PasswordRecoveryValues'
 import { PasswordInput } from './PasswordInput'
-import { resetPasswordSchema } from './schemas/passwordRecoverySchema'
-import type { PasswordRecoveryClient } from './types/PasswordRecoveryClient'
-import type { ResetPasswordValues } from './types/PasswordRecoveryValues'
 
 const INVALID_RESET_MESSAGE = 'This reset link is invalid or has expired. Request a new one.'
 const PASSWORD_ALREADY_IN_USE_MESSAGE =

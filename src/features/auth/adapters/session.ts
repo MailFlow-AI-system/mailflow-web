@@ -1,6 +1,6 @@
+import { authSessionSchema } from '../schemas/authSessionSchema'
+import type { AuthUser } from '../types/AuthUser'
 import { filterBetterAuthCookies } from './authCookies'
-import { authSessionSchema } from './schemas/authSessionSchema'
-import type { AuthUser } from './types/AuthUser'
 
 export async function readAuthSession(
   apiBaseUrl: string,

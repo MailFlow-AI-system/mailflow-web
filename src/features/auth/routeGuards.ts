@@ -1,6 +1,6 @@
 import { redirect } from '@tanstack/react-router'
 
-import { getCurrentSession } from './server'
+import { getCurrentSession } from './adapters/getCurrentSession'
 
 export async function redirectRootEntry(): Promise<never> {
   const user = await getCurrentSession()

@@ -8,8 +8,8 @@ const { signIn, invalidate, navigate, recordAuthTransportFailure } = vi.hoisted(
   recordAuthTransportFailure: vi.fn(),
 }))
 
-vi.mock('./client', () => ({ authClient: { signIn: { email: signIn } } }))
-vi.mock('../../observability/faro', () => ({ recordAuthTransportFailure }))
+vi.mock('../clients/authClient', () => ({ authClient: { signIn: { email: signIn } } }))
+vi.mock('../../../observability/faro', () => ({ recordAuthTransportFailure }))
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a href="/forgot-password">{children}</a>,
   useNavigate: () => navigate,

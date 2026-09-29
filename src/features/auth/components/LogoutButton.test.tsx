@@ -15,8 +15,8 @@ vi.mock('@mailflow/ui/components', async (importOriginal) => {
   const original = await importOriginal<typeof import('@mailflow/ui/components')>()
   return { ...original, toast: { ...original.toast, error: toastError } }
 })
-vi.mock('./client', () => ({ authClient: { signOut } }))
-vi.mock('../../observability/faro', () => ({ recordAuthTransportFailure }))
+vi.mock('../clients/authClient', () => ({ authClient: { signOut } }))
+vi.mock('../../../observability/faro', () => ({ recordAuthTransportFailure }))
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => navigate,
   useRouter: () => ({ invalidate }),
