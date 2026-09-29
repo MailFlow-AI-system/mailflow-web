@@ -1,13 +1,20 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { signOut, invalidate, navigate, recordAuthTransportFailure } = vi.hoisted(() => ({
-  signOut: vi.fn(),
-  invalidate: vi.fn(async () => {}),
-  navigate: vi.fn(async () => {}),
-  recordAuthTransportFailure: vi.fn(),
-}))
+const { signOut, invalidate, navigate, recordAuthTransportFailure, toastError } = vi.hoisted(
+  () => ({
+    signOut: vi.fn(),
+    invalidate: vi.fn(async () => {}),
+    navigate: vi.fn(async () => {}),
+    recordAuthTransportFailure: vi.fn(),
+    toastError: vi.fn(),
+  }),
+)
 
+vi.mock('@mailflow/ui/components', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@mailflow/ui/components')>()
+  return { ...original, toast: { ...original.toast, error: toastError } }
+})
 vi.mock('./client', () => ({ authClient: { signOut } }))
 vi.mock('../../observability/faro', () => ({ recordAuthTransportFailure }))
 vi.mock('@tanstack/react-router', () => ({
@@ -26,6 +33,7 @@ describe('LogoutButton', () => {
     navigate.mockReset()
     navigate.mockImplementation(async () => {})
     recordAuthTransportFailure.mockReset()
+    toastError.mockReset()
   })
 
   it('revokes the session before redirecting to login', async () => {
@@ -35,14 +43,15 @@ describe('LogoutButton', () => {
     await waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: '/login' }))
     expect(signOut).toHaveBeenCalledOnce()
     expect(invalidate).toHaveBeenCalledOnce()
+    expect(toastError).not.toHaveBeenCalled()
   })
 
   it('stays on the page if revocation fails', async () => {
     signOut.mockResolvedValue({ error: { status: 503 } })
     render(<LogoutButton />)
     fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Unable to sign out. Please try again.',
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith('Unable to sign out. Please try again.'),
     )
     expect(navigate).not.toHaveBeenCalled()
     expect(recordAuthTransportFailure).not.toHaveBeenCalled()
@@ -55,8 +64,8 @@ describe('LogoutButton', () => {
     render(<LogoutButton />)
     fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Unable to sign out. Please try again.',
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith('Unable to sign out. Please try again.'),
     )
     expect(recordAuthTransportFailure).toHaveBeenCalledOnce()
     expect(recordAuthTransportFailure).toHaveBeenCalledWith('sign_out', expect.any(Number))
@@ -76,13 +85,14 @@ describe('LogoutButton', () => {
     render(<LogoutButton />)
     fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Unable to sign out. Please try again.',
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith('Unable to sign out. Please try again.'),
     )
     expect(recordAuthTransportFailure).toHaveBeenCalledWith('sign_out', expect.any(Number))
     expect(JSON.stringify(recordAuthTransportFailure.mock.calls)).not.toMatch(
       /private@example\.test|private-token/,
     )
+    expect(JSON.stringify(toastError.mock.calls)).not.toMatch(/private@example\.test|private-token/)
   })
 
   it('does not report a router failure after Core returned a response', async () => {
@@ -91,8 +101,8 @@ describe('LogoutButton', () => {
     render(<LogoutButton />)
     fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Unable to sign out. Please try again.',
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith('Unable to sign out. Please try again.'),
     )
     expect(recordAuthTransportFailure).not.toHaveBeenCalled()
   })

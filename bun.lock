@@ -8,7 +8,7 @@
         "@grafana/faro-web-sdk": "2.12.0",
         "@grafana/faro-web-tracing": "2.12.0",
         "@hookform/resolvers": "^5.2.2",
-        "@mailflow/ui": "git+https://github.com/MailFlow-AI-system/mailflow-design-system.git#v0.4.0",
+        "@mailflow/ui": "git+https://github.com/MailFlow-AI-system/mailflow-design-system.git#v0.5.0",
         "@t3-oss/env-core": "^0.13.11",
         "@tailwindcss/vite": "^4.1.18",
         "@tanstack/react-devtools": "^0.10.12",
@@ -312,7 +312,7 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
-    "@mailflow/ui": ["@mailflow/ui@github:MailFlow-AI-system/mailflow-design-system#4254645", { "dependencies": { "@base-ui/react": "1.8.0", "@fontsource/inter": "5.3.0", "class-variance-authority": "0.7.1", "cn": "0.2.6", "lucide-react": "1.43.0" }, "peerDependencies": { "react": ">=19.2.0 <20", "react-dom": ">=19.2.0 <20", "tailwindcss": ">=4.1.18 <5" } }, "MailFlow-AI-system-mailflow-design-system-4254645", "sha512-RoJb1GLzChqLQMuVA/Ivg5E2La2HVxElZ0T4mSoD8zBwayvyT1UvTSD2a054XrWKdvOvU4RLdkNNea3YId5Zfw=="],
+    "@mailflow/ui": ["@mailflow/ui@github:MailFlow-AI-system/mailflow-design-system#30c707f", { "dependencies": { "@base-ui/react": "1.8.0", "@fontsource/inter": "5.3.0", "class-variance-authority": "0.7.1", "cn": "0.2.6", "lucide-react": "1.43.0", "sonner": "2.0.7" }, "peerDependencies": { "react": ">=19.2.0 <20", "react-dom": ">=19.2.0 <20", "tailwindcss": ">=4.1.18 <5" } }, "MailFlow-AI-system-mailflow-design-system-30c707f", "sha512-YiUHME+MtRCIVrczRqBoXsYdlCBgIcetf2JmbCZz8aRergShGvdK3njBH1CutlzudY2Yy5bNBFK2e6msZ1TpBw=="],
 
     "@napi-rs/wasm-runtime": ["@napi-rs/wasm-runtime@1.2.3", "", { "dependencies": { "@tybys/wasm-util": "^0.10.3" }, "peerDependencies": { "@emnapi/core": "^1.7.1 || ^2.0.0-alpha.4", "@emnapi/runtime": "^1.7.1 || ^2.0.0-alpha.4" } }, "sha512-UMduMbqO5s5zF2NkNacMT/yK5Y5QiKvWr2+50bzIIxFDwVJ2h49b+oyjaCGPhJxd2/gC2x39EHv/gHVuu36x2Q=="],
 
@@ -967,6 +967,8 @@
     "siginfo": ["siginfo@2.0.0", "", {}, "sha512-ybx0WO1/8bSBLEWXZvEd7gMW3Sn3JFlW3TvX1nREbDLRNQNaeNN8WK0meBwPdAaOI7TtRRRJn/Es1zhrrCHu7g=="],
 
     "solid-js": ["solid-js@1.9.15", "", { "dependencies": { "csstype": "^3.1.0", "seroval": "~1.5.4", "seroval-plugins": "~1.5.4" } }, "sha512-EeiY2xfpZJqPLjXspVEKjAII4yv8NyG//NxZ3IpOFHdUNnnTyL0uJOeS9LWGvA7cFCz5y94cjFwYlmw5Luncsg=="],
+
+    "sonner": ["sonner@2.0.7", "", { "peerDependencies": { "react": "^18.0.0 || ^19.0.0 || ^19.0.0-rc", "react-dom": "^18.0.0 || ^19.0.0 || ^19.0.0-rc" } }, "sha512-W6ZN4p58k8aDKA4XPcx2hpIQXBRAgyiWVkYhT7CvK6D3iAu7xjvVyhQHg2/iaKJZ1XVJ4r7XuwGL+WGEK37i9w=="],
 
     "source-map": ["source-map@0.7.6", "", {}, "sha512-i5uvt8C3ikiWeNZSVZNWcfZPItFQOsYTUAOkcUPGd8DqDy1uOUikjt5dG+uRlwyvR108Fb9DOd4GvXfT0N2/uQ=="],
 
