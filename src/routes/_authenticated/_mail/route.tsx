@@ -13,10 +13,11 @@ function MailLayout() {
         <AppShell.Sidebar userMenu={<LogoutMenuItem />} />
         <AppShell.Main>
           <AppShell.Header>
-            <AppShell.Breadcrumbs />
-            <AppShell.Header.Actions>
+            <AppShell.Header.Mailbox>
+              <AppShell.Header.Search />
+              <AppShell.Header.Filters />
               <EmailComposer.Trigger />
-            </AppShell.Header.Actions>
+            </AppShell.Header.Mailbox>
           </AppShell.Header>
           <AppShell.Content>
             <Outlet />

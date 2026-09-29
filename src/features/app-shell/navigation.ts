@@ -62,6 +62,13 @@ const mailBreadcrumb = (label: string, to: MailRoutePath): readonly BreadcrumbIt
   { label, to },
 ]
 
+export function mailboxSearchScope(pathname: string) {
+  const mailbox = navigationSections
+    .flatMap((section) => section.items)
+    .find((item) => item.to === pathname)
+  return (mailbox?.label ?? 'mail').toLowerCase()
+}
+
 export const breadcrumbsByPath: Readonly<Record<string, readonly BreadcrumbItem[]>> = {
   '/inbox': mailBreadcrumb('Inbox', '/inbox'),
   '/sent': mailBreadcrumb('Sent', '/sent'),

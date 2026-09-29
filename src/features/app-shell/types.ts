@@ -51,6 +51,10 @@ export type AppShellHeaderActionsProps = {
   children: ReactNode
 }
 
+export type AppShellHeaderMailboxProps = {
+  children: ReactNode
+}
+
 export type AppShellContentProps = {
   children: ReactNode
 }
