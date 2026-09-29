@@ -9,7 +9,11 @@ vi.mock('@tanstack/react-router', () => ({
 
 vi.mock('@/features/app-shell', () => {
   const Header = ({ children }: { children: ReactNode }) => <header>{children}</header>
-  Header.Actions = ({ children }: { children: ReactNode }) => <div>{children}</div>
+  Header.Mailbox = ({ children }: { children: ReactNode }) => (
+    <div data-testid="mailbox-toolbar">{children}</div>
+  )
+  Header.Search = () => <input aria-label="Buscar em inbox" />
+  Header.Filters = () => <button type="button">Filtros</button>
 
   return {
     AppShell: {
@@ -19,7 +23,6 @@ vi.mock('@/features/app-shell', () => {
       Sidebar: () => <aside aria-label="Application navigation" />,
       Main: ({ children }: { children: ReactNode }) => <div>{children}</div>,
       Header,
-      Breadcrumbs: () => <nav aria-label="Breadcrumb" />,
       Content: ({ children }: { children: ReactNode }) => <main>{children}</main>,
     },
   }
@@ -51,12 +54,15 @@ if (!MailLayout) throw new Error('Mail layout route has no component')
 describe('MailLayout', () => {
   afterEach(cleanup)
 
-  it('renders the application shell, route content, and compose action in the header', () => {
+  it('renders the mailbox toolbar in the header without breadcrumbs', () => {
     render(<MailLayout />)
 
+    const toolbar = screen.getByTestId('mailbox-toolbar')
     expect(screen.getByTestId('app-shell')).toBeInTheDocument()
-    expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Compose' })).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).not.toBeInTheDocument()
+    expect(toolbar).toContainElement(screen.getByRole('textbox', { name: 'Buscar em inbox' }))
+    expect(toolbar).toContainElement(screen.getByRole('button', { name: 'Filtros' }))
+    expect(toolbar).toContainElement(screen.getByRole('button', { name: 'Compose' }))
     expect(screen.getByTestId('route-outlet')).toBeInTheDocument()
   })
 })
