@@ -8,7 +8,7 @@
         "@grafana/faro-web-sdk": "2.12.0",
         "@grafana/faro-web-tracing": "2.12.0",
         "@hookform/resolvers": "^5.2.2",
-        "@mailflow/ui": "git+https://github.com/MailFlow-AI-system/mailflow-design-system.git#v0.5.0",
+        "@mailflow/ui": "git+https://github.com/MailFlow-AI-system/mailflow-design-system.git#v0.6.0",
         "@t3-oss/env-core": "^0.13.11",
         "@tailwindcss/vite": "^4.1.18",
         "@tanstack/react-devtools": "^0.10.12",
@@ -312,7 +312,7 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
-    "@mailflow/ui": ["@mailflow/ui@github:MailFlow-AI-system/mailflow-design-system#30c707f", { "dependencies": { "@base-ui/react": "1.8.0", "@fontsource/inter": "5.3.0", "class-variance-authority": "0.7.1", "cn": "0.2.6", "lucide-react": "1.43.0", "sonner": "2.0.7" }, "peerDependencies": { "react": ">=19.2.0 <20", "react-dom": ">=19.2.0 <20", "tailwindcss": ">=4.1.18 <5" } }, "MailFlow-AI-system-mailflow-design-system-30c707f", "sha512-YiUHME+MtRCIVrczRqBoXsYdlCBgIcetf2JmbCZz8aRergShGvdK3njBH1CutlzudY2Yy5bNBFK2e6msZ1TpBw=="],
+    "@mailflow/ui": ["@mailflow/ui@github:MailFlow-AI-system/mailflow-design-system#4707dbb", { "dependencies": { "@base-ui/react": "1.8.0", "@fontsource/inter": "5.3.0", "class-variance-authority": "0.7.1", "cn": "0.2.6", "lucide-react": "1.43.0", "sonner": "2.0.7" }, "peerDependencies": { "react": ">=19.2.0 <20", "react-dom": ">=19.2.0 <20", "tailwindcss": ">=4.1.18 <5" } }, "MailFlow-AI-system-mailflow-design-system-4707dbb", "sha512-0vOXnMtr3s6/3b0ZnzLKuFfsnyzdYY3F8bPn8puJDOK06+3ONfEfbfXiAr3VsEtdcJo3tM2RY9HLPQBlL3Su3g=="],
 
     "@napi-rs/wasm-runtime": ["@napi-rs/wasm-runtime@1.2.3", "", { "dependencies": { "@tybys/wasm-util": "^0.10.3" }, "peerDependencies": { "@emnapi/core": "^1.7.1 || ^2.0.0-alpha.4", "@emnapi/runtime": "^1.7.1 || ^2.0.0-alpha.4" } }, "sha512-UMduMbqO5s5zF2NkNacMT/yK5Y5QiKvWr2+50bzIIxFDwVJ2h49b+oyjaCGPhJxd2/gC2x39EHv/gHVuu36x2Q=="],
 
