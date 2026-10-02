@@ -8,7 +8,7 @@ import {
   Outlet,
   RouterProvider,
 } from '@tanstack/react-router'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { NuqsAdapter } from 'nuqs/adapters/tanstack-router'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -86,6 +86,7 @@ describe('MailboxSearch router integration', () => {
 
   afterEach(() => {
     cleanup()
+    vi.useRealTimers()
     vi.restoreAllMocks()
     mailClient.fetchMailMessages.mockReset()
   })
@@ -184,6 +185,43 @@ describe('MailboxSearch router integration', () => {
     releaseGuard?.()
     await waitFor(() => expect(router.state.location.search.q).toBeUndefined())
     expect(input).toHaveValue('')
+  })
+
+  it('clears a pending draft, removes the existing query, and prevents stale debounce restore', async () => {
+    mailClient.fetchMailMessages.mockResolvedValue({ items: [], nextCursor: null })
+    const router = createTestRouter({
+      component: SearchProbe,
+      initialEntries: ['/inbox?q=invoice'],
+    })
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    )
+    const input = await screen.findByRole('searchbox')
+    expect(input).toHaveValue('invoice')
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    fireEvent.change(input, { target: { value: 'pending draft' } })
+    expect(input).toHaveValue('pending draft')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear search' }))
+    expect(input).toHaveValue('')
+    expect(input).toHaveFocus()
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350)
+    })
+    expect(router.state.location.search.q).toBeUndefined()
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300)
+    })
+    expect(input).toHaveValue('')
+    expect(router.state.location.search.q).toBeUndefined()
+    expect(mailClient.fetchMailMessages).not.toHaveBeenCalledWith(
+      expect.objectContaining({ q: 'pending draft', cursor: null }),
+    )
   })
 
   it('keeps URL updates on Inbox and restores the input after external query navigation', async () => {
