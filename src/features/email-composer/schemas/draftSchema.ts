@@ -31,7 +31,7 @@ const attachments = z
     for (const issue of getAttachmentSizeIssues(values.map(({ file }) => file.size))) {
       context.addIssue({
         code: 'custom',
-        path: 'attachmentIndex' in issue ? [issue.attachmentIndex] : [],
+        path: 'attachmentIndex' in issue ? [issue.attachmentIndex, 'file'] : ['root'],
         message: issue.message,
       })
     }

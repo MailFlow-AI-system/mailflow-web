@@ -1,13 +1,25 @@
 import { Button } from '@mailflow/ui/components'
 import { Paperclip, X } from '@mailflow/ui/icons'
-import { useFormContext, useWatch } from 'react-hook-form'
+import { useFormContext, useFormState, useWatch } from 'react-hook-form'
 import { useComposer } from '../context'
 import type { DraftValues } from '../types/DraftValues'
 
 export function Attachments() {
-  const { removeAttachment, attachmentErrorId, validation } = useComposer()
+  const { removeAttachment, attachmentErrorId } = useComposer()
   const { control } = useFormContext<DraftValues>()
+  const { errors } = useFormState({ control })
   const attachments = useWatch({ control, name: 'attachments' })
+  const indexedAttachmentErrors = Array.isArray(errors.attachments)
+    ? errors.attachments.flatMap((attachment, index) => {
+        const message = attachment?.file?.message
+        return message ? [{ key: `${index}.file`, label: `Anexo ${index + 1}: `, message }] : []
+      })
+    : []
+  const totalAttachmentError = errors.attachments?.root?.message
+    ? [{ key: 'root', label: '', message: errors.attachments.root.message }]
+    : []
+  const attachmentErrors = [...indexedAttachmentErrors, ...totalAttachmentError]
+
   return (
     <>
       {attachments.length > 0 && (
@@ -36,18 +48,14 @@ export function Attachments() {
           ))}
         </ul>
       )}
-      {validation.attachmentIssues.length > 0 && (
+      {attachmentErrors.length > 0 && (
         <ul
           id={attachmentErrorId}
           role="alert"
           className="list-none px-4 pb-3 text-xs text-destructive"
         >
-          {validation.attachmentIssues.map((issue) => (
-            <li key={`${issue.field}-${issue.attachmentIndex ?? 'total'}-${issue.message}`}>
-              {typeof issue.attachmentIndex === 'number'
-                ? `Anexo ${issue.attachmentIndex + 1}: ${issue.message}`
-                : issue.message}
-            </li>
+          {attachmentErrors.map(({ key, label, message }) => (
+            <li key={key}>{`${label}${message}`}</li>
           ))}
         </ul>
       )}

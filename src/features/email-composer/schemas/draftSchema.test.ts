@@ -57,7 +57,7 @@ describe('draftSchema', () => {
     if (!result.success) {
       expect(result.error.issues).toContainEqual(
         expect.objectContaining({
-          path: ['attachments', 1],
+          path: ['attachments', 1, 'file'],
           message: 'Cada anexo deve ter no máximo 10 MiB.',
         }),
       )
@@ -78,11 +78,11 @@ describe('draftSchema', () => {
     if (!result.success) {
       expect(result.error.issues).toContainEqual(
         expect.objectContaining({
-          path: ['attachments'],
+          path: ['attachments', 'root'],
           message: 'Os anexos devem somar no máximo 25 MiB.',
         }),
       )
-      expect(result.error.issues.some((issue) => issue.path.length > 1)).toBe(false)
+      expect(result.error.issues.some((issue) => typeof issue.path[1] === 'number')).toBe(false)
     }
   })
 })
