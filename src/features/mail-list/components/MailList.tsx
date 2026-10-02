@@ -31,6 +31,22 @@ export function MailList({ userId, q, isSearching = false }: MailListProps) {
   const showPageSkeletons = !showSearchSkeletons && mail.isFetchingNextPage
   const isBusy = isSearching || mail.isFetching
   const showLoadError = !showSearchSkeletons && mail.isError && mail.messages.length === 0
+  const hasSearchQuery = q.trim().length > 0
+  function getStatusMessage() {
+    if (showSearchSkeletons)
+      return isSearching || hasSearchQuery ? 'Searching messages' : 'Loading messages'
+    if (showLoadError) return ''
+    if (mail.isFetchingNextPage) return 'Loading more messages'
+    if (mail.isFetching) return ''
+    if (mail.messages.length === 0) {
+      return hasSearchQuery ? 'No messages found for this search' : 'No messages found.'
+    }
+
+    const count = mail.messages.length
+    const searchContext = hasSearchQuery ? ' for this search' : ''
+    return `${count} message${count === 1 ? '' : 's'} loaded${searchContext}`
+  }
+  const statusMessage = getStatusMessage()
   const advance = useMailListAutoFill({
     rootRef: scrollRootRef,
     sentinelRef,
@@ -42,17 +58,15 @@ export function MailList({ userId, q, isSearching = false }: MailListProps) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      <p aria-atomic="true" aria-live="polite" className="sr-only" role="status">
+        {statusMessage}
+      </p>
       <section
         aria-busy={isBusy}
         aria-label="Inbox message list"
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
         ref={setScrollRoot}
       >
-        {showSearchSkeletons || showPageSkeletons ? (
-          <p className="sr-only" role="status">
-            {isSearching ? 'Searching messages' : 'Loading messages'}
-          </p>
-        ) : null}
         {showLoadError ? (
           <div className="grid justify-items-center gap-3 p-6 text-center">
             <p className="text-sm text-muted-foreground" role="alert">
