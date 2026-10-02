@@ -8,4 +8,5 @@ export const COMPOSITION_VALIDATION_MESSAGES = {
   noRecipients: 'Adicione pelo menos um destinatário.',
   attachmentTooLarge: 'Cada anexo deve ter no máximo 10 MiB.',
   attachmentsTotalTooLarge: 'Os anexos devem somar no máximo 25 MiB.',
+  continuationFailed: 'Não foi possível continuar com a mensagem. Tente novamente.',
 } as const

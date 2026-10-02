@@ -12,8 +12,10 @@ import {
 } from '@mailflow/ui/icons'
 import { useEditorState } from '@tiptap/react'
 import { useRef, useState } from 'react'
+import { useFormContext, useFormState } from 'react-hook-form'
 import { useComposer } from '../context'
 import { readInlineImage } from '../editor/images'
+import type { DraftValues } from '../types/DraftValues'
 import type { FormatAction } from '../types/editor'
 import { EmojiPicker } from './EmojiPicker'
 import { LinkEditor } from './LinkEditor'
@@ -49,14 +51,11 @@ export function FormattingToolbar() {
 }
 
 function EditorToolbar() {
-  const {
-    editor,
-    addAttachments,
-    sessionRef,
-    attachmentTriggerRef,
-    attachmentErrorId,
-    validation,
-  } = useComposer()
+  const { editor, addAttachments, sessionRef, attachmentTriggerRef, attachmentErrorId } =
+    useComposer()
+  const { control } = useFormContext<DraftValues>()
+  const { errors } = useFormState({ control })
+  const hasAttachmentErrors = Boolean(errors.attachments)
   const active = useEditorState({
     editor,
     selector: ({ editor }) => ({
@@ -132,8 +131,8 @@ function EditorToolbar() {
           ref={attachmentTriggerRef}
           aria-label="Anexar arquivo"
           title="Anexar arquivo"
-          aria-invalid={validation.attachmentIssues.length > 0}
-          aria-describedby={validation.attachmentIssues.length > 0 ? attachmentErrorId : undefined}
+          aria-invalid={hasAttachmentErrors}
+          aria-describedby={hasAttachmentErrors ? attachmentErrorId : undefined}
           onClick={() => attachmentInput.current?.click()}
         >
           <Paperclip aria-hidden="true" className="size-3.5" />
