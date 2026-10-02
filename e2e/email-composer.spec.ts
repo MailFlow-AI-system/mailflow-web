@@ -163,7 +163,9 @@ test('uses keyboard focus boundaries, Escape close guard and draft retention wit
   await expect(page.getByRole('alertdialog')).toBeVisible()
   await page.getByRole('button', { name: 'Continuar editando' }).click()
   await page.getByRole('button', { name: 'Rascunho', exact: true }).click()
-  await expect(page.getByRole('status')).toHaveText('Rascunho nesta aba')
+  await expect(page.getByRole('dialog', { name: 'Nova mensagem' }).getByRole('status')).toHaveText(
+    'Rascunho nesta aba',
+  )
   await page.getByRole('button', { name: 'Fechar janela' }).click()
   await expect(page.getByRole('alertdialog')).toHaveCount(0)
   await page.getByRole('button', { name: 'Compose', exact: true }).click()
