@@ -25,11 +25,11 @@ export const navigationSections: readonly NavigationSection[] = [
     label: 'Mail',
     items: [
       { label: 'Inbox', icon: Inbox, to: '/inbox' },
-      { label: 'Sent', icon: Send, to: '/sent' },
-      { label: 'Drafts', icon: FilePenLine, to: '/drafts' },
-      { label: 'Starred', icon: Star, to: '/starred' },
-      { label: 'Spam', icon: ShieldAlert, to: '/spam' },
-      { label: 'Trash', icon: Trash2, to: '/trash' },
+      { label: 'Sent', icon: Send },
+      { label: 'Drafts', icon: FilePenLine },
+      { label: 'Starred', icon: Star },
+      { label: 'Spam', icon: ShieldAlert },
+      { label: 'Trash', icon: Trash2 },
     ],
   },
   {
@@ -62,13 +62,6 @@ const mailBreadcrumb = (label: string, to: MailRoutePath): readonly BreadcrumbIt
   { label, to },
 ]
 
-export function mailboxSearchScope(pathname: string) {
-  const mailbox = navigationSections
-    .flatMap((section) => section.items)
-    .find((item) => item.to === pathname)
-  return (mailbox?.label ?? 'mail').toLowerCase()
-}
-
 export const breadcrumbsByPath: Readonly<Record<string, readonly BreadcrumbItem[]>> = {
   '/inbox': mailBreadcrumb('Inbox', '/inbox'),
   '/sent': mailBreadcrumb('Sent', '/sent'),
@@ -76,4 +69,10 @@ export const breadcrumbsByPath: Readonly<Record<string, readonly BreadcrumbItem[
   '/starred': mailBreadcrumb('Starred', '/starred'),
   '/spam': mailBreadcrumb('Spam', '/spam'),
   '/trash': mailBreadcrumb('Trash', '/trash'),
+}
+
+export function mailboxSearchScope(pathname: string) {
+  const breadcrumbs = breadcrumbsByPath[pathname]
+  const label = breadcrumbs?.at(-1)?.label
+  return (label ?? 'mail').toLowerCase()
 }
