@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -82,6 +82,97 @@ describe('MailList', () => {
     )
     expect(screen.getAllByTestId('mail-message-skeleton')).toHaveLength(8)
     expect(screen.queryByText('No messages found.')).not.toBeInTheDocument()
+  })
+
+  it('keeps one polite atomic status outside the busy region and announces settled empty results', async () => {
+    let resolveInitial:
+      | ((page: { items: ReturnType<typeof message>[]; nextCursor: null }) => void)
+      | undefined
+    client.fetchMailMessages.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveInitial = resolve
+        }),
+    )
+    render(<MailList userId="user-1" q="" />, { wrapper: createWrapper() })
+
+    const status = screen.getByRole('status')
+    const region = screen.getByRole('region', { name: 'Inbox message list' })
+    expect(screen.getAllByRole('status')).toHaveLength(1)
+    expect(status).toHaveAttribute('aria-live', 'polite')
+    expect(status).toHaveAttribute('aria-atomic', 'true')
+    expect(region).not.toContainElement(status)
+    expect(status).toHaveTextContent('Loading messages')
+
+    await act(async () => resolveInitial?.({ items: [], nextCursor: null }))
+
+    await waitFor(() => expect(status).toHaveTextContent('No messages found.'))
+    expect(screen.getByRole('status')).toBe(status)
+    expect(within(region).getByText('No messages found.')).toBeInTheDocument()
+  })
+
+  it('announces filtered loading and empty results', async () => {
+    let resolveSearch:
+      | ((page: { items: ReturnType<typeof message>[]; nextCursor: null }) => void)
+      | undefined
+    client.fetchMailMessages.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveSearch = resolve
+        }),
+    )
+    render(<MailList userId="user-1" q="ada" />, { wrapper: createWrapper() })
+
+    const status = screen.getByRole('status')
+    expect(status).toHaveTextContent('Searching messages')
+    await act(async () => resolveSearch?.({ items: [], nextCursor: null }))
+
+    await waitFor(() => expect(status).toHaveTextContent('No messages found for this search'))
+    expect(
+      within(screen.getByRole('region', { name: 'Inbox message list' })).getByText(
+        'No messages found.',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('announces loaded unique message counts after each page settles', async () => {
+    VisibleIntersectionObserver.visible = false
+    let resolveSecondPage:
+      | ((page: { items: ReturnType<typeof message>[]; nextCursor: null }) => void)
+      | undefined
+    client.fetchMailMessages.mockImplementation(({ cursor }: { cursor?: string }) =>
+      cursor
+        ? new Promise((resolve) => {
+            resolveSecondPage = resolve
+          })
+        : Promise.resolve({ items: [message('first')], nextCursor: 'cursor-2' }),
+    )
+    render(<MailList userId="user-1" q="" />, { wrapper: createWrapper() })
+    await screen.findByText('Message first')
+
+    const status = screen.getByRole('status')
+    await waitFor(() => expect(status).toHaveTextContent('1 message loaded'))
+    fireEvent.click(screen.getByRole('button', { name: 'Load more messages' }))
+    await waitFor(() => expect(status).toHaveTextContent('Loading more messages'))
+    expect(status).not.toHaveTextContent(/message loaded/)
+    expect(screen.getByText('Message first')).toBeInTheDocument()
+
+    await act(async () => resolveSecondPage?.({ items: [message('second')], nextCursor: null }))
+
+    await screen.findByText('Message second')
+    await waitFor(() => expect(status).toHaveTextContent('2 messages loaded'))
+  })
+
+  it('does not announce an empty result when loading fails', async () => {
+    client.fetchMailMessages
+      .mockRejectedValueOnce(new Error('Unavailable'))
+      .mockRejectedValueOnce(new Error('Unavailable'))
+    const Wrapper = createWrapper()
+    activeQueryClient.setQueryDefaults(['mail-messages-page'], { retryDelay: 0 })
+    render(<MailList userId="user-1" q="filtered" />, { wrapper: Wrapper })
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Messages could not be loaded.')
+    expect(screen.getByRole('status')).toBeEmptyDOMElement()
   })
 
   it('shows skeletons while retrying a failed search without existing messages', async () => {
@@ -192,6 +283,7 @@ describe('MailList', () => {
     await waitFor(() => expect(client.fetchMailMessages).toHaveBeenCalledTimes(2))
 
     expect(screen.queryAllByTestId('mail-message-skeleton')).toHaveLength(0)
+    expect(screen.getByRole('status')).toHaveTextContent('1 message loaded')
     expect(screen.getByRole('region', { name: 'Inbox message list' })).toHaveAttribute(
       'aria-busy',
       'false',
@@ -213,6 +305,8 @@ describe('MailList', () => {
       )
     render(<MailList userId="user-1" q="" />, { wrapper: createWrapper() })
     await screen.findByText('Message first')
+    const status = screen.getByRole('status')
+    expect(status).toHaveTextContent('1 message loaded')
 
     act(() => {
       void activeQueryClient.invalidateQueries({
@@ -228,8 +322,10 @@ describe('MailList', () => {
 
     expect(screen.getByText('Message first')).toBeInTheDocument()
     expect(screen.queryAllByTestId('mail-message-skeleton')).toHaveLength(0)
-    resolveRefetch?.({ items: [message('updated')], nextCursor: null })
+    expect(status).toBeEmptyDOMElement()
+    resolveRefetch?.({ items: [message('updated'), message('another')], nextCursor: null })
     await screen.findByText('Message updated')
+    await waitFor(() => expect(status).toHaveTextContent('2 messages loaded'))
   })
 
   it('auto-fills an underfilled scroll root and serializes repeated intersection events', async () => {
