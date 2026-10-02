@@ -2,14 +2,40 @@ import type { WindowOpenChangeDetails, WindowState } from '@mailflow/ui/componen
 import type { Editor } from '@tiptap/react'
 import type { ReactNode, RefObject } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
+import type {
+  CompositionValidationIssue,
+  CompositionWarning,
+  NormalizedComposition,
+} from './CompositionValidation'
 
 import type { DraftValues } from './DraftValues'
 
 export type { Attachment } from './DraftValues'
 export type RecipientField = 'to' | 'cc' | 'bcc' | 'subject'
 export type DraftFields = Record<RecipientField, string>
-export type ComposerRootProps = { children: ReactNode; theme?: 'dark' | 'light' }
+export type ValidatedComposition = Omit<NormalizedComposition, 'attachments'> & {
+  attachments: DraftValues['attachments']
+}
+export type ComposerRootProps = {
+  children: ReactNode
+  theme?: 'dark' | 'light'
+  onValidated?: (composition: ValidatedComposition) => void | Promise<void>
+}
 export type ComposerLayoutProps = { children: ReactNode; assistant?: ReactNode }
+export type ComposerValidationState = {
+  attachmentIssues: CompositionValidationIssue[]
+  cancelWarnings: () => void
+  confirmWarnings: () => Promise<void>
+  errorMessage: string | null
+  invalidate: () => void
+  ready: boolean
+  reset: () => void
+  submitting: boolean
+  validate: () => Promise<void>
+  validateAttachments: (attachments: DraftValues['attachments']) => void
+  warnings: CompositionWarning[]
+  warningsOpen: boolean
+}
 export type ComposerContextValue = {
   revision: number
   sessionRef: RefObject<number>
@@ -27,6 +53,13 @@ export type ComposerContextValue = {
   theme: 'dark' | 'light'
   triggerRef: RefObject<HTMLButtonElement | null>
   recipientRef: RefObject<HTMLInputElement | null>
+  ccRef: RefObject<HTMLInputElement | null>
+  bccRef: RefObject<HTMLInputElement | null>
+  attachmentTriggerRef: RefObject<HTMLButtonElement | null>
+  attachmentErrorId: string
+  showCc: boolean
+  setShowCc: (value: boolean | ((previous: boolean) => boolean)) => void
+  validation: ComposerValidationState
 }
 
 export type ComposerController = {
