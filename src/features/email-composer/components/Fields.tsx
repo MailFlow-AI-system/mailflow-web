@@ -13,7 +13,7 @@ const fieldLabels: Record<RecipientField, string> = {
 }
 
 export function Fields() {
-  const { recipientRef, ccRef, bccRef, showCc, setShowCc } = useComposer()
+  const { recipientRef, ccRef, bccRef, pendingRecipientFocusRef, showCc, setShowCc } = useComposer()
   const {
     register,
     formState: { errors },
@@ -44,6 +44,14 @@ export function Fields() {
                 if (field === 'to') recipientRef.current = node
                 if (field === 'cc') ccRef.current = node
                 if (field === 'bcc') bccRef.current = node
+                if (
+                  node &&
+                  (field === 'cc' || field === 'bcc') &&
+                  pendingRecipientFocusRef.current === field
+                ) {
+                  pendingRecipientFocusRef.current = null
+                  node.focus()
+                }
               }}
               aria-invalid={Boolean(error)}
               aria-describedby={error ? `${id}-${field}-error` : undefined}

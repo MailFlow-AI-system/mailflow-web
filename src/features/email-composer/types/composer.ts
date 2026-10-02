@@ -2,11 +2,7 @@ import type { WindowOpenChangeDetails, WindowState } from '@mailflow/ui/componen
 import type { Editor } from '@tiptap/react'
 import type { ReactNode, RefObject } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
-import type {
-  CompositionValidationIssue,
-  CompositionWarning,
-  NormalizedComposition,
-} from './CompositionValidation'
+import type { CompositionWarning, NormalizedComposition } from './CompositionValidation'
 
 import type { DraftValues } from './DraftValues'
 
@@ -23,14 +19,11 @@ export type ComposerRootProps = {
 }
 export type ComposerLayoutProps = { children: ReactNode; assistant?: ReactNode }
 export type ComposerValidationState = {
-  attachmentIssues: CompositionValidationIssue[]
   cancelWarnings: () => void
   confirmWarnings: () => Promise<void>
-  errorMessage: string | null
   invalidate: () => void
   ready: boolean
   reset: () => void
-  submitting: boolean
   validate: () => Promise<void>
   validateAttachments: (attachments: DraftValues['attachments']) => void
   warnings: CompositionWarning[]
@@ -42,8 +35,7 @@ export type ComposerContextValue = {
   editor: Editor | null
   addAttachments: (files: File[]) => void
   removeAttachment: (id: string) => void
-  bodyDirty: boolean
-  baselineFieldsRef: RefObject<string>
+  baselineDraftSignature: string
   saved: boolean
   saveDraft: () => void
   confirm: boolean
@@ -57,6 +49,7 @@ export type ComposerContextValue = {
   bccRef: RefObject<HTMLInputElement | null>
   attachmentTriggerRef: RefObject<HTMLButtonElement | null>
   attachmentErrorId: string
+  pendingRecipientFocusRef: RefObject<'cc' | 'bcc' | null>
   showCc: boolean
   setShowCc: (value: boolean | ((previous: boolean) => boolean)) => void
   validation: ComposerValidationState

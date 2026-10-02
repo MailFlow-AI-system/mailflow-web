@@ -1,17 +1,20 @@
-import { act, renderHook } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import type { Editor } from '@tiptap/react'
-import { useForm } from 'react-hook-form'
+import { type ReactNode, StrictMode } from 'react'
+import { useFormState } from 'react-hook-form'
 import { describe, expect, it, vi } from 'vitest'
 import type { CompositionValidationIssue } from '../types/CompositionValidation'
 import type { ValidatedComposition } from '../types/composer'
-import type { Attachment, DraftValues } from '../types/DraftValues'
+import type { Attachment } from '../types/DraftValues'
 import { useCompositionValidation } from './useCompositionValidation'
+import { emptyDraft, useDraftForm } from './useDraftForm'
 
 function setup(
   options: {
     onValidated?: (composition: ValidatedComposition) => void | Promise<void>
     focusInvalidField?: (field: CompositionValidationIssue['field']) => void
     body?: 'text' | 'empty'
+    strictMode?: boolean
   } = {},
 ) {
   const html = { current: options.body === 'empty' ? '<p></p>' : '<p>Body</p>' }
@@ -28,26 +31,45 @@ function setup(
     getHTML: () => html.current,
     getJSON: () => document.current,
   } as unknown as Editor
-  const hook = renderHook(() => {
-    const draft = useForm<DraftValues>({
-      defaultValues: {
-        to: 'ada@example.test',
-        cc: '',
-        bcc: '',
-        subject: 'Update',
-        body: html.current,
-        attachments: [],
-      },
-    })
+  const useValidation = () => {
+    const draft = useDraftForm()
+    const formState = useFormState({ control: draft.control })
     const validation = useCompositionValidation({
       draft,
       editor,
       onValidated: options.onValidated,
       focusInvalidField: options.focusInvalidField,
     })
-    return { draft, validation }
-  })
+    return {
+      draft,
+      validation,
+      errors: formState.errors,
+      isSubmitting: formState.isSubmitting,
+      isSubmitSuccessful: formState.isSubmitSuccessful,
+    }
+  }
+  const StrictWrapper = ({ children }: { children: ReactNode }) => (
+    <StrictMode>{children}</StrictMode>
+  )
+  const hook = renderHook(
+    useValidation,
+    options.strictMode ? { wrapper: StrictWrapper } : undefined,
+  )
+  act(() =>
+    hook.result.current.draft.reset({
+      ...emptyDraft,
+      to: 'ada@example.test',
+      subject: 'Update',
+      body: html.current,
+    }),
+  )
   return { ...hook, html, document, editor }
+}
+
+function fileWithSize(name: string, size: number): File {
+  const file = new File(['x'], name)
+  Object.defineProperty(file, 'size', { value: size })
+  return file
 }
 
 describe('useCompositionValidation', () => {
@@ -89,6 +111,8 @@ describe('useCompositionValidation', () => {
     await act(async () => result.current.validation.validate())
 
     expect(result.current.validation.warnings).toHaveLength(2)
+    expect(result.current.isSubmitSuccessful).toBe(true)
+    expect(result.current.validation.ready).toBe(false)
     act(() => result.current.validation.cancelWarnings())
     expect(onValidated).not.toHaveBeenCalled()
     expect(result.current.validation.ready).toBe(false)
@@ -124,6 +148,24 @@ describe('useCompositionValidation', () => {
     expect(onValidated).toHaveBeenCalledWith(expect.objectContaining({ body: '<p>Now filled</p>' }))
   })
 
+  it('cancels a warning confirmation before the async resolver can invoke the callback', async () => {
+    const onValidated = vi.fn()
+    const { result } = setup({ onValidated, body: 'empty' })
+    await act(async () => result.current.validation.validate())
+    expect(result.current.validation.warningsOpen).toBe(true)
+
+    let confirmation!: Promise<void>
+    act(() => {
+      confirmation = result.current.validation.confirmWarnings()
+      result.current.validation.cancelWarnings()
+    })
+    await act(async () => confirmation)
+
+    expect(onValidated).not.toHaveBeenCalled()
+    expect(result.current.validation.ready).toBe(false)
+    expect(result.current.validation.warningsOpen).toBe(false)
+  })
+
   it('guards duplicate async callbacks and does not mark failed callbacks ready', async () => {
     let rejectCallback: (reason?: unknown) => void = () => {}
     const onValidated = vi.fn(
@@ -137,15 +179,16 @@ describe('useCompositionValidation', () => {
       firstAttempt = result.current.validation.validate()
     })
     await act(async () => result.current.validation.validate())
+    await waitFor(() => expect(onValidated).toHaveBeenCalledTimes(1))
     expect(onValidated).toHaveBeenCalledTimes(1)
-    expect(result.current.validation.submitting).toBe(true)
+    expect(result.current.isSubmitting).toBe(true)
 
     await act(async () => {
       rejectCallback(new Error('provider detail'))
       await firstAttempt
     })
     expect(result.current.validation.ready).toBe(false)
-    expect(result.current.validation.errorMessage).toMatch(/tente novamente/i)
+    expect(result.current.errors.root?.server?.message).toMatch(/tente novamente/i)
     expect(result.current.draft.getValues('cc')).toBe('ada@example.test')
     onValidated.mockImplementationOnce(() => Promise.resolve())
     await act(async () => result.current.validation.validate())
@@ -163,7 +206,8 @@ describe('useCompositionValidation', () => {
     act(() => {
       attempt = result.current.validation.validate()
     })
-    expect(result.current.validation.submitting).toBe(true)
+    await waitFor(() => expect(onValidated).toHaveBeenCalledTimes(1))
+    expect(result.current.isSubmitting).toBe(true)
     html.current = '<p>Changed body</p>'
     document.current = {
       type: 'doc',
@@ -182,13 +226,37 @@ describe('useCompositionValidation', () => {
     expect(onValidated).toHaveBeenCalledTimes(1)
   })
 
+  it('ignores callback rejection after the draft changes while submission is pending', async () => {
+    let rejectCallback: (reason?: unknown) => void = () => {}
+    const onValidated = vi.fn(
+      () => new Promise<void>((_resolve, reject) => (rejectCallback = reject)),
+    )
+    const { result } = setup({ onValidated })
+    act(() => result.current.draft.setValue('cc', 'grace@example.test'))
+
+    let attempt!: Promise<void>
+    act(() => {
+      attempt = result.current.validation.validate()
+    })
+    await waitFor(() => expect(onValidated).toHaveBeenCalledTimes(1))
+    expect(result.current.isSubmitting).toBe(true)
+    act(() => result.current.draft.setValue('subject', 'Changed while pending'))
+    await act(async () => {
+      rejectCallback(new Error('stale provider detail'))
+      await attempt
+    })
+
+    expect(result.current.validation.ready).toBe(false)
+    expect(result.current.errors.root?.server).toBeUndefined()
+  })
+
   it('focuses the first blocking field, validates attachments after changes, and resets readiness', async () => {
     const focusInvalidField = vi.fn()
     const onValidated = vi.fn()
     const { result } = setup({ onValidated, focusInvalidField })
     const tooLarge = {
       id: 'large',
-      file: { name: 'large.bin', size: 10 * 1024 * 1024 + 1 } as File,
+      file: fileWithSize('large.bin', 10 * 1024 * 1024 + 1),
     } satisfies Attachment
 
     act(() => {
@@ -201,14 +269,14 @@ describe('useCompositionValidation', () => {
     expect(onValidated).not.toHaveBeenCalled()
     expect(focusInvalidField).toHaveBeenCalledWith('cc')
     expect(result.current.draft.getFieldState('cc').error?.message).toBeTruthy()
-    expect(result.current.validation.attachmentIssues).toHaveLength(1)
+    expect(result.current.draft.getFieldState('attachments.0.file').error?.message).toBeTruthy()
 
     act(() => result.current.draft.setValue('cc', 'grace@example.test'))
     expect(result.current.draft.getFieldState('cc').error).toBeUndefined()
 
     act(() => result.current.draft.setValue('attachments', []))
     act(() => result.current.validation.validateAttachments([]))
-    expect(result.current.validation.attachmentIssues).toEqual([])
+    expect(result.current.draft.getFieldState('attachments.0.file').error).toBeUndefined()
 
     act(() => result.current.draft.setValue('cc', 'grace@example.test'))
     await act(async () => result.current.validation.validate())
@@ -235,5 +303,20 @@ describe('useCompositionValidation', () => {
     expect(onValidated).not.toHaveBeenCalled()
     expect(focusInvalidField).toHaveBeenCalledWith('to')
     expect(result.current.draft.getFieldState('to').error?.message).toBeTruthy()
+  })
+
+  it('subscribes once under StrictMode and invalidates on a subsequent field edit', async () => {
+    const onValidated = vi.fn()
+    const { result } = setup({ onValidated, strictMode: true })
+
+    await act(async () => result.current.validation.validate())
+    expect(onValidated).toHaveBeenCalledTimes(1)
+    expect(result.current.validation.ready).toBe(true)
+
+    act(() => result.current.draft.setValue('subject', 'Changed'))
+    expect(result.current.validation.ready).toBe(false)
+    await act(async () => result.current.validation.validate())
+    expect(onValidated).toHaveBeenCalledTimes(2)
+    expect(result.current.validation.ready).toBe(true)
   })
 })

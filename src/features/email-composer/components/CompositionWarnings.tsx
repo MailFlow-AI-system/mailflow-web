@@ -7,10 +7,14 @@ import {
   Button,
 } from '@mailflow/ui/components'
 import { useRef } from 'react'
+import { useFormContext, useFormState } from 'react-hook-form'
 import { useComposer } from '../context'
+import type { DraftValues } from '../types/DraftValues'
 
 export function CompositionWarnings() {
   const { theme, validation } = useComposer()
+  const { control } = useFormContext<DraftValues>()
+  const { isSubmitting } = useFormState({ control })
   const safeRef = useRef<HTMLButtonElement>(null)
 
   return (
@@ -36,7 +40,7 @@ export function CompositionWarnings() {
           </AlertDialogClose>
           <Button
             type="button"
-            disabled={validation.submitting}
+            disabled={isSubmitting}
             onClick={() => void validation.confirmWarnings()}
           >
             Continuar mesmo assim
