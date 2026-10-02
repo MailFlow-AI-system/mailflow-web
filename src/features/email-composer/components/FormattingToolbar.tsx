@@ -49,7 +49,14 @@ export function FormattingToolbar() {
 }
 
 function EditorToolbar() {
-  const { editor, addAttachments, sessionRef } = useComposer()
+  const {
+    editor,
+    addAttachments,
+    sessionRef,
+    attachmentTriggerRef,
+    attachmentErrorId,
+    validation,
+  } = useComposer()
   const active = useEditorState({
     editor,
     selector: ({ editor }) => ({
@@ -122,8 +129,11 @@ function EditorToolbar() {
           <Smile aria-hidden="true" className="size-3.5" />
         </ToolbarButton>
         <ToolbarButton
+          ref={attachmentTriggerRef}
           aria-label="Anexar arquivo"
           title="Anexar arquivo"
+          aria-invalid={validation.attachmentIssues.length > 0}
+          aria-describedby={validation.attachmentIssues.length > 0 ? attachmentErrorId : undefined}
           onClick={() => attachmentInput.current?.click()}
         >
           <Paperclip aria-hidden="true" className="size-3.5" />
