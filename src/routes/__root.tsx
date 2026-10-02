@@ -11,6 +11,7 @@ import {
   Scripts,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
+import { NuqsAdapter } from 'nuqs/adapters/tanstack-router'
 import { useEffect } from 'react'
 
 import { BrowserObservability } from '../observability/BrowserObservability'
@@ -53,7 +54,11 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 })
 
 function AppShell() {
-  return <Outlet />
+  return (
+    <NuqsAdapter>
+      <Outlet />
+    </NuqsAdapter>
+  )
 }
 
 export function RootNotFoundComponent() {

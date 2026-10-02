@@ -3,6 +3,7 @@ import { createRouter as createTanStackRouter } from '@tanstack/react-router'
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
 
 import '#/config/env'
+import { parseQueryParams, stringifyQueryParams } from '#/config/queryParams'
 import { routeTree } from './routeTree.gen'
 
 export function getRouter() {
@@ -21,6 +22,8 @@ export function getRouter() {
     scrollRestoration: true,
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
+    parseSearch: parseQueryParams,
+    stringifySearch: stringifyQueryParams,
   })
 
   setupRouterSsrQueryIntegration({ router, queryClient })
