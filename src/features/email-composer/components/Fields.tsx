@@ -1,5 +1,5 @@
 import { Button, Input } from '@mailflow/ui/components'
-import { useId, useState } from 'react'
+import { useId } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { useComposer } from '../context'
 import type { RecipientField } from '../types/composer'
@@ -13,12 +13,11 @@ const fieldLabels: Record<RecipientField, string> = {
 }
 
 export function Fields() {
-  const { recipientRef } = useComposer()
+  const { recipientRef, ccRef, bccRef, showCc, setShowCc } = useComposer()
   const {
     register,
     formState: { errors },
   } = useFormContext<DraftValues>()
-  const [showCc, setShowCc] = useState(false)
   const id = useId()
   const visible: RecipientField[] = showCc ? ['to', 'cc', 'bcc', 'subject'] : ['to', 'subject']
   return (
@@ -43,6 +42,8 @@ export function Fields() {
               ref={(node) => {
                 registration.ref(node)
                 if (field === 'to') recipientRef.current = node
+                if (field === 'cc') ccRef.current = node
+                if (field === 'bcc') bccRef.current = node
               }}
               aria-invalid={Boolean(error)}
               aria-describedby={error ? `${id}-${field}-error` : undefined}
@@ -58,6 +59,7 @@ export function Fields() {
             />
             {field === 'to' && (
               <Button
+                type="button"
                 variant="ghost"
                 size="sm"
                 aria-expanded={showCc}

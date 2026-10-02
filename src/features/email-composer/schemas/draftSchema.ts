@@ -1,25 +1,47 @@
 import { z } from 'zod'
 
+import { COMPOSITION_VALIDATION_MESSAGES } from '../composerValidationConstants'
 import type { DraftValues } from '../types/DraftValues'
+import {
+  getAttachmentSizeIssues,
+  invalidRecipientAddresses,
+  splitRecipientList,
+} from './compositionSchema'
 
-const optionalEmail = z
+const recipientList = z
   .string()
   .trim()
-  .refine(
-    (value) => value === '' || z.email().safeParse(value).success,
-    'Informe um e-mail válido.',
-  )
+  .superRefine((value, context) => {
+    if (invalidRecipientAddresses(splitRecipientList(value)).length > 0) {
+      context.addIssue({
+        code: 'custom',
+        message: COMPOSITION_VALIDATION_MESSAGES.invalidRecipients,
+      })
+    }
+  })
 
-export const draftSchema = z.object({
-  to: optionalEmail,
-  cc: optionalEmail,
-  bcc: optionalEmail,
-  subject: z.string(),
-  body: z.string(),
-  attachments: z.array(
+const attachments = z
+  .array(
     z.object({
       id: z.string(),
       file: z.custom<File>((value) => value instanceof File),
     }),
-  ),
+  )
+  .superRefine((values, context) => {
+    for (const issue of getAttachmentSizeIssues(values.map(({ file }) => file.size))) {
+      context.addIssue({
+        code: 'custom',
+        path: 'attachmentIndex' in issue ? [issue.attachmentIndex] : [],
+        message: issue.message,
+      })
+    }
+  })
+
+export const draftSchema = z.object({
+  to: recipientList,
+  cc: recipientList,
+  bcc: recipientList,
+  subject: z.string(),
+  body: z.string(),
+  attachments,
 }) satisfies z.ZodType<DraftValues>
