@@ -13,6 +13,7 @@ export function useMailboxSearch(userId: string) {
 
   if (draft.query !== query) setDraft({ query, value: query })
 
+  // Nuqs owns URL state; this timer also starts prefetch and must stop on navigation or unmount.
   // biome-ignore lint/correctness/useExhaustiveDependencies: changing the URL query cancels a pending debounce.
   useEffect(
     () => () => {
