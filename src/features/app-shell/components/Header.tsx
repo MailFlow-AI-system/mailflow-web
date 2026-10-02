@@ -7,11 +7,12 @@ import type {
   AppShellHeaderActionsProps,
   AppShellHeaderMailboxProps,
   AppShellHeaderProps,
+  AppShellHeaderSearchProps,
 } from '../types'
 
 function HeaderRoot({ children }: AppShellHeaderProps) {
   return (
-    <header className="flex shrink-0 items-center gap-2 border-b border-border bg-background/80 px-3 py-2.5 backdrop-blur-[12px]">
+    <header className="flex w-full shrink-0 items-center gap-2 border-b border-border bg-background/80 px-3 py-2.5 backdrop-blur-[12px] md:w-[29vw] md:max-w-[419px] md:pr-0">
       <SidebarTrigger className="md:hidden" />
       {children}
     </header>
@@ -30,7 +31,7 @@ function Mailbox({ children }: AppShellHeaderMailboxProps) {
   )
 }
 
-function MailboxSearch() {
+function MailboxSearch({ value, onChange }: AppShellHeaderSearchProps) {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const label = `Buscar em ${mailboxSearchScope(pathname)}…`
 
@@ -43,8 +44,10 @@ function MailboxSearch() {
       <Input
         aria-label={label}
         className="h-8 pl-8 text-xs focus-visible:border-input focus-visible:ring-1 focus-visible:ring-ring"
+        onChange={onChange ? (event) => onChange(event.currentTarget.value) : undefined}
         placeholder={label}
         type="search"
+        value={value}
       />
     </div>
   )

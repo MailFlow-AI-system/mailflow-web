@@ -75,6 +75,7 @@ Other features should adopt it through their own feature boundaries.
 e2e/                    Playwright browser tests
 src/features/auth/       Login, logout, and session adapters, schemas, and types
 src/features/app-shell/ Application shell: sidebar, header, and content layout
+src/features/mail-list/ Inbox message cards, search, paging, and API adapter
 src/config/             Validated client configuration
 src/i18n/               Locale and timezone primitives
 src/routes/             TanStack Router file-based routes
@@ -95,13 +96,26 @@ application shell. Neither layout name appears in the browser URL.
 - `/login` and `/forgot-password` are public. An authenticated visit to `/login`
   redirects to `/inbox`.
 - `/inbox`, `/sent`, `/drafts`, `/starred`, `/spam`, and `/trash` require a session.
-  The menu links between these routes and supports browser history.
+  The sidebar enables Inbox; other folders remain disabled until their features
+  are implemented. Direct mailbox URLs still render their placeholders.
 - Unknown paths render the global 404 page. `/app` is no longer a route.
 
-The mail pages identify their folders only; message data and actions are not part
-of this routing foundation. The authentication proxy at `/api/auth/*` is a server
-route outside the page layouts. Session lookup errors remain errors rather than
-being treated as signed-out sessions.
+Inbox renders a paged message list. Other mailbox routes remain folder
+placeholders; reader and message actions are not included. The authentication
+proxy at `/api/auth/*` is a server route outside the page layouts. Session lookup
+errors remain errors rather than being treated as signed-out sessions.
+
+Inbox search debounces input for 300 ms and stores the normalized term in the
+URL through Nuqs. Core searches sender names, subjects, and complete message
+bodies across the dataset. The first result page starts warming alongside route session
+validation and shares its cursor cache with the displayed infinite query.
+The route guard still validates the session before committing navigation.
+
+The message scroll region stays mounted while the filter changes. Eight
+decorative skeleton rows cover initial loading and pending searches; loading
+another page appends skeletons below existing messages. Background refreshes
+and next-page prefetches keep existing cards visible. Empty and retry states
+appear only after the current search finishes.
 
 ## Design system
 
@@ -123,6 +137,13 @@ MailFlow architecture:
 - client navigation hydrates and opens the mail layout;
 - TanStack Query uses the official Router SSR integration with a request-local
   `QueryClient`.
+
+Query parameter state uses Nuqs with its TanStack Router adapter at the root
+outlet. New query parameters should use shared Nuqs parsers for URL state and
+route validation; TanStack Router continues to own navigation and session
+guards. Inbox search and password reset tokens follow this convention.
+Router query parsing preserves URL values as strings, so terms such as `123`
+and `false` remain literal search text. Nuqs parsers own typed conversion.
 
 If future deployment evidence invalidates this path, the approved fallback is
 React Router with Vite. That fallback is not active in this repository.
@@ -156,6 +177,21 @@ response's cookie; users sign in on Web to establish a Web-scoped session.
 Only variables prefixed with `VITE_` are exposed to browser code. Never place
 secrets in them.
 
+The inbox uses the same-origin `GET /api/mail/messages` route so host-only
+Better Auth cookies reach Core. The adapter forwards only Better Auth cookies,
+trace context, normalized `q`, and the optional cursor to the fixed Core endpoint
+`GET /api/v1/mail/messages`; responses use `Cache-Control: private, no-store`.
+
+Core returns up to eight `{ id, senderName, subject, body, receivedAt }` items
+and a `nextCursor`. Search is literal, case-insensitive, and spans all stored
+messages. The browser keeps the displayed pages in a TanStack Query infinite
+query keyed by user and normalized search. It warms one next-cursor page in the
+same per-page cache; that page appears only when scrolling or the accessible
+load-more control advances the list. An underfilled list observes its own scroll
+root and continues until it fills or reaches the end. Message cards show sender
+initials, sender name, subject, and a one-line plain-text body preview. They do
+not render the body as HTML.
+
 Vite does not load `.env` files (`envDir: false`). Build validation reads
 `process.env` — the same process Infisical injects into. `.env.example`
 documents the contract only.
@@ -179,6 +215,26 @@ bun run build:local
 
 - Browser sign-in, session lookup, and sign-out use a same-origin Web proxy;
   Core remains the only session authority and database store.
+- Inbox messages use a narrow same-origin adapter because Core's session cookie
+  is host-only. Search text stays in the URL; list pages and warm data stay in
+  TanStack Query. The adapter accepts only the messages route and a fixed Core
+  destination.
+- The inbox warms one cursor ahead and appends that page only when the list
+  advances. It keeps the current page set without virtualization or a cache
+  window; revisit that choice if measured mailbox size makes rendering costly.
+- Search warms the first page in parallel with session validation to avoid
+  serial request latency. It does not bypass the route guard. Loading feedback
+  follows displayed-result requests rather than background prefetch activity,
+  and filter changes reset scroll without remounting the list.
+- Nuqs is the query parameter standard. Its official TanStack Router adapter
+  is experimental and does not declare TanStack Start support; server rendering,
+  hydration, query reloads, and guarded navigation must stay covered when it is
+  updated. The adapter uses Router navigation instead of replacing session guards.
+- Message body previews remain plain text and use frontend truncation. Core owns
+  search matching and paging; the Web layer does not add mailbox filters or
+  message metadata.
+- `@mailflow/ui` remains pinned at `v0.6.0`; these inbox components use its
+  existing controls and tokens without changing the shared design system.
 - Site registration stays on Site and redirects users to Web login. The Web
   proxy rejects registration and every unsupported Better Auth path.
 - Password recovery renders an unavailable state until email delivery exists;
