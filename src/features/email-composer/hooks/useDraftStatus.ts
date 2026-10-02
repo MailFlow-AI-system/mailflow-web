@@ -1,20 +1,20 @@
 import { useFormContext, useWatch } from 'react-hook-form'
 import { useComposer } from '../context'
-import { draftFieldsSignature } from '../draft'
+import { draftSignature, emptyBody } from '../draft'
 import type { DraftValues } from '../types/DraftValues'
 
 export function useDraftStatus() {
-  const { saved, bodyDirty, baselineFieldsRef } = useComposer()
+  const { saved, baselineDraftSignature } = useComposer()
   const { control } = useFormContext<DraftValues>()
-  const [to, cc, bcc, subject, attachments] = useWatch({
+  const [to, cc, bcc, subject, body, attachments] = useWatch({
     control,
-    name: ['to', 'cc', 'bcc', 'subject', 'attachments'],
+    name: ['to', 'cc', 'bcc', 'subject', 'body', 'attachments'],
   })
-  const fieldsDirty =
-    draftFieldsSignature(
-      { to: to ?? '', cc: cc ?? '', bcc: bcc ?? '', subject: subject ?? '' },
-      attachments ?? [],
-    ) !== baselineFieldsRef.current
+  const signature = draftSignature(
+    { to: to ?? '', cc: cc ?? '', bcc: bcc ?? '', subject: subject ?? '' },
+    body ?? emptyBody,
+    attachments ?? [],
+  )
 
-  return { dirty: fieldsDirty || bodyDirty, saved }
+  return { dirty: signature !== baselineDraftSignature, saved }
 }

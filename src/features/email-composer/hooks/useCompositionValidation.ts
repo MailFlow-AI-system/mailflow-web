@@ -2,6 +2,7 @@ import type { Editor } from '@tiptap/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { FieldPath, UseFormReturn } from 'react-hook-form'
 import { validateComposition } from '../composerValidation'
+import { COMPOSITION_VALIDATION_MESSAGES } from '../composerValidationConstants'
 import { getEditorBodySnapshot } from '../editor/bodyContent'
 import type {
   CompositionValidationIssue,
@@ -11,9 +12,9 @@ import type {
 import type { ValidatedComposition } from '../types/composer'
 import type { Attachment, DraftValues } from '../types/DraftValues'
 
-const callbackFailureMessage = 'Não foi possível continuar com a mensagem. Tente novamente.'
-
 type FocusField = CompositionValidationIssue['field']
+type PendingWarnings = { warnings: CompositionWarning[]; revision: number }
+type CallbackOutcome = 'completed' | 'failed' | 'cancelled'
 
 type UseCompositionValidationOptions = {
   draft: UseFormReturn<DraftValues>
@@ -32,24 +33,21 @@ export function useCompositionValidation({
   onValidated,
   focusInvalidField,
 }: UseCompositionValidationOptions) {
-  const [warnings, setWarnings] = useState<CompositionWarning[]>([])
-  const [warningsOpen, setWarningsOpen] = useState(false)
-  const [attachmentIssues, setAttachmentIssues] = useState<CompositionValidationIssue[]>([])
+  const [pendingWarnings, setPendingWarnings] = useState<PendingWarnings | null>(null)
   const [ready, setReady] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const revisionRef = useRef(0)
-  const pendingWarningRevisionRef = useRef<number | null>(null)
   const operationRef = useRef(0)
   const busyRef = useRef(false)
   const readyRef = useRef(false)
+  const activeCancelRef = useRef<(() => void) | null>(null)
+  const submissionCleanupRef = useRef<Promise<void>>(Promise.resolve())
 
   const invalidate = useCallback(() => {
     revisionRef.current += 1
     readyRef.current = false
     setReady(false)
-    setErrorMessage(null)
-  }, [])
+    draft.clearErrors('root.server')
+  }, [draft])
 
   const snapshot = useCallback(
     (attachmentsOverride?: Attachment[]) => {
@@ -57,6 +55,10 @@ export function useCompositionValidation({
       const bodySnapshot = editor
         ? getEditorBodySnapshot(editor)
         : { body: values.body, hasBodyContent: false }
+
+      if (bodySnapshot.body !== values.body) {
+        draft.setValue('body', bodySnapshot.body, { shouldDirty: true })
+      }
 
       return {
         to: values.to,
@@ -75,7 +77,7 @@ export function useCompositionValidation({
     [draft, editor],
   )
 
-  const setAttachmentErrorFields = useCallback(
+  const setAttachmentErrors = useCallback(
     (issues: CompositionValidationIssue[], clear = true) => {
       if (clear) draft.clearErrors('attachments')
       const seen = new Set<string>()
@@ -90,7 +92,6 @@ export function useCompositionValidation({
         seen.add(path)
         draft.setError(path, { type: 'composition', message: issue.message })
       }
-      setAttachmentIssues(issues.filter((issue) => issue.field === 'attachments'))
     },
     [draft],
   )
@@ -105,9 +106,9 @@ export function useCompositionValidation({
         seen.add(issue.field)
         draft.setError(issue.field, { type: 'composition', message: issue.message })
       }
-      setAttachmentErrorFields(issues, false)
+      setAttachmentErrors(issues, false)
     },
-    [draft, setAttachmentErrorFields],
+    [draft, setAttachmentErrors],
   )
 
   const evaluateCurrent = useCallback((): CompositionValidationResult => {
@@ -138,100 +139,141 @@ export function useCompositionValidation({
     [draft],
   )
 
-  const acceptComposition = useCallback(
-    async (result: Extract<CompositionValidationResult, { success: true }>) => {
-      if (busyRef.current || readyRef.current) return
+  const submitComposition = useCallback(
+    (confirmedRevision?: number): Promise<void> => {
+      if (busyRef.current || readyRef.current) return Promise.resolve()
+
       busyRef.current = true
       const operation = ++operationRef.current
-      const revision = revisionRef.current
-      setSubmitting(true)
-      setErrorMessage(null)
+      const cleanupBeforeAttempt = submissionCleanupRef.current
+      let submissionRevision: number | null = null
 
-      try {
-        await onValidated?.(makeValidatedComposition(result))
-        if (operation === operationRef.current && revision === revisionRef.current) {
+      const run = async () => {
+        await cleanupBeforeAttempt
+        if (operation !== operationRef.current) return
+
+        snapshot()
+        const revision = revisionRef.current
+        submissionRevision = revision
+        let cancel!: () => void
+        const cancelled = new Promise<CallbackOutcome>((resolve) => {
+          cancel = () => resolve('cancelled')
+        })
+        activeCancelRef.current = cancel
+        const isCurrent = () =>
+          operation === operationRef.current && revision === revisionRef.current
+
+        const onValid = async () => {
+          if (!isCurrent()) return
+          const result = evaluateCurrent()
+
+          if (!result.success) {
+            if (confirmedRevision !== undefined) setPendingWarnings(null)
+            focusFirstIssue(result.issues)
+            return
+          }
+
+          if (result.warnings.length > 0 && confirmedRevision !== revision) {
+            setPendingWarnings({ warnings: result.warnings, revision })
+            return
+          }
+
+          setPendingWarnings(null)
+          draft.clearErrors('root.server')
+          let callback: Promise<void>
+          try {
+            callback = Promise.resolve(onValidated?.(makeValidatedComposition(result)))
+          } catch {
+            callback = Promise.reject(new Error('Composition continuation failed'))
+          }
+          const outcome = await Promise.race([
+            callback.then(
+              () => 'completed' as const,
+              () => 'failed' as const,
+            ),
+            cancelled,
+          ])
+
+          if (outcome === 'cancelled' || !isCurrent()) return
+          if (outcome === 'failed') {
+            draft.setError('root.server', {
+              type: 'server',
+              message: COMPOSITION_VALIDATION_MESSAGES.continuationFailed,
+            })
+            return
+          }
+
           readyRef.current = true
           setReady(true)
         }
-      } catch {
-        if (operation === operationRef.current) {
-          readyRef.current = false
-          setReady(false)
-          setErrorMessage(callbackFailureMessage)
+
+        const onInvalid = () => {
+          if (!isCurrent()) return
+          const result = evaluateCurrent()
+          if (confirmedRevision !== undefined) setPendingWarnings(null)
+          if (!result.success) focusFirstIssue(result.issues)
         }
-      } finally {
-        if (operation === operationRef.current) {
-          busyRef.current = false
-          setSubmitting(false)
+
+        const submission = draft.handleSubmit(onValid, onInvalid)()
+        const cleanup = submission.then(
+          () => undefined,
+          () => undefined,
+        )
+        submissionCleanupRef.current = cleanup
+        try {
+          await submission
+        } catch {
+          if (isCurrent()) {
+            draft.setError('root.server', {
+              type: 'server',
+              message: COMPOSITION_VALIDATION_MESSAGES.continuationFailed,
+            })
+          }
+        } finally {
+          if (activeCancelRef.current === cancel) activeCancelRef.current = null
         }
       }
+
+      const attempt = run().then(
+        () => undefined,
+        () => {
+          if (operation === operationRef.current && submissionRevision === revisionRef.current) {
+            draft.setError('root.server', {
+              type: 'server',
+              message: COMPOSITION_VALIDATION_MESSAGES.continuationFailed,
+            })
+          }
+        },
+      )
+      return attempt.finally(() => {
+        if (operation === operationRef.current) busyRef.current = false
+      })
     },
-    [makeValidatedComposition, onValidated],
+    [draft, evaluateCurrent, focusFirstIssue, makeValidatedComposition, onValidated, snapshot],
   )
 
-  const validate = useCallback(async () => {
-    if (busyRef.current || readyRef.current) return
-    setErrorMessage(null)
-    const result = evaluateCurrent()
+  const validate = useCallback(() => submitComposition(), [submitComposition])
 
-    if (!result.success) {
-      setWarnings(result.warnings)
-      setWarningsOpen(false)
-      pendingWarningRevisionRef.current = null
-      focusFirstIssue(result.issues)
-      return
-    }
-
-    if (result.warnings.length > 0) {
-      setWarnings(result.warnings)
-      setWarningsOpen(true)
-      pendingWarningRevisionRef.current = revisionRef.current
-      return
-    }
-
-    setWarnings([])
-    setWarningsOpen(false)
-    pendingWarningRevisionRef.current = null
-    await acceptComposition(result)
-  }, [acceptComposition, evaluateCurrent, focusFirstIssue])
-
-  const confirmWarnings = useCallback(async () => {
-    if (!warningsOpen || busyRef.current) return
-    const result = evaluateCurrent()
-
-    if (!result.success) {
-      setWarningsOpen(false)
-      pendingWarningRevisionRef.current = null
-      focusFirstIssue(result.issues)
-      return
-    }
-
-    const confirmationIsCurrent = pendingWarningRevisionRef.current === revisionRef.current
-    if (result.warnings.length > 0 && !confirmationIsCurrent) {
-      setWarnings(result.warnings)
-      pendingWarningRevisionRef.current = revisionRef.current
-      return
-    }
-
-    setWarningsOpen(false)
-    pendingWarningRevisionRef.current = null
-    if (result.warnings.length === 0) setWarnings([])
-    await acceptComposition(result)
-  }, [acceptComposition, evaluateCurrent, focusFirstIssue, warningsOpen])
+  const confirmWarnings = useCallback(() => {
+    if (!pendingWarnings) return Promise.resolve()
+    return submitComposition(pendingWarnings.revision)
+  }, [pendingWarnings, submitComposition])
 
   const cancelWarnings = useCallback(() => {
-    setWarningsOpen(false)
-    setWarnings([])
-    pendingWarningRevisionRef.current = null
+    operationRef.current += 1
+    busyRef.current = false
+    activeCancelRef.current?.()
+    activeCancelRef.current = null
+    setPendingWarnings(null)
   }, [])
 
   const validateAttachments = useCallback(
     (attachments: Attachment[]) => {
       invalidate()
       const result = validateComposition(snapshot(attachments))
-      setAttachmentErrorFields(result.success ? [] : result.issues)
+      setAttachmentErrors(result.success ? [] : result.issues)
     },
-    [invalidate, setAttachmentErrorFields, snapshot],
+    [invalidate, setAttachmentErrors, snapshot],
   )
 
   const reset = useCallback(() => {
@@ -239,43 +281,39 @@ export function useCompositionValidation({
     operationRef.current += 1
     busyRef.current = false
     readyRef.current = false
-    pendingWarningRevisionRef.current = null
+    activeCancelRef.current?.()
+    activeCancelRef.current = null
     draft.clearErrors()
-    setWarnings([])
-    setWarningsOpen(false)
-    setAttachmentIssues([])
+    setPendingWarnings(null)
     setReady(false)
-    setSubmitting(false)
-    setErrorMessage(null)
   }, [draft])
 
   useEffect(() => {
-    const subscription = draft.watch((_values, { name }) => {
-      invalidate()
-      if (name !== 'to' && name !== 'cc' && name !== 'bcc') return
-      const hadRecipientError = (['to', 'cc', 'bcc'] as const).some(
-        (field) => draft.getFieldState(field).error,
-      )
-      if (hadRecipientError) {
-        const result = validateComposition(snapshot())
-        applyIssues(result.success ? [] : result.issues)
-      }
+    const unsubscribe = draft.subscribe({
+      formState: { values: true },
+      callback: () => {
+        invalidate()
+        const hasValidationErrors = (['to', 'cc', 'bcc', 'attachments'] as const).some(
+          (field) => draft.getFieldState(field).error,
+        )
+        if (hasValidationErrors) {
+          const result = validateComposition(snapshot())
+          applyIssues(result.success ? [] : result.issues)
+        }
+      },
     })
-    return () => subscription.unsubscribe()
+    return unsubscribe
   }, [applyIssues, draft, invalidate, snapshot])
 
   return {
-    attachmentIssues,
     cancelWarnings,
     confirmWarnings,
-    errorMessage,
     invalidate,
     ready,
     reset,
-    submitting,
     validate,
     validateAttachments,
-    warnings,
-    warningsOpen,
+    warnings: pendingWarnings?.warnings ?? [],
+    warningsOpen: pendingWarnings !== null,
   }
 }
