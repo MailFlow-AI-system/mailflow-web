@@ -10,6 +10,12 @@ vi.mock('@tanstack/react-router', () => ({
       user: { id: 'user-1', name: 'Ada Lovelace', email: 'ada@example.test' },
     }),
   }),
+  useRouterState: ({ select }: { select: (state: { location: { pathname: string } }) => string }) =>
+    select({ location: { pathname: '/inbox' } }),
+}))
+
+vi.mock('#/features/mail-list/components/MailboxSearch', () => ({
+  MailboxSearch: () => <input aria-label="Buscar em inbox" />,
 }))
 
 vi.mock('@/features/app-shell', () => {
@@ -51,6 +57,7 @@ vi.mock('@/features/email-composer', () => ({
   },
 }))
 
+import { normalizeMailSearch } from '#/features/mail-list/types/mailSearch'
 import { Route } from './route'
 
 const MailLayout = Route.options.component
@@ -58,6 +65,15 @@ if (!MailLayout) throw new Error('Mail layout route has no component')
 
 describe('MailLayout', () => {
   afterEach(cleanup)
+
+  it('normalizes the inbox query parameter', () => {
+    expect(normalizeMailSearch({ q: '  AuroraLedger  ' })).toEqual({ q: 'AuroraLedger' })
+    expect(normalizeMailSearch({ q: '   ' })).toEqual({})
+    expect(normalizeMailSearch({})).toEqual({})
+    expect(normalizeMailSearch({ q: 123 })).toEqual({})
+    expect(normalizeMailSearch({ q: false })).toEqual({})
+    expect(normalizeMailSearch({ q: ['AuroraLedger'] })).toEqual({})
+  })
 
   it('renders the mailbox toolbar in the header without breadcrumbs', () => {
     render(<MailLayout />)

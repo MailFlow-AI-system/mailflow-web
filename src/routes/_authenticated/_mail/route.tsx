@@ -1,15 +1,21 @@
-import { createFileRoute, getRouteApi, Outlet } from '@tanstack/react-router'
+import { createFileRoute, getRouteApi, Outlet, useRouterState } from '@tanstack/react-router'
 
 import { LogoutMenuItem } from '#/features/auth/LogoutMenuItem'
+import { MailboxSearch } from '#/features/mail-list/components/MailboxSearch'
+import { normalizeMailSearch } from '#/features/mail-list/types/mailSearch'
 import { AppShell } from '@/features/app-shell'
 import { EmailComposer } from '@/features/email-composer'
 
 const authenticatedRoute = getRouteApi('/_authenticated')
 
-export const Route = createFileRoute('/_authenticated/_mail')({ component: MailLayout })
+export const Route = createFileRoute('/_authenticated/_mail')({
+  validateSearch: normalizeMailSearch,
+  component: MailLayout,
+})
 
 function MailLayout() {
   const { user } = authenticatedRoute.useRouteContext()
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
 
   return (
     <EmailComposer.Root>
@@ -18,7 +24,11 @@ function MailLayout() {
         <AppShell.Main>
           <AppShell.Header>
             <AppShell.Header.Mailbox>
-              <AppShell.Header.Search />
+              {pathname === '/inbox' ? (
+                <MailboxSearch userId={user.id} />
+              ) : (
+                <AppShell.Header.Search />
+              )}
               <AppShell.Header.Filters />
               <EmailComposer.Trigger />
             </AppShell.Header.Mailbox>

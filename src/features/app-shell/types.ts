@@ -72,6 +72,11 @@ export type AppShellHeaderMailboxProps = {
   children: ReactNode
 }
 
+export type AppShellHeaderSearchProps = {
+  value?: string
+  onChange?: (value: string) => void
+}
+
 export type AppShellContentProps = {
   children: ReactNode
 }
