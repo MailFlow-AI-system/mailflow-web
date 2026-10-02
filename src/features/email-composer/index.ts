@@ -1,2 +1,2 @@
 export { EmailComposer } from './components/EmailComposer'
-export type { ComposerLayoutProps, ComposerRootProps } from './types/composer'
+export type { ComposerLayoutProps, ComposerRootProps, ValidatedComposition } from './types/composer'
