@@ -23,6 +23,7 @@ import { Route as AuthenticatedMailSpamRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedMailStarredRouteImport } from './routes/_authenticated/_mail/starred'
 import { Route as AuthenticatedMailTrashRouteImport } from './routes/_authenticated/_mail/trash'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiMailMessagesRouteImport } from './routes/api/mail/messages'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -92,6 +93,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMailMessagesRoute = ApiMailMessagesRouteImport.update({
+  id: '/api/mail/messages',
+  path: '/api/mail/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/starred': typeof AuthenticatedMailStarredRoute
   '/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/mail/messages': typeof ApiMailMessagesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/starred': typeof AuthenticatedMailStarredRoute
   '/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/mail/messages': typeof ApiMailMessagesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -135,6 +143,7 @@ export interface FileRoutesById {
   '/_authenticated/_mail/starred': typeof AuthenticatedMailStarredRoute
   '/_authenticated/_mail/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/mail/messages': typeof ApiMailMessagesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/starred'
     | '/trash'
     | '/api/auth/$'
+    | '/api/mail/messages'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/starred'
     | '/trash'
     | '/api/auth/$'
+    | '/api/mail/messages'
   id:
     | '__root__'
     | '/_authenticated'
@@ -179,12 +190,14 @@ export interface FileRouteTypes {
     | '/_authenticated/_mail/starred'
     | '/_authenticated/_mail/trash'
     | '/api/auth/$'
+    | '/api/mail/messages'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   PublicRouteRoute: typeof PublicRouteRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiMailMessagesRoute: typeof ApiMailMessagesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -287,6 +300,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/mail/messages': {
+      id: '/api/mail/messages'
+      path: '/api/mail/messages'
+      fullPath: '/api/mail/messages'
+      preLoaderRoute: typeof ApiMailMessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -347,6 +367,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   PublicRouteRoute: PublicRouteRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiMailMessagesRoute: ApiMailMessagesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
