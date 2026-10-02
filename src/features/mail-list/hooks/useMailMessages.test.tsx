@@ -128,6 +128,59 @@ describe('useMailMessages', () => {
     expect(client.fetchMailMessages).toHaveBeenCalledWith(expect.objectContaining({ q: 'new' }))
   })
 
+  it('keeps a shared request alive until the last list unmounts', async () => {
+    let signal: AbortSignal | undefined
+    client.fetchMailMessages.mockImplementation((input: { signal: AbortSignal }) => {
+      signal = input.signal
+      return new Promise((_resolve, reject) => {
+        input.signal.addEventListener('abort', () =>
+          reject(new DOMException('Aborted', 'AbortError')),
+        )
+      })
+    })
+    const { Wrapper } = createWrapper()
+    const first = renderHook(() => useMailMessages('user-1', 'shared'), { wrapper: Wrapper })
+    const second = renderHook(() => useMailMessages('user-1', 'shared'), { wrapper: Wrapper })
+    await waitFor(() => expect(signal).toBeDefined())
+
+    first.unmount()
+    expect(signal?.aborted).toBe(false)
+    expect(client.fetchMailMessages).toHaveBeenCalledTimes(1)
+
+    second.unmount()
+    await waitFor(() => expect(signal?.aborted).toBe(true))
+  })
+
+  it('can return to a cancelled filter without inheriting its aborted request', async () => {
+    let oldSignal: AbortSignal | undefined
+    let oldAttempts = 0
+    client.fetchMailMessages.mockImplementation(
+      ({ q, signal }: { q: string; signal: AbortSignal }) => {
+        if (signal.aborted) return Promise.reject(new DOMException('Aborted', 'AbortError'))
+        if (q !== 'old') return Promise.resolve(makePage(['new-result'], null))
+        oldAttempts += 1
+        if (oldAttempts > 1) return Promise.resolve(makePage(['old-result'], null))
+        oldSignal = signal
+        return new Promise((_resolve, reject) => {
+          signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+        })
+      },
+    )
+    const { Wrapper, queryClient } = createWrapper()
+    queryClient.setQueryDefaults(['mail-messages-page'], { retryDelay: 0 })
+    const { result, rerender } = renderHook(({ q }) => useMailMessages('user-1', q), {
+      initialProps: { q: 'old' },
+      wrapper: Wrapper,
+    })
+    await waitFor(() => expect(oldSignal).toBeDefined())
+
+    rerender({ q: 'new' })
+    await waitFor(() => expect(oldSignal?.aborted).toBe(true))
+    rerender({ q: 'old' })
+
+    await waitFor(() => expect(result.current.messages.map(({ id }) => id)).toEqual(['old-result']))
+  })
+
   it('keeps visible messages after a warm-page failure and retries when the user advances', async () => {
     let nextPageAttempts = 0
     client.fetchMailMessages.mockImplementation(async ({ cursor }: { cursor?: string }) => {

@@ -1,5 +1,4 @@
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
 
 import {
   mailMessagesKey,
@@ -20,8 +19,8 @@ export function useMailMessages(userId: string, q: string) {
     initialData: firstPage ? { pages: [firstPage], pageParams: [null] } : undefined,
     initialDataUpdatedAt: queryClient.getQueryState(firstPageKey)?.dataUpdatedAt,
     staleTime: 30_000,
-    queryFn: ({ pageParam }) =>
-      queryClient.fetchQuery(mailMessagesPageOptions(userId, normalizedQ, pageParam)),
+    queryFn: ({ pageParam, signal }) =>
+      queryClient.fetchQuery(mailMessagesPageOptions(userId, normalizedQ, pageParam, signal)),
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     retry: 0,
   })
@@ -30,19 +29,6 @@ export function useMailMessages(userId: string, q: string) {
     ...mailMessagesPageOptions(userId, normalizedQ, nextCursor),
     enabled: nextCursor !== null,
   })
-
-  useEffect(
-    () => () => {
-      void queryClient.cancelQueries({
-        queryKey: mailMessagesKey(userId, normalizedQ),
-        exact: true,
-      })
-      void queryClient.cancelQueries({
-        queryKey: ['mail-messages-page', userId, normalizedQ],
-      })
-    },
-    [normalizedQ, queryClient, userId],
-  )
 
   const seenIds = new Set<string>()
   const messages = (query.data?.pages.flatMap((page) => page.items) ?? []).filter((message) => {
