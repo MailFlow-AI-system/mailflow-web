@@ -20,6 +20,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:workspace:e2e": "playwright test --config playwright.workspace.config.ts",
+    "test:workspace-switching:e2e": "playwright test --config playwright.workspace-switching.config.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",

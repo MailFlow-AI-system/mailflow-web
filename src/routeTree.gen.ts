@@ -25,6 +25,7 @@ import { Route as AuthenticatedMailStarredRouteImport } from './routes/_authenti
 import { Route as AuthenticatedMailTrashRouteImport } from './routes/_authenticated/_mail/trash'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiMailMessagesRouteImport } from './routes/api/mail/messages'
+import { Route as ApiV1WorkspaceSelectionRouteImport } from './routes/api/v1/workspace-selection'
 import { Route as ApiV1WorkspacesRouteImport } from './routes/api/v1/workspaces'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -105,6 +106,11 @@ const ApiMailMessagesRoute = ApiMailMessagesRouteImport.update({
   path: '/api/mail/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1WorkspaceSelectionRoute = ApiV1WorkspaceSelectionRouteImport.update({
+  id: '/api/v1/workspace-selection',
+  path: '/api/v1/workspace-selection',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1WorkspacesRoute = ApiV1WorkspacesRouteImport.update({
   id: '/api/v1/workspaces',
   path: '/api/v1/workspaces',
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/mail/messages': typeof ApiMailMessagesRoute
+  '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
 }
 export interface FileRoutesByTo {
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/mail/messages': typeof ApiMailMessagesRoute
+  '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
 }
 export interface FileRoutesById {
@@ -161,6 +169,7 @@ export interface FileRoutesById {
   '/_authenticated/_mail/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/mail/messages': typeof ApiMailMessagesRoute
+  '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
 }
 export interface FileRouteTypes {
@@ -179,6 +188,7 @@ export interface FileRouteTypes {
     | '/trash'
     | '/api/auth/$'
     | '/api/mail/messages'
+    | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -195,6 +205,7 @@ export interface FileRouteTypes {
     | '/trash'
     | '/api/auth/$'
     | '/api/mail/messages'
+    | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
   id:
     | '__root__'
@@ -214,6 +225,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_mail/trash'
     | '/api/auth/$'
     | '/api/mail/messages'
+    | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
   fileRoutesById: FileRoutesById
 }
@@ -223,6 +235,7 @@ export interface RootRouteChildren {
   ApiWorkspaceContextRoute: typeof ApiWorkspaceContextRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiMailMessagesRoute: typeof ApiMailMessagesRoute
+  ApiV1WorkspaceSelectionRoute: typeof ApiV1WorkspaceSelectionRoute
   ApiV1WorkspacesRoute: typeof ApiV1WorkspacesRoute
 }
 
@@ -340,6 +353,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMailMessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/workspace-selection': {
+      id: '/api/v1/workspace-selection'
+      path: '/api/v1/workspace-selection'
+      fullPath: '/api/v1/workspace-selection'
+      preLoaderRoute: typeof ApiV1WorkspaceSelectionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/workspaces': {
       id: '/api/v1/workspaces'
       path: '/api/v1/workspaces'
@@ -409,8 +429,18 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWorkspaceContextRoute: ApiWorkspaceContextRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiMailMessagesRoute: ApiMailMessagesRoute,
+  ApiV1WorkspaceSelectionRoute: ApiV1WorkspaceSelectionRoute,
   ApiV1WorkspacesRoute: ApiV1WorkspacesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

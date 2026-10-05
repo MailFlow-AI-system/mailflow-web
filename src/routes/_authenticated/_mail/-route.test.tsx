@@ -2,6 +2,11 @@ import { cleanup, render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+const environment = vi.hoisted(() => ({
+  VITE_WORKSPACE_BASE_HOST: undefined as string | undefined,
+}))
+vi.mock('#/config/env', () => ({ clientEnvironment: environment }))
+
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: unknown) => ({ options }),
   Outlet: () => <div data-testid="route-outlet" />,
@@ -15,7 +20,7 @@ vi.mock('@tanstack/react-router', () => ({
 }))
 
 vi.mock('#/features/mail-list/components/MailboxSearch', () => ({
-  MailboxSearch: () => <input aria-label="Buscar em inbox" />,
+  MailboxSearch: () => <input aria-label="Buscar em inbox" data-testid="global-mailbox-search" />,
 }))
 
 vi.mock('@/features/app-shell', () => {
@@ -64,7 +69,17 @@ const MailLayout = Route.options.component
 if (!MailLayout) throw new Error('Mail layout route has no component')
 
 describe('MailLayout', () => {
-  afterEach(cleanup)
+  afterEach(() => {
+    cleanup()
+    environment.VITE_WORKSPACE_BASE_HOST = undefined
+  })
+
+  it('does not mount the global search in workspace mode', () => {
+    environment.VITE_WORKSPACE_BASE_HOST = 'workspace.test'
+    render(<MailLayout />)
+    expect(screen.queryByTestId('global-mailbox-search')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Compose' })).toBeVisible()
+  })
 
   it('normalizes the inbox query parameter', () => {
     expect(normalizeMailSearch({ q: '  AuroraLedger  ' })).toEqual({ q: 'AuroraLedger' })
