@@ -16,6 +16,7 @@ import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as PublicForgotPasswordRouteImport } from './routes/_public/forgot-password'
 import { Route as PublicLoginRouteImport } from './routes/_public/login'
 import { Route as PublicResetPasswordRouteImport } from './routes/_public/reset-password'
+import { Route as ApiWorkspaceContextRouteImport } from './routes/api/workspace-context'
 import { Route as AuthenticatedMailDraftsRouteImport } from './routes/_authenticated/_mail/drafts'
 import { Route as AuthenticatedMailInboxRouteImport } from './routes/_authenticated/_mail/inbox'
 import { Route as AuthenticatedMailSentRouteImport } from './routes/_authenticated/_mail/sent'
@@ -24,6 +25,7 @@ import { Route as AuthenticatedMailStarredRouteImport } from './routes/_authenti
 import { Route as AuthenticatedMailTrashRouteImport } from './routes/_authenticated/_mail/trash'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiMailMessagesRouteImport } from './routes/api/mail/messages'
+import { Route as ApiV1WorkspacesRouteImport } from './routes/api/v1/workspaces'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -56,6 +58,11 @@ const PublicResetPasswordRoute = PublicResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
   getParentRoute: () => PublicRouteRoute,
+} as any)
+const ApiWorkspaceContextRoute = ApiWorkspaceContextRouteImport.update({
+  id: '/api/workspace-context',
+  path: '/api/workspace-context',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedMailDraftsRoute = AuthenticatedMailDraftsRouteImport.update({
   id: '/drafts',
@@ -98,12 +105,18 @@ const ApiMailMessagesRoute = ApiMailMessagesRouteImport.update({
   path: '/api/mail/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1WorkspacesRoute = ApiV1WorkspacesRouteImport.update({
+  id: '/api/v1/workspaces',
+  path: '/api/v1/workspaces',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
   '/forgot-password': typeof PublicForgotPasswordRoute
   '/login': typeof PublicLoginRoute
   '/reset-password': typeof PublicResetPasswordRoute
+  '/api/workspace-context': typeof ApiWorkspaceContextRoute
   '/drafts': typeof AuthenticatedMailDraftsRoute
   '/inbox': typeof AuthenticatedMailInboxRoute
   '/sent': typeof AuthenticatedMailSentRoute
@@ -112,12 +125,14 @@ export interface FileRoutesByFullPath {
   '/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/mail/messages': typeof ApiMailMessagesRoute
+  '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
   '/forgot-password': typeof PublicForgotPasswordRoute
   '/login': typeof PublicLoginRoute
   '/reset-password': typeof PublicResetPasswordRoute
+  '/api/workspace-context': typeof ApiWorkspaceContextRoute
   '/drafts': typeof AuthenticatedMailDraftsRoute
   '/inbox': typeof AuthenticatedMailInboxRoute
   '/sent': typeof AuthenticatedMailSentRoute
@@ -126,6 +141,7 @@ export interface FileRoutesByTo {
   '/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/mail/messages': typeof ApiMailMessagesRoute
+  '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -135,6 +151,7 @@ export interface FileRoutesById {
   '/_public/forgot-password': typeof PublicForgotPasswordRoute
   '/_public/login': typeof PublicLoginRoute
   '/_public/reset-password': typeof PublicResetPasswordRoute
+  '/api/workspace-context': typeof ApiWorkspaceContextRoute
   '/_public/': typeof PublicIndexRoute
   '/_authenticated/_mail/drafts': typeof AuthenticatedMailDraftsRoute
   '/_authenticated/_mail/inbox': typeof AuthenticatedMailInboxRoute
@@ -144,6 +161,7 @@ export interface FileRoutesById {
   '/_authenticated/_mail/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/mail/messages': typeof ApiMailMessagesRoute
+  '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -152,6 +170,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/reset-password'
+    | '/api/workspace-context'
     | '/drafts'
     | '/inbox'
     | '/sent'
@@ -160,12 +179,14 @@ export interface FileRouteTypes {
     | '/trash'
     | '/api/auth/$'
     | '/api/mail/messages'
+    | '/api/v1/workspaces'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/forgot-password'
     | '/login'
     | '/reset-password'
+    | '/api/workspace-context'
     | '/drafts'
     | '/inbox'
     | '/sent'
@@ -174,6 +195,7 @@ export interface FileRouteTypes {
     | '/trash'
     | '/api/auth/$'
     | '/api/mail/messages'
+    | '/api/v1/workspaces'
   id:
     | '__root__'
     | '/_authenticated'
@@ -182,6 +204,7 @@ export interface FileRouteTypes {
     | '/_public/forgot-password'
     | '/_public/login'
     | '/_public/reset-password'
+    | '/api/workspace-context'
     | '/_public/'
     | '/_authenticated/_mail/drafts'
     | '/_authenticated/_mail/inbox'
@@ -191,13 +214,16 @@ export interface FileRouteTypes {
     | '/_authenticated/_mail/trash'
     | '/api/auth/$'
     | '/api/mail/messages'
+    | '/api/v1/workspaces'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   PublicRouteRoute: typeof PublicRouteRouteWithChildren
+  ApiWorkspaceContextRoute: typeof ApiWorkspaceContextRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiMailMessagesRoute: typeof ApiMailMessagesRoute
+  ApiV1WorkspacesRoute: typeof ApiV1WorkspacesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -250,6 +276,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/reset-password'
       preLoaderRoute: typeof PublicResetPasswordRouteImport
       parentRoute: typeof PublicRouteRoute
+    }
+    '/api/workspace-context': {
+      id: '/api/workspace-context'
+      path: '/api/workspace-context'
+      fullPath: '/api/workspace-context'
+      preLoaderRoute: typeof ApiWorkspaceContextRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/_mail/drafts': {
       id: '/_authenticated/_mail/drafts'
@@ -305,6 +338,13 @@ declare module '@tanstack/react-router' {
       path: '/api/mail/messages'
       fullPath: '/api/mail/messages'
       preLoaderRoute: typeof ApiMailMessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/workspaces': {
+      id: '/api/v1/workspaces'
+      path: '/api/v1/workspaces'
+      fullPath: '/api/v1/workspaces'
+      preLoaderRoute: typeof ApiV1WorkspacesRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -366,18 +406,11 @@ const PublicRouteRouteWithChildren = PublicRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   PublicRouteRoute: PublicRouteRouteWithChildren,
+  ApiWorkspaceContextRoute: ApiWorkspaceContextRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiMailMessagesRoute: ApiMailMessagesRoute,
+  ApiV1WorkspacesRoute: ApiV1WorkspacesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

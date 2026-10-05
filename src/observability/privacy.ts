@@ -3,7 +3,7 @@ import type { TransportItem } from '@grafana/faro-web-sdk'
 import { normalizeRoute } from './config'
 
 const blockedKeys =
-  /^(authorization|cookie|set-cookie|password|secret|token|accessToken|refreshToken|api[-_]?key|email|subject|recipient|recipients|prompt|content|body|payload|user|username|fullname|workspace[-_]?id|job[-_]?id|email[-_]?id|detail)$/i
+  /^(authorization|cookie|set-cookie|password|secret|token|accessToken|refreshToken|api[-_]?key|email|subject|recipient|recipients|prompt|content|body|payload|user|username|fullname|workspace[-_]?(id|slug|name)|tenant[-_]?(id|slug)|host(name)?|job[-_]?id|email[-_]?id|detail)$/i
 const emailPattern = /\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b/g
 const credentialPattern =
   /\b(?:authorization|cookie|set-cookie|password|secret|token|api[-_]?key)\s*[:=]\s*(?:Bearer\s+)?[^\s,;]+/gi
@@ -77,6 +77,10 @@ function stripUrlDetails(value: string): string {
     const url = new URL(value, 'https://mailflow.invalid')
     url.search = ''
     url.hash = ''
+    const workspaceZone = import.meta.env.VITE_WORKSPACE_BASE_HOST
+    if (workspaceZone && url.hostname.endsWith(`.${workspaceZone}`)) {
+      url.hostname = workspaceZone
+    }
     const pathname = /^\/assets\/[A-Za-z0-9._-]+\.(?:js|css)$/.test(url.pathname)
       ? url.pathname
       : normalizeRoute(url.pathname)

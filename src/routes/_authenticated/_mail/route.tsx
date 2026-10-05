@@ -3,6 +3,7 @@ import { createFileRoute, getRouteApi, Outlet, useRouterState } from '@tanstack/
 import { LogoutMenuItem } from '#/features/auth/LogoutMenuItem'
 import { MailboxSearch } from '#/features/mail-list/components/MailboxSearch'
 import { normalizeMailSearch } from '#/features/mail-list/types/mailSearch'
+import { WorkspaceBoundary } from '#/features/workspaces/components/WorkspaceBoundary'
 import { AppShell } from '@/features/app-shell'
 import { EmailComposer } from '@/features/email-composer'
 
@@ -34,7 +35,9 @@ function MailLayout() {
             </AppShell.Header.Mailbox>
           </AppShell.Header>
           <AppShell.Content>
-            <Outlet />
+            <WorkspaceBoundary>
+              <Outlet />
+            </WorkspaceBoundary>
           </AppShell.Content>
         </AppShell.Main>
       </AppShell.Root>
