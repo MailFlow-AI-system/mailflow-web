@@ -1,9 +1,27 @@
 import type { TransportItem } from '@grafana/faro-web-sdk'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { sanitizeTelemetryItem } from './privacy'
 
 describe('sanitizeTelemetryItem', () => {
+  afterEach(() => vi.unstubAllEnvs())
+  it('redacts tenant hostnames and workspace identity from browser telemetry', () => {
+    vi.stubEnv('VITE_WORKSPACE_BASE_HOST', 'workspace.test')
+    const item = sanitizeTelemetryItem({
+      type: 'event',
+      payload: {
+        name: 'mailflow.navigation',
+        attributes: {
+          workspaceId: 'private-id',
+          workspaceSlug: 'private-acme',
+          hostname: 'private-acme.workspace.test',
+        },
+      },
+      meta: { page: { url: 'https://private-acme.workspace.test/inbox?token=secret' } },
+    } as unknown as TransportItem)
+    expect(item?.meta).toEqual({ page: { url: 'https://workspace.test/inbox' } })
+    expect(JSON.stringify(item)).not.toMatch(/private-acme|private-id|secret/)
+  })
   it('removes reset tokens from page URLs before transport', () => {
     const item = sanitizeTelemetryItem({
       type: 'view',
