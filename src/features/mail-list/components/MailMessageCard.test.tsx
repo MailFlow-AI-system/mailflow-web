@@ -21,7 +21,7 @@ describe('MailMessageCard', () => {
       </ul>,
     )
 
-    expect(screen.getByText('AL')).toBeInTheDocument()
+    expect(screen.getByText('AL').closest('[aria-hidden="true"]')).toBeInTheDocument()
     expect(screen.getByText('Ada Lovelace')).toBeInTheDocument()
     expect(screen.getByText('Analytical Engine')).toBeInTheDocument()
     expect(screen.getByText('<img src=x onerror=alert(1)> A long plain-text body')).toHaveClass(
@@ -30,5 +30,24 @@ describe('MailMessageCard', () => {
     expect(document.querySelector('img')).toBeNull()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
     expect(screen.queryByText(/2026|favorite|star/i)).not.toBeInTheDocument()
+  })
+
+  it('keeps the fallback sender marker decorative for an empty sender name', () => {
+    render(
+      <ul>
+        <MailMessageCard
+          message={{
+            id: 'message-2',
+            senderName: '  ',
+            subject: 'Unknown sender',
+            body: 'Message preview',
+            receivedAt: '2026-10-01T12:00:00.000Z',
+          }}
+        />
+      </ul>,
+    )
+
+    expect(screen.getByText('?').closest('[aria-hidden="true"]')).toBeInTheDocument()
+    expect(screen.queryByRole('img')).not.toBeInTheDocument()
   })
 })
