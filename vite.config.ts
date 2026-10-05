@@ -13,6 +13,11 @@ const config = defineConfig(({ command }) => {
   }
 
   return {
+    server: {
+      allowedHosts: process.env.VITE_WORKSPACE_BASE_HOST
+        ? [`.${process.env.VITE_WORKSPACE_BASE_HOST}`]
+        : [],
+    },
     envDir: false,
     resolve: { tsconfigPaths: true },
     ssr: { noExternal: ['@mailflow/ui'] },

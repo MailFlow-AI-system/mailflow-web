@@ -1,75 +1,8 @@
-import {
-  Avatar,
-  AvatarFallback,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from '@mailflow/ui/components'
-import { ChevronUp } from '@mailflow/ui/icons'
-import { useState } from 'react'
-
-import type { WorkspaceLabelProps, WorkspaceMarkProps } from '../types'
-
-const workspaces = [
-  { value: 'acme', initials: 'AC', name: 'Acme Corp' },
-  { value: 'northwind', initials: 'NW', name: 'Northwind' },
-  { value: 'globex', initials: 'GX', name: 'Globex' },
-]
-
-function WorkspaceMark({ initials }: WorkspaceMarkProps) {
-  return (
-    <Avatar aria-hidden="true" className="size-6">
-      <AvatarFallback className="bg-primary/15 text-[color:color-mix(in_oklch,var(--primary)_90%,black)] text-[10px] font-medium leading-none dark:text-primary">
-        {initials}
-      </AvatarFallback>
-    </Avatar>
-  )
-}
-
-function WorkspaceLabel({ name }: WorkspaceLabelProps) {
-  return (
-    <span className="min-w-0">
-      <span className="block truncate text-xs font-semibold leading-4">{name}</span>
-      <span className="block truncate text-[10px] leading-4 text-muted-foreground">Workspace</span>
-    </span>
-  )
-}
+import { WorkspaceSelector } from '#/features/workspaces/components/WorkspaceSelector'
+import { useWorkspaceContext } from '#/features/workspaces/hooks/useWorkspaceContext'
 
 export function WorkspaceSwitcher() {
-  const [value, setValue] = useState(workspaces[0].value)
-  const selected = workspaces.find((workspace) => workspace.value === value) ?? workspaces[0]
-
-  return (
-    <div className="group-data-[collapsible=icon]:hidden">
-      <Select
-        value={value}
-        onValueChange={(next) => {
-          if (next) setValue(next)
-        }}
-      >
-        <SelectTrigger
-          aria-label={`Workspace: ${selected.name}`}
-          className="h-auto w-full cursor-pointer gap-2 rounded-md border-0 bg-transparent px-2 py-1 text-sidebar-foreground shadow-none hover:bg-accent focus-visible:ring-sidebar-ring data-[popup-open]:bg-accent"
-          icon={<ChevronUp aria-hidden="true" className="size-4 text-muted-foreground" />}
-        >
-          <span className="flex min-w-0 flex-1 items-center gap-2">
-            <WorkspaceMark initials={selected.initials} />
-            <WorkspaceLabel name={selected.name} />
-          </span>
-        </SelectTrigger>
-        <SelectContent
-          align="start"
-          className="bg-sidebar text-sidebar-foreground ring-sidebar-border"
-        >
-          {workspaces.map((workspace) => (
-            <SelectItem key={workspace.value} value={workspace.value}>
-              <WorkspaceMark initials={workspace.initials} />
-              <WorkspaceLabel name={workspace.name} />
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  )
+  const state = useWorkspaceContext()
+  if (!state) return null
+  return <WorkspaceSelector state={state} />
 }
