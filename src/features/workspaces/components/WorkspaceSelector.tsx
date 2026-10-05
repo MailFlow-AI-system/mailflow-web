@@ -3,7 +3,12 @@ import { ChevronUp } from '@mailflow/ui/icons'
 import type { WorkspaceSwitcherProps } from '../types'
 import { workspaceInitials } from '../utils/workspaceHost'
 
-export function WorkspaceSelector({ state }: WorkspaceSwitcherProps) {
+export function WorkspaceSelector({
+  state,
+  onSelect,
+  busy = false,
+  selectionError,
+}: WorkspaceSwitcherProps) {
   const label =
     state.status === 'loading'
       ? 'Loading workspace…'
@@ -17,7 +22,12 @@ export function WorkspaceSelector({ state }: WorkspaceSwitcherProps) {
   const initials = state.current ? workspaceInitials(state.current.name) : '—'
   return (
     <div className="min-w-0">
-      <Select value={state.current?.id ?? null} readOnly disabled={state.status !== 'ready'}>
+      <Select
+        value={state.current?.id ?? null}
+        readOnly={!onSelect}
+        onValueChange={onSelect}
+        disabled={state.status !== 'ready' || busy}
+      >
         <SelectTrigger
           aria-label={`Workspace: ${label}`}
           title={label}
@@ -60,6 +70,12 @@ export function WorkspaceSelector({ state }: WorkspaceSwitcherProps) {
         </SelectContent>
       </Select>
       <div aria-live="polite" className="text-xs text-muted-foreground">
+        {busy && <p className="px-2 py-1">Changing workspace…</p>}
+        {selectionError && (
+          <p role="alert" className="px-2 py-1 text-destructive">
+            {selectionError}
+          </p>
+        )}
         {state.status === 'error' && (
           <Button size="sm" variant="ghost" className="w-full cursor-pointer" onClick={state.retry}>
             Try again

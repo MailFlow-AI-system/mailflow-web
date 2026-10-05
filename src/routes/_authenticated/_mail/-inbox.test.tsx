@@ -3,8 +3,16 @@ import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const routerState = vi.hoisted(() => ({
+  baseHost: undefined as string | undefined,
   committedQ: 'invoice' as string | undefined,
   queryQ: 'invoice' as string | undefined,
+}))
+vi.mock('#/config/env', () => ({
+  clientEnvironment: {
+    get VITE_WORKSPACE_BASE_HOST() {
+      return routerState.baseHost
+    },
+  },
 }))
 
 vi.mock('@tanstack/react-router', () => ({
@@ -35,7 +43,19 @@ const InboxPage = Route.options.component
 if (!InboxPage) throw new Error('Inbox route has no component')
 
 describe('Inbox route', () => {
-  afterEach(cleanup)
+  afterEach(() => {
+    cleanup()
+    routerState.baseHost = undefined
+  })
+
+  it('does not mount the global list in workspace mode', () => {
+    routerState.baseHost = 'workspace.test'
+    render(<InboxPage />)
+    expect(
+      screen.getByRole('heading', { name: 'Workspace mail is not available yet' }),
+    ).toBeVisible()
+    expect(screen.queryByTestId('mail-list')).toBeNull()
+  })
 
   it('shows the Inbox heading and sets the document title', () => {
     routerState.committedQ = 'invoice'

@@ -2,7 +2,11 @@ import { filterBetterAuthCookies } from '#/features/auth/adapters/authCookies'
 
 const allowedRequestHeaders = new Set(['accept', 'traceparent', 'tracestate'])
 
-export function createMailMessagesProxyHandler(apiBaseUrl: string, fetcher: typeof fetch = fetch) {
+export function createMailMessagesProxyHandler(
+  apiBaseUrl: string,
+  fetcher: typeof fetch = fetch,
+  workspaceMode = false,
+) {
   return async function proxyMailMessages(request: Request): Promise<Response> {
     const incomingUrl = new URL(request.url)
     if (request.method !== 'GET' || incomingUrl.pathname !== '/api/mail/messages') {
@@ -10,6 +14,13 @@ export function createMailMessagesProxyHandler(apiBaseUrl: string, fetcher: type
         status: 404,
         headers: { 'Cache-Control': 'private, no-store' },
       })
+    }
+
+    if (workspaceMode) {
+      return Response.json(
+        { code: 'workspace_mail_unavailable', message: 'Workspace mail is not available yet.' },
+        { status: 503, headers: { 'Cache-Control': 'private, no-store' } },
+      )
     }
 
     const upstreamUrl = new URL('/api/v1/mail/messages', apiBaseUrl)
