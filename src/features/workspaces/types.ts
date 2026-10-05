@@ -19,7 +19,12 @@ export type WorkspaceState = {
 }
 export type WorkspaceProviderProps = { userId: string; children: ReactNode }
 export type WorkspaceBoundaryProps = { children: ReactNode }
-export type WorkspaceSwitcherProps = { state: WorkspaceState }
+export type WorkspaceSwitcherProps = {
+  state: WorkspaceState
+  onSelect?: (workspaceId: string | null) => void
+  busy?: boolean
+  selectionError?: string | null
+}
 export type WorkspaceHost =
   | { kind: 'generic' }
   | { kind: 'workspace'; slug: string }

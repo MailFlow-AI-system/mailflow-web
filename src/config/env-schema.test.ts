@@ -3,6 +3,26 @@ import { describe, expect, it } from 'vitest'
 import { createClientEnvironment } from './env-schema'
 
 describe('createClientEnvironment', () => {
+  it('keeps switching dark by default and only enables it in the isolated test zone', () => {
+    expect(
+      createClientEnvironment({ VITE_API_BASE_URL: 'http://localhost:8080' })
+        .VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED,
+    ).toBe(false)
+    expect(
+      createClientEnvironment({
+        VITE_API_BASE_URL: 'http://localhost:8080',
+        VITE_WORKSPACE_BASE_HOST: 'workspace.test',
+        VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED: 'true',
+      }).VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED,
+    ).toBe(true)
+    expect(() =>
+      createClientEnvironment({
+        VITE_API_BASE_URL: 'http://localhost:8080',
+        VITE_WORKSPACE_BASE_HOST: 'production.example',
+        VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED: 'true',
+      }),
+    ).toThrow('isolated')
+  })
   it.each([
     'https://workspace.test',
     '*.workspace.test',

@@ -1,9 +1,27 @@
-import { workspaceContextSchema, workspacePageSchema } from '../schemas'
+import {
+  workspaceContextSchema,
+  workspacePageSchema,
+  workspaceSelectionResultSchema,
+} from '../schemas'
 
 async function read(path: string, signal: AbortSignal) {
   const response = await fetch(path, { credentials: 'same-origin', cache: 'no-store', signal })
   if (!response.ok) throw new Error('Workspace request failed')
   return response.json()
+}
+export async function selectWorkspace(workspaceId: string, signal: AbortSignal) {
+  const response = await fetch('/api/v1/workspace-selection', {
+    method: 'POST',
+    credentials: 'same-origin',
+    cache: 'no-store',
+    signal,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ workspaceId }),
+  })
+  if (!response.ok) throw new Error('Workspace selection failed')
+  const result = workspaceSelectionResultSchema.parse(await response.json())
+  if (result.workspace.id !== workspaceId) throw new Error('Workspace selection failed')
+  return result.workspace
 }
 
 export async function readWorkspaceContext(signal: AbortSignal) {

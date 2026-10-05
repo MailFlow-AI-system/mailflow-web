@@ -17,5 +17,6 @@ coverage
 playwright-report
 test-results
 workspace-test-results
+workspace-switching-test-results
 graphify-out/
 .codex/hooks.json
