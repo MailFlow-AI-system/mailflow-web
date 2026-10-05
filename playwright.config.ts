@@ -4,6 +4,8 @@ const origin = `http://127.0.0.1:${process.env.E2E_PORT ?? '3000'}`
 
 export default defineConfig({
   testDir: './e2e',
+  // This suite uses an auth double. Workspace acceptance has a separate real-Core harness.
+  testIgnore: '**/workspaces/**',
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
