@@ -74,4 +74,22 @@ describe('auth route guards', () => {
     }
     expect(redirect).not.toHaveBeenCalled()
   })
+  it('preserves only a collection and clears inherited fragments when workspace login is required', async () => {
+    getCurrentSession.mockResolvedValue(null)
+    await expect(
+      requireAuthenticatedUser({ location: { pathname: '/sent' }, clearFragment: true }),
+    ).rejects.toEqual({
+      isRedirect: true,
+      options: { href: '/login?returnTo=%2Fsent#', replace: true, reloadDocument: true },
+    })
+    await expect(
+      requireAuthenticatedUser({ location: { pathname: '//attacker.test' }, clearFragment: true }),
+    ).rejects.toMatchObject({ options: { href: '/login#' } })
+  })
+  it('continues an already authenticated login only to the validated collection', async () => {
+    getCurrentSession.mockResolvedValue(user)
+    await expect(
+      redirectAuthenticatedLogin({ search: { returnTo: '/drafts' } }),
+    ).rejects.toMatchObject({ options: { to: '/drafts', replace: true } })
+  })
 })
