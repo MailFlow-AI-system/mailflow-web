@@ -43,7 +43,7 @@ Browser smoke tests use test-only values and install Chromium with
 
 TanStack Query owns server state; Nuqs owns query parameters, using shared
 parsers and the root TanStack Router adapter. React state handles local UI.
-Use Tailwind and shared `@mailflow/ui` components and tokens, currently `v0.6.0`.
+Use Tailwind and shared `@mailflow/ui` components and tokens, currently `v0.7.0`.
 The Nuqs adapter is experimental: verify SSR, hydration, and navigation on upgrades.
 
 Server adapters forward requests to Core and must not access the database or
