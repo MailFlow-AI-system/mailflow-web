@@ -1,19 +1,47 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router'
-
+import { createFileRoute, Outlet, redirect, useRouter } from '@tanstack/react-router'
+import { clientEnvironment } from '#/config/env'
+import { LogoutButton } from '#/features/auth/components/LogoutButton'
 import { requireAuthenticatedUser } from '#/features/auth/routeGuards'
+import { workspaceLoginDestination } from '#/features/auth/utils/authNavigation'
+import { getWorkspaceEntryBootstrap } from '#/features/workspaces/adapters/getWorkspaceEntryBootstrap'
+import { WorkspaceEntryBoundary } from '#/features/workspaces/components/WorkspaceEntryBoundary'
 import { WorkspaceProvider } from '#/features/workspaces/components/WorkspaceProvider'
 
 export const Route = createFileRoute('/_authenticated')({
   headers: () => ({ 'Cache-Control': 'private, no-store' }),
-  beforeLoad: requireAuthenticatedUser,
+  beforeLoad: async ({ location }) => {
+    const { user } = await requireAuthenticatedUser({
+      location,
+      clearFragment: clientEnvironment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED,
+    })
+    const entry = await getWorkspaceEntryBootstrap({ data: { pathname: location.pathname } })
+    if (entry.kind === 'redirect')
+      throw redirect({ href: entry.href, reloadDocument: true, replace: true })
+    if (entry.kind === 'unauthenticated')
+      throw redirect({
+        href: workspaceLoginDestination(location.pathname),
+        replace: true,
+        reloadDocument: true,
+      })
+    return { user, workspaceEntryKind: entry.kind }
+  },
   component: AuthenticatedLayout,
 })
 
 function AuthenticatedLayout() {
-  const { user } = Route.useRouteContext()
+  const { user, workspaceEntryKind } = Route.useRouteContext()
+  const router = useRouter()
   return (
-    <WorkspaceProvider key={user.id} userId={user.id}>
-      <Outlet />
-    </WorkspaceProvider>
+    <WorkspaceEntryBoundary
+      kind={workspaceEntryKind}
+      accountAction={<LogoutButton />}
+      retry={() => {
+        void router.invalidate()
+      }}
+    >
+      <WorkspaceProvider key={user.id} userId={user.id}>
+        <Outlet />
+      </WorkspaceProvider>
+    </WorkspaceEntryBoundary>
   )
 }

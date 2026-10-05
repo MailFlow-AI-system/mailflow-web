@@ -25,6 +25,7 @@ import { Route as AuthenticatedMailStarredRouteImport } from './routes/_authenti
 import { Route as AuthenticatedMailTrashRouteImport } from './routes/_authenticated/_mail/trash'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiMailMessagesRouteImport } from './routes/api/mail/messages'
+import { Route as ApiV1WorkspaceEntryRouteImport } from './routes/api/v1/workspace-entry'
 import { Route as ApiV1WorkspaceSelectionRouteImport } from './routes/api/v1/workspace-selection'
 import { Route as ApiV1WorkspacesRouteImport } from './routes/api/v1/workspaces'
 
@@ -106,6 +107,11 @@ const ApiMailMessagesRoute = ApiMailMessagesRouteImport.update({
   path: '/api/mail/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1WorkspaceEntryRoute = ApiV1WorkspaceEntryRouteImport.update({
+  id: '/api/v1/workspace-entry',
+  path: '/api/v1/workspace-entry',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1WorkspaceSelectionRoute = ApiV1WorkspaceSelectionRouteImport.update({
   id: '/api/v1/workspace-selection',
   path: '/api/v1/workspace-selection',
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/mail/messages': typeof ApiMailMessagesRoute
+  '/api/v1/workspace-entry': typeof ApiV1WorkspaceEntryRoute
   '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
 }
@@ -148,6 +155,7 @@ export interface FileRoutesByTo {
   '/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/mail/messages': typeof ApiMailMessagesRoute
+  '/api/v1/workspace-entry': typeof ApiV1WorkspaceEntryRoute
   '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
 }
@@ -169,6 +177,7 @@ export interface FileRoutesById {
   '/_authenticated/_mail/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/mail/messages': typeof ApiMailMessagesRoute
+  '/api/v1/workspace-entry': typeof ApiV1WorkspaceEntryRoute
   '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
 }
@@ -188,6 +197,7 @@ export interface FileRouteTypes {
     | '/trash'
     | '/api/auth/$'
     | '/api/mail/messages'
+    | '/api/v1/workspace-entry'
     | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
   fileRoutesByTo: FileRoutesByTo
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/trash'
     | '/api/auth/$'
     | '/api/mail/messages'
+    | '/api/v1/workspace-entry'
     | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
   id:
@@ -225,6 +236,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_mail/trash'
     | '/api/auth/$'
     | '/api/mail/messages'
+    | '/api/v1/workspace-entry'
     | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
   fileRoutesById: FileRoutesById
@@ -235,6 +247,7 @@ export interface RootRouteChildren {
   ApiWorkspaceContextRoute: typeof ApiWorkspaceContextRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiMailMessagesRoute: typeof ApiMailMessagesRoute
+  ApiV1WorkspaceEntryRoute: typeof ApiV1WorkspaceEntryRoute
   ApiV1WorkspaceSelectionRoute: typeof ApiV1WorkspaceSelectionRoute
   ApiV1WorkspacesRoute: typeof ApiV1WorkspacesRoute
 }
@@ -353,6 +366,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMailMessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/workspace-entry': {
+      id: '/api/v1/workspace-entry'
+      path: '/api/v1/workspace-entry'
+      fullPath: '/api/v1/workspace-entry'
+      preLoaderRoute: typeof ApiV1WorkspaceEntryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/workspace-selection': {
       id: '/api/v1/workspace-selection'
       path: '/api/v1/workspace-selection'
@@ -429,6 +449,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWorkspaceContextRoute: ApiWorkspaceContextRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiMailMessagesRoute: ApiMailMessagesRoute,
+  ApiV1WorkspaceEntryRoute: ApiV1WorkspaceEntryRoute,
   ApiV1WorkspaceSelectionRoute: ApiV1WorkspaceSelectionRoute,
   ApiV1WorkspacesRoute: ApiV1WorkspacesRoute,
 }

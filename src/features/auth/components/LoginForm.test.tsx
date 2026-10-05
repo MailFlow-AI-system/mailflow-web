@@ -1,12 +1,18 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { signIn, invalidate, navigate, recordAuthTransportFailure } = vi.hoisted(() => ({
-  signIn: vi.fn(),
-  invalidate: vi.fn(async () => {}),
-  navigate: vi.fn(async () => {}),
-  recordAuthTransportFailure: vi.fn(),
-}))
+const { signIn, invalidate, navigate, recordAuthTransportFailure, clear, cancelQueries } =
+  vi.hoisted(() => ({
+    signIn: vi.fn(),
+    invalidate: vi.fn(async () => {}),
+    navigate: vi.fn(async () => {}),
+    recordAuthTransportFailure: vi.fn(),
+    clear: vi.fn(),
+    cancelQueries: vi.fn(async () => {}),
+  }))
+vi.mock('@tanstack/react-query', () => ({ useQueryClient: () => ({ clear, cancelQueries }) }))
+const environment = vi.hoisted(() => ({ VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED: false }))
+vi.mock('#/config/env', () => ({ clientEnvironment: environment }))
 
 vi.mock('../clients/authClient', () => ({ authClient: { signIn: { email: signIn } } }))
 vi.mock('../../../observability/faro', () => ({ recordAuthTransportFailure }))
@@ -21,12 +27,15 @@ import { LoginForm } from './LoginForm'
 describe('LoginForm', () => {
   afterEach(cleanup)
   beforeEach(() => {
+    environment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED = false
     signIn.mockReset()
     invalidate.mockReset()
     invalidate.mockImplementation(async () => {})
     navigate.mockReset()
     navigate.mockImplementation(async () => {})
     recordAuthTransportFailure.mockReset()
+    clear.mockClear()
+    cancelQueries.mockClear()
   })
 
   it('validates fields before contacting Core', async () => {
@@ -82,6 +91,8 @@ describe('LoginForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
     await waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: '/inbox' }))
     expect(invalidate).toHaveBeenCalledOnce()
+    expect(cancelQueries).toHaveBeenCalledOnce()
+    expect(clear).toHaveBeenCalledOnce()
   })
 
   it('reveals and hides the password when the visibility toggle is clicked', () => {
@@ -96,6 +107,32 @@ describe('LoginForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Hide password' }))
     expect(password).toHaveAttribute('type', 'password')
     expect(screen.getByRole('button', { name: 'Show password' })).toBeVisible()
+  })
+  it('clears identity data before resuming a safe collection', async () => {
+    signIn.mockResolvedValue({ data: { user: { id: 'next-identity' } } })
+    render(<LoginForm returnTo="/sent" />)
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'other@example.test' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: '/sent' }))
+    expect(clear.mock.invocationCallOrder[0]).toBeLessThan(invalidate.mock.invocationCallOrder[0])
+  })
+  it('uses a single full-document navigation for workspace login without competing route invalidation', async () => {
+    environment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED = true
+    signIn.mockResolvedValue({ data: { user: { id: 'next-identity' } } })
+    render(<LoginForm returnTo="/sent" />)
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'other@example.test' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    await waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith({
+        href: '/sent#',
+        replace: true,
+        reloadDocument: true,
+      }),
+    )
+    expect(invalidate).not.toHaveBeenCalled()
+    expect(clear.mock.invocationCallOrder[0]).toBeLessThan(navigate.mock.invocationCallOrder[0])
   })
 
   it('reports an auth transport failure without recording credentials or errors', async () => {

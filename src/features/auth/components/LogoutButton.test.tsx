@@ -1,15 +1,26 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { signOut, invalidate, navigate, recordAuthTransportFailure, toastError } = vi.hoisted(
-  () => ({
-    signOut: vi.fn(),
-    invalidate: vi.fn(async () => {}),
-    navigate: vi.fn(async () => {}),
-    recordAuthTransportFailure: vi.fn(),
-    toastError: vi.fn(),
-  }),
-)
+const {
+  signOut,
+  invalidate,
+  navigate,
+  recordAuthTransportFailure,
+  toastError,
+  clear,
+  cancelQueries,
+} = vi.hoisted(() => ({
+  signOut: vi.fn(),
+  invalidate: vi.fn(async () => {}),
+  navigate: vi.fn(async () => {}),
+  recordAuthTransportFailure: vi.fn(),
+  toastError: vi.fn(),
+  clear: vi.fn(),
+  cancelQueries: vi.fn(async () => {}),
+}))
+vi.mock('@tanstack/react-query', () => ({ useQueryClient: () => ({ clear, cancelQueries }) }))
+const environment = vi.hoisted(() => ({ VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED: false }))
+vi.mock('#/config/env', () => ({ clientEnvironment: environment }))
 
 vi.mock('@mailflow/ui/components', async (importOriginal) => {
   const original = await importOriginal<typeof import('@mailflow/ui/components')>()
@@ -27,6 +38,7 @@ import { LogoutButton } from './LogoutButton'
 describe('LogoutButton', () => {
   afterEach(cleanup)
   beforeEach(() => {
+    environment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED = false
     signOut.mockReset()
     invalidate.mockReset()
     invalidate.mockImplementation(async () => {})
@@ -34,6 +46,8 @@ describe('LogoutButton', () => {
     navigate.mockImplementation(async () => {})
     recordAuthTransportFailure.mockReset()
     toastError.mockReset()
+    clear.mockClear()
+    cancelQueries.mockClear()
   })
 
   it('revokes the session before redirecting to login', async () => {
@@ -43,6 +57,8 @@ describe('LogoutButton', () => {
     await waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: '/login' }))
     expect(signOut).toHaveBeenCalledOnce()
     expect(invalidate).toHaveBeenCalledOnce()
+    expect(cancelQueries).toHaveBeenCalledOnce()
+    expect(clear).toHaveBeenCalledOnce()
     expect(toastError).not.toHaveBeenCalled()
   })
 
@@ -54,7 +70,25 @@ describe('LogoutButton', () => {
       expect(toastError).toHaveBeenCalledWith('Unable to sign out. Please try again.'),
     )
     expect(navigate).not.toHaveBeenCalled()
+    expect(clear).not.toHaveBeenCalled()
     expect(recordAuthTransportFailure).not.toHaveBeenCalled()
+  })
+  it('starts a fresh document in workspace mode without concurrent route invalidation', async () => {
+    environment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED = true
+    signOut.mockResolvedValue({ data: { success: true } })
+    render(<LogoutButton />)
+    fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
+    await waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith({
+        href: '/login#',
+        replace: true,
+        reloadDocument: true,
+      }),
+    )
+    expect(cancelQueries).toHaveBeenCalledOnce()
+    expect(clear).toHaveBeenCalledOnce()
+    expect(invalidate).not.toHaveBeenCalled()
+    expect(clear.mock.invocationCallOrder[0]).toBeLessThan(navigate.mock.invocationCallOrder[0])
   })
 
   it('reports a proxy upstream outage but not a Core HTTP failure', async () => {

@@ -1,12 +1,15 @@
 import { toast } from '@mailflow/ui/components'
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useRouter } from '@tanstack/react-router'
 import { useState } from 'react'
+import { clientEnvironment } from '#/config/env'
 
 import { recordAuthTransportFailure } from '../../../observability/faro'
 import { AUTH_UPSTREAM_UNAVAILABLE } from '../authErrorCodes'
 import { authClient } from '../clients/authClient'
 
 export function useLogout() {
+  const queryClient = useQueryClient()
   const navigate = useNavigate()
   const router = useRouter()
   const [pending, setPending] = useState(false)
@@ -23,6 +26,12 @@ export function useLogout() {
           recordAuthTransportFailure('sign_out', performance.now() - authStartedAt)
         }
         toast.error('Unable to sign out. Please try again.')
+        return
+      }
+      await queryClient.cancelQueries()
+      queryClient.clear()
+      if (clientEnvironment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED) {
+        await navigate({ href: '/login#', replace: true, reloadDocument: true })
         return
       }
       await router.invalidate()
