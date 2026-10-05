@@ -1,19 +1,24 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button, Input } from '@mailflow/ui/components'
+import { useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouter } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
+import { clientEnvironment } from '#/config/env'
 
 import { recordAuthTransportFailure } from '../../../observability/faro'
 import { AUTH_UPSTREAM_UNAVAILABLE } from '../authErrorCodes'
 import { authClient } from '../clients/authClient'
 import { loginSchema } from '../schemas/loginSchema'
+import type { LoginFormProps } from '../types/AuthNavigation'
 import type { LoginValues } from '../types/LoginValues'
+import { safeMailCollectionPath } from '../utils/authNavigation'
 import { PasswordInput } from './PasswordInput'
 
 const INVALID_CREDENTIALS_MESSAGE = 'Email or password is incorrect.'
 const SIGN_IN_ERROR_MESSAGE = 'Unable to sign in. Please try again.'
 
-export function LoginForm() {
+export function LoginForm({ returnTo }: LoginFormProps = {}) {
+  const queryClient = useQueryClient()
   const navigate = useNavigate()
   const router = useRouter()
   const {
@@ -41,8 +46,18 @@ export function LoginForm() {
             : SIGN_IN_ERROR_MESSAGE,
         )
       }
+      await queryClient.cancelQueries()
+      queryClient.clear()
+      if (clientEnvironment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED) {
+        await navigate({
+          href: `${safeMailCollectionPath(returnTo)}#`,
+          replace: true,
+          reloadDocument: true,
+        })
+        return
+      }
       await router.invalidate()
-      await navigate({ to: '/inbox' })
+      await navigate({ to: safeMailCollectionPath(returnTo) })
     } catch (error) {
       if (!authRequestReturned && error instanceof TypeError) {
         recordAuthTransportFailure('sign_in', performance.now() - authStartedAt)

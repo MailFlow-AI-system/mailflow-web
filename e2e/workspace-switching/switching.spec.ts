@@ -1,35 +1,11 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import type { SwitchingFixture } from './types'
+import { control, fixture, login } from './fixture'
 
-async function fixture(): Promise<SwitchingFixture> {
-  return (await fetch('http://127.0.0.1:8083/__fixture')).json()
-}
-async function control(action: string) {
-  const data = await fixture()
-  const response = await fetch('http://127.0.0.1:8083/__fixture/control', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-fixture-control': data.controlKey },
-    body: JSON.stringify({ action }),
-  })
-  expect(response.ok).toBe(true)
-}
 test.beforeEach(async ({ page }) => {
   await control('reset')
   const data = await fixture()
-  await page.goto(`http://${data.host}:3003/login`)
-  // Verify hydration before submitting the real login form.
-  const password = page.getByLabel('Password', { exact: true })
-  await expect
-    .poll(async () => {
-      if ((await password.getAttribute('type')) === 'password')
-        await page.getByRole('button', { name: 'Show password', exact: true }).click()
-      return password.getAttribute('type')
-    })
-    .toBe('text')
-  await page.getByLabel('Email', { exact: true }).fill(data.email)
-  await password.fill(data.password)
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click()
+  await login(page, `http://${data.host}:3003/login`)
   await expect(page.getByRole('combobox', { name: 'Workspace: Acme Corp' })).toBeVisible({
     timeout: 15000,
   })
