@@ -6,6 +6,20 @@ const webOrigin = 'https://mail.example.test'
 const apiOrigin = 'https://api.example.test'
 
 describe('createMailMessagesProxyHandler', () => {
+  it('blocks direct BFF listing in workspace mode without contacting Core', async () => {
+    const fetcher = vi.fn(async () => Response.json({ items: [], nextCursor: null }))
+    const proxy = createMailMessagesProxyHandler(apiOrigin, fetcher, true)
+    const response = await proxy(
+      new Request(`${webOrigin}/api/mail/messages?q=invoice`, {
+        headers: { Cookie: 'better-auth.session_token=opaque' },
+      }),
+    )
+    expect(response.status).toBe(503)
+    expect(await response.json()).toMatchObject({ code: 'workspace_mail_unavailable' })
+    expect(response.headers.get('cache-control')).toBe('private, no-store')
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
   it('forwards only the fixed messages path, normalized query, auth cookies, and trace context', async () => {
     let upstreamUrl: URL | undefined
     let upstreamInit: RequestInit | undefined

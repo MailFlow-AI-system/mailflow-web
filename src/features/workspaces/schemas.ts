@@ -14,3 +14,7 @@ export const workspacePageSchema = z.object({
   nextCursor: z.string().nullable(),
 })
 export const workspaceContextSchema = z.object({ workspace: workspaceSchema.nullable() })
+export const workspaceSelectionSchema = z
+  .object({ workspaceId: z.string().min(1).max(128) })
+  .strict()
+export const workspaceSelectionResultSchema = z.object({ workspace: workspaceSchema }).strict()

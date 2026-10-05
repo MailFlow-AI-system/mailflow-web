@@ -41,6 +41,9 @@ export type ComposerContextValue = {
   confirm: boolean
   setConfirm: (value: boolean) => void
   discard: () => void
+  hasLocalDraft: () => boolean
+  navigationPending: boolean
+  setNavigationPending: (pending: boolean) => void
   state: WindowState
   theme: 'dark' | 'light'
   triggerRef: RefObject<HTMLButtonElement | null>
@@ -65,3 +68,7 @@ export type ComposerController = {
 }
 
 export type ComposerFocusMemory = { element: HTMLElement | null; revision: number }
+export type ComposerNavigationGuard = Pick<
+  ComposerContextValue,
+  'hasLocalDraft' | 'discard' | 'theme' | 'setNavigationPending'
+>

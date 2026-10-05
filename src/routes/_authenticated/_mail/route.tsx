@@ -1,4 +1,5 @@
 import { createFileRoute, getRouteApi, Outlet, useRouterState } from '@tanstack/react-router'
+import { clientEnvironment } from '#/config/env'
 
 import { LogoutMenuItem } from '#/features/auth/LogoutMenuItem'
 import { MailboxSearch } from '#/features/mail-list/components/MailboxSearch'
@@ -25,7 +26,7 @@ function MailLayout() {
         <AppShell.Main>
           <AppShell.Header>
             <AppShell.Header.Mailbox>
-              {pathname === '/inbox' ? (
+              {pathname === '/inbox' && !clientEnvironment.VITE_WORKSPACE_BASE_HOST ? (
                 <MailboxSearch userId={user.id} />
               ) : (
                 <AppShell.Header.Search />

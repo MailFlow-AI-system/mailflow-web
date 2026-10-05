@@ -7,6 +7,7 @@ import { getEditorBodySnapshot } from '../editor/bodyContent'
 import { composerExtensions } from '../editor/extensions'
 import type { ComposerController, DraftFields, ValidatedComposition } from '../types/composer'
 import type { DraftValues } from '../types/DraftValues'
+import { createAttachmentId } from '../utils/attachmentId'
 import { useCompositionValidation } from './useCompositionValidation'
 import { emptyDraft, useDraftForm } from './useDraftForm'
 
@@ -22,6 +23,7 @@ export function useComposerController(
   const [open, setOpen] = useState(false)
   const [state, setState] = useState<WindowState>('normal')
   const [saved, setSaved] = useState(false)
+  const [navigationPending, setNavigationPending] = useState(false)
   const [confirm, setConfirm] = useState(false)
   const [showCc, setShowCc] = useState(false)
   const [baselineDraftSignature, setBaselineDraftSignature] = useState(
@@ -138,7 +140,7 @@ export function useComposerController(
       if (files.length === 0) return
       const attachments = [
         ...draft.getValues('attachments'),
-        ...files.map((file) => ({ id: crypto.randomUUID(), file })),
+        ...files.map((file) => ({ id: createAttachmentId(), file })),
       ]
       draft.setValue('attachments', attachments, { shouldDirty: true })
       validation.validateAttachments(attachments)
@@ -169,6 +171,12 @@ export function useComposerController(
       confirm,
       setConfirm,
       discard,
+      hasLocalDraft: () => readDraftSignature() !== draftSignature(emptyFields, emptyBody, []),
+      navigationPending,
+      setNavigationPending: (pending) => {
+        editorRef.current?.setEditable(!pending)
+        setNavigationPending(pending)
+      },
       state,
       theme,
       triggerRef,
@@ -186,6 +194,10 @@ export function useComposerController(
     state,
     setState,
     onOpenChange: (next: boolean, details: WindowOpenChangeDetails) => {
+      if (navigationPending) {
+        details.cancel()
+        return
+      }
       if (!next && isDirty()) {
         details.cancel()
         setConfirm(true)
