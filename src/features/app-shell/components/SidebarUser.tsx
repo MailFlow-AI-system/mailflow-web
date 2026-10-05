@@ -1,4 +1,10 @@
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@mailflow/ui/components'
+import {
+  Avatar,
+  AvatarFallback,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@mailflow/ui/components'
 
 import type { SidebarUserProps } from '../types'
 
@@ -19,9 +25,11 @@ export function SidebarUser({ user, signOutAction }: SidebarUserProps) {
         aria-label={`Abrir menu de ${user.name}`}
         className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-1 focus-visible:ring-sidebar-ring group-data-[collapsible=icon]:hidden"
       >
-        <span className="grid size-7 shrink-0 place-items-center rounded-full bg-sidebar-primary/20 text-[10px] font-medium text-sidebar-primary">
-          {initials}
-        </span>
+        <Avatar aria-hidden="true" className="size-7">
+          <AvatarFallback className="bg-violet-500/20 text-[10px] font-normal text-violet-700 dark:text-violet-300">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
         <span className="min-w-0">
           <span className="block truncate text-xs font-medium leading-4 text-sidebar-foreground">
             {user.name}

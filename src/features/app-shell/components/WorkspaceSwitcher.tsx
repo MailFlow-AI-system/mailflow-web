@@ -1,4 +1,11 @@
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@mailflow/ui/components'
+import {
+  Avatar,
+  AvatarFallback,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from '@mailflow/ui/components'
 import { ChevronUp } from '@mailflow/ui/icons'
 import { useState } from 'react'
 
@@ -12,9 +19,11 @@ const workspaces = [
 
 function WorkspaceMark({ initials }: WorkspaceMarkProps) {
   return (
-    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-sidebar-accent text-[10px] font-semibold leading-none text-sidebar-primary">
-      {initials}
-    </span>
+    <Avatar aria-hidden="true" className="size-6">
+      <AvatarFallback className="bg-primary/15 text-[color:color-mix(in_oklch,var(--primary)_90%,black)] text-[10px] font-medium leading-none dark:text-primary">
+        {initials}
+      </AvatarFallback>
+    </Avatar>
   )
 }
 
@@ -40,6 +49,7 @@ export function WorkspaceSwitcher() {
         }}
       >
         <SelectTrigger
+          aria-label={`Workspace: ${selected.name}`}
           className="h-auto w-full cursor-pointer gap-2 rounded-md border-0 bg-transparent px-2 py-1 text-sidebar-foreground shadow-none hover:bg-accent focus-visible:ring-sidebar-ring data-[popup-open]:bg-accent"
           icon={<ChevronUp aria-hidden="true" className="size-4 text-muted-foreground" />}
         >
