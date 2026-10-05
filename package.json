@@ -34,7 +34,7 @@
     "@grafana/faro-web-sdk": "2.12.0",
     "@grafana/faro-web-tracing": "2.12.0",
     "@hookform/resolvers": "^5.2.2",
-    "@mailflow/ui": "git+https://github.com/MailFlow-AI-system/mailflow-design-system.git#v0.6.0",
+    "@mailflow/ui": "git+https://github.com/MailFlow-AI-system/mailflow-design-system.git#v0.7.0",
     "@t3-oss/env-core": "^0.13.11",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "^0.10.12",
