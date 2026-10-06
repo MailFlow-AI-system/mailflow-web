@@ -1,4 +1,6 @@
 import { getCurrentSession } from '../../auth/adapters/getCurrentSession'
+import { workspaceRetryAfter } from '../utils/workspaceRetryAfter'
+import { WorkspaceRateLimitedError } from './workspaceRateLimitedError'
 
 export class WorkspaceIdentityChangedError extends Error {
   constructor() {
@@ -25,6 +27,8 @@ export async function readWorkspaceResponse(
   if (response.status === 401) throw new WorkspaceIdentityChangedError()
   const identity = response.headers.get('x-workspace-identity')
   if (identity && identity !== userId) throw new WorkspaceIdentityChangedError()
+  if (response.status === 429)
+    throw new WorkspaceRateLimitedError(workspaceRetryAfter(response.headers.get('retry-after')))
   if (!response.ok) throw new Error('Workspace request failed')
   if (!identity) throw new Error('Workspace identity could not be verified')
   const data: unknown = await response.json()
