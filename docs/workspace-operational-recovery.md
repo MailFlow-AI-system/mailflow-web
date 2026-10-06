@@ -65,5 +65,31 @@ and independent explicit-host tabs with simultaneous reloads. The complete
 the inactive-feature correction. This is not a full parallel cold-start test.
 
 This correction does not establish the underlying TanStack resolver race as
-fixed for enabled tenancy. Parallel cold-start validation for configured tenancy
-and built local Worker remains pending, separately from legacy regression.
+universally fixed. Configured dev cold-start evidence is recorded below; built
+local Worker validation remains pending, separately from legacy regression.
+
+## Configured parallel startup
+
+`e2e/workspace-switching/parallelStartup.spec.ts` creates a real session through
+Core without warming authenticated Web routes, then opens six pages together in
+one browser context, alternating between A and B. Each checks HTTP 200, the
+correct workspace label and an enabled composer. Preference/selection/global
+Mail/activeOrganization counters remain unchanged. The fixture uses loopback
+Core, a restricted PostgreSQL pool and temporary workspace.test cookies only.
+
+The initial default five-second visibility assertion expired while the shell
+was still loading. The saved network trace showed no 5xx responses and successful
+workspace context/list reads. The test's startup ceiling was made explicit at
+30 seconds; retries remain zero and no application readiness behavior changed.
+
+A fresh dev start passed: six page readiness times were 7615, 7944, 7842, 8197,
+8172 and 8379 ms. An independent earlier run passed in 20.9 seconds including
+harness startup. A separate 12-request cold concurrent HTML probe also returned
+12 HTTP 200 responses without the serialized SSR error. Dev module compilation
+and browser hydration are included in page readiness, not just API latency.
+
+This is evidence for the tested local dev configuration, not a production
+latency SLO or proof that every TanStack resolver race is eliminated.
+The complete workspace browser suite passed all 22 tests after the accounting
+fix and addition of this regression (3.5 minutes, one test worker, zero retries;
+the startup scenario itself opens six concurrent pages).
