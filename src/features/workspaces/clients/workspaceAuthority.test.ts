@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getCurrentSession } from '../../auth/adapters/getCurrentSession'
 import { readWorkspaceResponse, WorkspaceIdentityChangedError } from './workspaceAuthority'
+import { WorkspaceRateLimitedError } from './workspaceRateLimitedError'
 
 vi.mock('../../auth/adapters/getCurrentSession', () => ({ getCurrentSession: vi.fn() }))
 const session = (id: string) => ({ id, name: 'Fixture', email: 'fixture@example.test' })
@@ -13,6 +14,29 @@ const response = (id = 'actor') =>
   )
 
 describe('workspace response authority', () => {
+  it.each([
+    ['37', 37],
+    [null, null],
+    ['invalid', null],
+    ['-1', null],
+    ['0', null],
+    ['9999999999999999999', null],
+  ])('preserves a bounded Retry-After value %s without session reads', async (header, seconds) => {
+    const headers = new Headers({ 'X-Workspace-Identity': 'actor' })
+    if (header) headers.set('Retry-After', header)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce(new Response(null, { status: 429, headers })),
+    )
+    const error = await readWorkspaceResponse(
+      '/api/v1/workspace-selection',
+      'actor',
+      new AbortController().signal,
+    ).catch((failure: unknown) => failure)
+    expect(error).toBeInstanceOf(WorkspaceRateLimitedError)
+    expect(error).toMatchObject({ retryAfterSeconds: seconds })
+    expect(getCurrentSession).not.toHaveBeenCalled()
+  })
   afterEach(() => {
     vi.unstubAllGlobals()
     vi.resetAllMocks()
