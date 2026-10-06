@@ -1,6 +1,7 @@
 import type { TransportItem } from '@grafana/faro-web-sdk'
 
 import { normalizeRoute } from './config'
+import { maskWorkspaceHosts } from './utils/maskWorkspaceHosts'
 
 const blockedKeys =
   /^(authorization|cookie|set-cookie|password|secret|token|accessToken|refreshToken|api[-_]?key|email|subject|recipient|recipients|prompt|content|body|payload|user|user[-_]?id|identity|identity[-_]?id|username|fullname|workspace[-_]?(id|slug|name|identity)|tenant[-_]?(id|slug)|host(name)?|job[-_]?id|email[-_]?id|detail)$/i
@@ -39,7 +40,7 @@ function sanitizeValue(value: unknown, key: string, signalType: string): unknown
     ) {
       return stripUrlDetails(value)
     }
-    return value
+    return maskWorkspaceHosts(value, import.meta.env.VITE_WORKSPACE_BASE_HOST)
       .replace(credentialPattern, '[redacted-secret]')
       .replace(bearerPattern, 'Bearer [redacted-secret]')
       .replace(emailPattern, '[redacted-email]')
