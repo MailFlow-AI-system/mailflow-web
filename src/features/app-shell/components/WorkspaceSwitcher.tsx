@@ -33,6 +33,7 @@ function WorkspaceSwitcherControl({ state }: WorkspaceSwitcherProps) {
         workspace={selection.confirmation}
         busy={selection.busy}
         error={selection.error}
+        retryAfterSeconds={selection.retryAfterSeconds}
         theme={composer?.theme}
         onCancel={selection.cancel}
         onConfirm={selection.confirm}

@@ -13,6 +13,7 @@ export function WorkspaceSelectionConfirmation({
   busy,
   theme,
   error,
+  retryAfterSeconds,
   onCancel,
   onConfirm,
 }: WorkspaceSelectionConfirmationProps) {
@@ -31,8 +32,10 @@ export function WorkspaceSelectionConfirmation({
           {workspace?.name} descartará a mensagem e os anexos.
         </AlertDialogDescription>
         {error && (
-          <p role="alert" className="text-sm text-destructive">
-            Não foi possível trocar. Sua mensagem foi preservada. Tente novamente.
+          <p role="alert" className="text-sm text-foreground">
+            {retryAfterSeconds
+              ? `Aguarde ${retryAfterSeconds} segundos antes de tentar novamente. Sua mensagem foi preservada.`
+              : 'Não foi possível trocar. Sua mensagem foi preservada. Tente novamente.'}
           </p>
         )}
         <div className="flex flex-wrap justify-end gap-2">

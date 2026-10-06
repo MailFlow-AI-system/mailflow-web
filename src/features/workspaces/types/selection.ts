@@ -15,4 +15,5 @@ export type WorkspaceSelectionConfirmationProps = {
   onCancel: () => void
   onConfirm: () => void
   error: string | null
+  retryAfterSeconds?: number | null
 }

@@ -19,6 +19,11 @@ function state(status: WorkspaceState['status'] = 'ready'): WorkspaceState {
   }
 }
 describe('workspace selector presentation', () => {
+  it('announces a selection failure with the semantic readable sidebar foreground', () => {
+    render(<WorkspaceSelector state={state()} selectionError="Please wait before trying again." />)
+    expect(screen.getByRole('alert')).toHaveTextContent('Please wait before trying again.')
+    expect(screen.getByRole('alert')).toHaveClass('text-sidebar-foreground')
+  })
   afterEach(cleanup)
   it('lists authorized workspaces and highlights current without local optimistic selection', async () => {
     const user = userEvent.setup()
