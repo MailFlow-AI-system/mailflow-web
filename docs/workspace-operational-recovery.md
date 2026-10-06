@@ -33,8 +33,8 @@ These existing scenarios do not yet cover rate-limit feedback in the browser.
 
 ## Pending acceptance
 
-Phase 6 remains in progress: browser-to-Core telemetry ingestion/correlation
-and approved environment smoke. Real browser rate-limit coverage is below.
+Phase 6 remains in progress for approved environment smoke/ingestion. Real
+browser-to-Core local telemetry correlation and rate-limit coverage are below.
 The local HTTP workload, dev/compiled SSR probes and development integration
 are recorded below (Core details live in its companion operational document).
 Real DNS/TLS/cookies/deployment smoke requires the approved environment topology.
@@ -188,5 +188,89 @@ these successful isolated tests do not certify abuse protection in deployment.
 
 Original dirty checkouts are preserved. Work is checkpointed locally on
 `feat/workspace-operational-recovery`, not pushed or deployed. Phase 6 is still
-open for real browser Faro → Web/BFF → Core correlation/ingestion and the
-approved-environment gates (including DNS/TLS, cookies, email and proxy trust).
+open for the approved-environment gates (including DNS/TLS, cookies, email,
+proxy trust and remote telemetry). The next checkpoint below closes the local
+browser correlation gap.
+
+## Real browser telemetry checkpoint — 2026-10-06
+
+The dedicated `playwright.workspace-telemetry.config.ts` starts real Core/DB,
+Web and a loopback HTTP Faro receiver. No Playwright route interception, mocked
+SDK, fabricated traceparent, disabled limiter or remote credentials are used.
+The existing instrumentation already propagates trace context for same-origin
+workspace BFF calls; no expansion of cross-origin propagation was necessary.
+
+The Core test caught missing operation/result dimensions for middleware's early
+429. That regression was fixed and covers early 401/429/503 too. The real Faro
+payload then caught tenant names in `httpHost` and `server.address` (including
+OTel key/value arrays), which URL-only sanitization had not covered. A failing
+privacy regression plus a dedicated masking utility now remove configured
+tenant hostname prefixes from plain technical values, preserving the base zone,
+port and trace IDs. Arbitrary identities/credentials continue to be blocked.
+These are telemetry/privacy changes; no UI/DS component or visual behavior changed.
+
+Final dedicated browser test: one passed in 28.1 seconds, zero retries/skips.
+It observes five real HTTP outcomes: success, denial, injected failure, injected
+control outage and actual identity budget exhaustion. For each, the actual Faro
+fetch span ID/trace ID is ingested by the HTTP receiver, linked through the BFF
+response request ID to the Core completion, and matched to Collector output's
+trace/Core-span/browser-parent IDs. Both workspace count/duration metrics appear
+in actual Collector output, not only mocked exporter assertions.
+
+The complete received Faro payloads contain none of the fixture email/password,
+identity/workspace IDs, tenant hostnames, control key or seeded composer
+subject/body. The composer draft remains unchanged after the workload. The
+receiver accepts only local workspace origins on port 3003, bounds decompressed
+payloads and in-memory retention, and exposes snapshots only to requests without
+a browser Origin. Core completion snapshots require the test control key.
+
+The harness initially rejected Faro's real session/idempotency CORS headers;
+adding those exact allowed headers corrected the test receiver, not application
+code or production CORS. It also supports bounded gzip payloads. The real OTLP
+Collector must be running; missing collector/DB/CLI is a failure, never a skip.
+
+Reproduction in this WSL/Docker Desktop setup, with the independently provisioned
+`mailflow-workspace-otel-local` Collector using Core's committed local config:
+
+```sh
+# Node 24 / Bun 1.4.1; reuse the existing dedicated local Collector, no deletion.
+'/mnt/c/Program Files/Docker/Docker/resources/bin/docker.exe' --context desktop-linux start mailflow-workspace-otel-local
+MAILFLOW_CORE_WORKTREE=/absolute/path/to/compatible/core \
+MAILFLOW_WORKSPACE_TEST_DATABASE_URL='<isolated-local-owner-url>' \
+MAILFLOW_WORKSPACE_DOCKER_COMMAND='/mnt/c/Program Files/Docker/Docker/resources/bin/docker.exe' \
+bun run playwright test --config playwright.workspace-telemetry.config.ts --reporter=line
+```
+
+Run browser configs/builds sequentially in this Web checkout. This suite uses
+ports 3003/8083/14319 and the fixed OTLP port 14318. Collector logs and ignored
+Playwright attachments retain only synthetic local evidence. This verifies a
+local Faro receiver and real Core OTLP ingestion, not remote Faro/Grafana service
+behavior or a new BFF server-span implementation.
+
+Updated full checks passed: Web 299 tests in 62 files, lint, formatting,
+typecheck and workspace-enabled production build; Core 173 tests in 39 files,
+lint, formatting, typecheck and build, with the isolated real PostgreSQL suites.
+
+Final real workspace regression: 23 passed in 3.3 minutes, zero skips/retries;
+six-page startup maximum 8739 ms. Legacy regression: 10 passed in 22.3 seconds
+with the original six workers and zero retries. Site onboarding was unchanged
+and its two real cross-repository scenarios passed at the preceding checkpoint;
+they were not rerun for these telemetry-only changes.
+
+One intermediate workspace run had 22 successes / one delayed-identity failure.
+This was test-run interference: editing this document at 17:12:20.087 (-03:00)
+triggered Vite reloads in both tabs during logout; the network trace shows the
+background tab requesting Inbox at 17:12:20.171, then redirecting to login before
+the new sign-in completed. The trace was preserved locally outside Git. A fresh
+complete run with no file edits while Vite was active passed all 23 scenarios.
+No application change, longer assertion timeout or enabled retry was used for it.
+Do not edit even documentation in the watched checkout while a browser suite runs.
+
+Core/Web changes are committed locally. The temporary Collector was stopped
+again, retaining its logs/container; the dedicated test database remains running.
+No external configuration, push, deploy, tag or release was performed.
+
+The final real-environment stage is intentionally deferred per the developer's
+request. [Manual rollout checklist](workspace-rollout-manual.md) documents the
+information/approvals needed and the remaining host/session adaptation; local
+flags must not be enabled on deployed applications.
