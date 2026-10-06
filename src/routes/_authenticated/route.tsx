@@ -3,7 +3,7 @@ import { clientEnvironment } from '#/config/env'
 import { LogoutButton } from '#/features/auth/components/LogoutButton'
 import { requireAuthenticatedUser } from '#/features/auth/routeGuards'
 import { workspaceLoginDestination } from '#/features/auth/utils/authNavigation'
-import { getWorkspaceEntryBootstrap } from '#/features/workspaces/adapters/getWorkspaceEntryBootstrap'
+import { resolveWorkspaceEntry } from '#/features/workspaces/adapters/resolveWorkspaceEntry'
 import { WorkspaceEntryBoundary } from '#/features/workspaces/components/WorkspaceEntryBoundary'
 import { WorkspaceProvider } from '#/features/workspaces/components/WorkspaceProvider'
 
@@ -14,7 +14,11 @@ export const Route = createFileRoute('/_authenticated')({
       location,
       clearFragment: clientEnvironment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED,
     })
-    const entry = await getWorkspaceEntryBootstrap({ data: { pathname: location.pathname } })
+    const entry = await resolveWorkspaceEntry(
+      location.pathname,
+      clientEnvironment.VITE_WORKSPACE_BASE_HOST,
+      clientEnvironment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED,
+    )
     if (entry.kind === 'redirect')
       throw redirect({ href: entry.href, reloadDocument: true, replace: true })
     if (entry.kind === 'unauthenticated')
