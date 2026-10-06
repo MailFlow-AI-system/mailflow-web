@@ -2,6 +2,7 @@ import { Button, Select, SelectContent, SelectItem, SelectTrigger } from '@mailf
 import { ChevronUp } from '@mailflow/ui/icons'
 import type { WorkspaceSwitcherProps } from '../types'
 import { workspaceInitials } from '../utils/workspaceHost'
+import { WorkspaceAvatar } from './WorkspaceAvatar'
 
 export function WorkspaceSelector({
   state,
@@ -25,7 +26,7 @@ export function WorkspaceSelector({
       <Select
         value={state.current?.id ?? null}
         readOnly={!onSelect}
-        onValueChange={onSelect}
+        onValueChange={onSelect ? (workspaceId) => onSelect(workspaceId) : undefined}
         disabled={state.status !== 'ready' || busy}
       >
         <SelectTrigger
@@ -39,12 +40,7 @@ export function WorkspaceSelector({
             />
           }
         >
-          <span
-            aria-hidden="true"
-            className="grid size-6 shrink-0 place-items-center rounded-full bg-sidebar-accent text-[10px] font-semibold leading-none text-sidebar-primary"
-          >
-            {initials}
-          </span>
+          <WorkspaceAvatar initials={initials} />
           <span className="min-w-0 flex-1 text-left group-data-[collapsible=icon]:hidden">
             <span className="block truncate text-xs font-semibold leading-4">{label}</span>
             <span className="block truncate text-[10px] leading-4 text-muted-foreground">
@@ -58,12 +54,7 @@ export function WorkspaceSelector({
         >
           {state.items.map((workspace) => (
             <SelectItem key={workspace.id} value={workspace.id}>
-              <span
-                aria-hidden="true"
-                className="grid size-6 shrink-0 place-items-center rounded-full bg-sidebar-accent text-[10px] font-semibold text-sidebar-primary"
-              >
-                {workspaceInitials(workspace.name)}
-              </span>
+              <WorkspaceAvatar initials={workspaceInitials(workspace.name)} />
               <span className="truncate text-xs font-semibold">{workspace.name}</span>
             </SelectItem>
           ))}
@@ -72,7 +63,7 @@ export function WorkspaceSelector({
       <div aria-live="polite" className="text-xs text-muted-foreground">
         {busy && <p className="px-2 py-1">Changing workspace…</p>}
         {selectionError && (
-          <p role="alert" className="px-2 py-1 text-destructive">
+          <p role="alert" className="px-2 py-1 text-sidebar-foreground">
             {selectionError}
           </p>
         )}

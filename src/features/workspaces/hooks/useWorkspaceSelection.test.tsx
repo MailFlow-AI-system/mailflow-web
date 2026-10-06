@@ -46,6 +46,7 @@ describe('workspace selection rate-limit recovery', () => {
     act(() => result.current.confirm())
     await waitFor(() => expect(result.current.error).toContain('Try again in 37 seconds.'))
     expect(result.current.error).toContain('Your message has been preserved.')
+    expect(result.current.retryAfterSeconds).toBe(37)
     expect(result.current.busy).toBe(false)
     expect(discard).not.toHaveBeenCalled()
     expect(pending.mock.calls).toEqual([[true], [false]])

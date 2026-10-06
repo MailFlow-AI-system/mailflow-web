@@ -16,6 +16,7 @@ export function useWorkspaceSelection({
   const [confirmation, setConfirmation] = useState<Workspace | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState<number | null>(null)
   const [identityError, setIdentityError] = useState<Error | null>(null)
   useWorkspaceIdentityRecovery(identityError)
   const active = useRef<AbortController | null>(null)
@@ -32,6 +33,7 @@ export function useWorkspaceSelection({
     active.current = controller
     setBusy(true)
     setError(null)
+    setRetryAfterSeconds(null)
     composer?.setNavigationPending(true)
     let navigating = false
     try {
@@ -49,6 +51,7 @@ export function useWorkspaceSelection({
           setIdentityError(failure)
           setError('Your session changed. Reopening this workspace safely.')
         } else if (failure instanceof WorkspaceRateLimitedError) {
+          setRetryAfterSeconds(failure.retryAfterSeconds)
           const wait = failure.retryAfterSeconds
             ? `Try again in ${failure.retryAfterSeconds} seconds.`
             : 'Please wait before trying again.'
@@ -78,6 +81,7 @@ export function useWorkspaceSelection({
     const workspace = state.items.find((item) => item.id === workspaceId)
     if (!workspace) return
     setError(null)
+    setRetryAfterSeconds(null)
     if (composer?.hasLocalDraft()) setConfirmation(workspace)
     else void perform(workspace)
   }
@@ -86,11 +90,13 @@ export function useWorkspaceSelection({
     request,
     busy,
     error,
+    retryAfterSeconds,
     confirmation,
     cancel: () => {
       if (!active.current) {
         setConfirmation(null)
         setError(null)
+        setRetryAfterSeconds(null)
       }
     },
     confirm: () => {
