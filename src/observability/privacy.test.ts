@@ -5,6 +5,30 @@ import { sanitizeTelemetryItem } from './privacy'
 
 describe('sanitizeTelemetryItem', () => {
   afterEach(() => vi.unstubAllEnvs())
+  it('masks plain tenant hosts in actual Faro performance and OTel address attributes', () => {
+    vi.stubEnv('VITE_WORKSPACE_BASE_HOST', 'workspace.test')
+    const item = sanitizeTelemetryItem({
+      type: 'trace',
+      payload: {
+        attributes: {
+          httpHost: 'private-acme.workspace.test:3003',
+          'server.address': 'private-acme.workspace.test',
+        },
+        spans: [
+          {
+            attributes: [
+              { key: 'server.address', value: { stringValue: 'private-acme.workspace.test' } },
+            ],
+          },
+        ],
+      },
+      meta: {},
+    } as unknown as TransportItem)
+    expect(JSON.stringify(item)).not.toContain('private-acme')
+    expect(item?.payload).toMatchObject({
+      attributes: { httpHost: 'workspace.test:3003', 'server.address': 'workspace.test' },
+    })
+  })
   it('does not export the workspace identity precondition through headers or span attributes', () => {
     const item = sanitizeTelemetryItem({
       type: 'event',
