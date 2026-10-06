@@ -46,6 +46,9 @@ export function createWorkspaceSelectionGateway(
           Origin: url.origin,
           'Content-Type': 'application/json',
           Accept: 'application/json',
+          ...(request.headers.get('x-workspace-identity')
+            ? { 'X-Workspace-Identity': request.headers.get('x-workspace-identity') ?? '' }
+            : {}),
           ...(request.headers.get('traceparent')
             ? { traceparent: request.headers.get('traceparent') ?? '' }
             : {}),
@@ -61,6 +64,8 @@ export function createWorkspaceSelectionGateway(
       const responseHeaders = new Headers({ 'Cache-Control': 'private, no-store' })
       const requestId = upstream.headers.get('x-request-id')
       if (requestId) responseHeaders.set('X-Request-ID', requestId)
+      const identity = upstream.headers.get('x-workspace-identity')
+      if (identity) responseHeaders.set('X-Workspace-Identity', identity)
       if (!upstream.ok) {
         const status = [400, 401, 403, 404, 413, 429].includes(upstream.status)
           ? upstream.status
