@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { WorkspaceIdentityChangedError } from '../clients/workspaceAuthority'
 import { selectWorkspace } from '../clients/workspaceClient'
+import { WorkspaceRateLimitedError } from '../clients/workspaceRateLimitedError'
 import type { Workspace } from '../types'
 import type { WorkspaceSelectionOptions } from '../types/selection'
 import { workspaceDestination } from '../utils/workspaceNavigation'
@@ -47,6 +48,11 @@ export function useWorkspaceSelection({
         if (failure instanceof WorkspaceIdentityChangedError) {
           setIdentityError(failure)
           setError('Your session changed. Reopening this workspace safely.')
+        } else if (failure instanceof WorkspaceRateLimitedError) {
+          const wait = failure.retryAfterSeconds
+            ? `Try again in ${failure.retryAfterSeconds} seconds.`
+            : 'Please wait before trying again.'
+          setError(`Too many workspace requests. Your message has been preserved. ${wait}`)
         } else {
           setError('Workspace could not be changed. Your message has been preserved. Try again.')
         }
