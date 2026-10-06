@@ -7,7 +7,9 @@ export type Workspace = {
   role: 'owner' | 'admin' | 'member'
 }
 export type WorkspacePage = { items: Workspace[]; nextCursor: string | null }
+export type WorkspaceContextResponse = { workspace: Workspace | null }
 export type WorkspaceState = {
+  identityId: string
   status: 'loading' | 'error' | 'empty' | 'ready' | 'unconfigured'
   current: Workspace | null
   items: Workspace[]

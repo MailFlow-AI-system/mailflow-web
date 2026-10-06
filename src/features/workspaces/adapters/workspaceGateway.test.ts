@@ -67,4 +67,34 @@ describe('bounded workspace gateway', () => {
     )(request)
     expect(await response.json()).toEqual({ code: 'workspace_upstream_unavailable' })
   })
+  it('preserves authenticated identity and correlation but discards upstream cookies', async () => {
+    const fetcher = vi.fn(async () =>
+      Response.json(
+        { workspace: null },
+        {
+          headers: {
+            'X-Workspace-Identity': 'actor',
+            'X-Request-ID': 'request-1',
+            'Set-Cookie': 'private=secret',
+          },
+        },
+      ),
+    )
+    const result = await createWorkspaceGateway(
+      'https://core.test',
+      'workspace.test',
+      fetcher,
+    )(
+      new Request('http://acme.workspace.test/api/workspace-context', {
+        headers: { Cookie: cookie, tracestate: 'vendor=value' },
+      }),
+    )
+    expect(result.headers.get('x-workspace-identity')).toBe('actor')
+    expect(result.headers.get('x-request-id')).toBe('request-1')
+    expect(result.headers.get('set-cookie')).toBeNull()
+    expect(fetcher.mock.calls[0]).toMatchObject([
+      expect.any(URL),
+      { headers: { tracestate: 'vendor=value' } },
+    ])
+  })
 })

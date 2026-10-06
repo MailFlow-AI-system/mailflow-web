@@ -5,6 +5,25 @@ import { sanitizeTelemetryItem } from './privacy'
 
 describe('sanitizeTelemetryItem', () => {
   afterEach(() => vi.unstubAllEnvs())
+  it('does not export the workspace identity precondition through headers or span attributes', () => {
+    const item = sanitizeTelemetryItem({
+      type: 'event',
+      payload: {
+        name: 'request',
+        attributes: {
+          'request.headers.x-workspace-identity': 'private-actor',
+          identityId: 'private-actor',
+          technical: 'X-Workspace-Identity: private-actor',
+          spans: [{ key: 'http.request.header.x-workspace-identity', value: 'private-actor' }],
+        },
+      },
+      meta: {},
+    } as unknown as TransportItem)
+    expect(JSON.stringify(item)).not.toContain('private-actor')
+    expect(item?.payload).toMatchObject({
+      attributes: { technical: '[redacted-secret]', spans: [] },
+    })
+  })
   it('redacts tenant hostnames and workspace identity from browser telemetry', () => {
     vi.stubEnv('VITE_WORKSPACE_BASE_HOST', 'workspace.test')
     const item = sanitizeTelemetryItem({

@@ -35,8 +35,14 @@ export function createWorkspaceGateway(
         headers: {
           Cookie: cookie,
           Accept: 'application/json',
+          ...(request.headers.get('x-workspace-identity')
+            ? { 'X-Workspace-Identity': request.headers.get('x-workspace-identity') ?? '' }
+            : {}),
           ...(request.headers.get('traceparent')
             ? { traceparent: request.headers.get('traceparent') ?? '' }
+            : {}),
+          ...(request.headers.get('tracestate')
+            ? { tracestate: request.headers.get('tracestate') ?? '' }
             : {}),
         },
         cache: 'no-store',
@@ -45,10 +51,14 @@ export function createWorkspaceGateway(
       })
       if (url.pathname === '/api/workspace-context' && host.kind === 'generic' && upstream.ok) {
         const session: unknown = await upstream.json()
-        if (!session) return failure(401, 'authentication_required')
+        if (!session || typeof session !== 'object' || !('user' in session))
+          return failure(401, 'authentication_required')
+        const user = session.user
+        if (!user || typeof user !== 'object' || !('id' in user) || typeof user.id !== 'string')
+          return failure(502, 'workspace_upstream_unavailable')
         return Response.json(
           { workspace: null },
-          { headers: { 'Cache-Control': 'private, no-store' } },
+          { headers: { 'Cache-Control': 'private, no-store', 'X-Workspace-Identity': user.id } },
         )
       }
       const headers = new Headers({
@@ -57,6 +67,10 @@ export function createWorkspaceGateway(
       })
       const retryAfter = upstream.headers.get('retry-after')
       if (retryAfter) headers.set('Retry-After', retryAfter)
+      const identity = upstream.headers.get('x-workspace-identity')
+      if (identity) headers.set('X-Workspace-Identity', identity)
+      const requestId = upstream.headers.get('x-request-id')
+      if (requestId) headers.set('X-Request-ID', requestId)
       if (upstream.status >= 300 && upstream.status < 400)
         return failure(502, 'workspace_upstream_unavailable')
       return new Response(upstream.body, { status: upstream.status, headers })

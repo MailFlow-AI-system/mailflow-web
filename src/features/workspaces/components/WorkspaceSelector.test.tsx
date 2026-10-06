@@ -7,6 +7,7 @@ import { WorkspaceSelector } from './WorkspaceSelector'
 const current = { id: 'a', name: 'Acme Corp', slug: 'acme', role: 'owner' as const }
 function state(status: WorkspaceState['status'] = 'ready'): WorkspaceState {
   return {
+    identityId: 'actor',
     status,
     current,
     items: [current, { id: 'b', name: 'Northwind', slug: 'northwind', role: 'member' }],
