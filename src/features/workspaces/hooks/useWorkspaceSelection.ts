@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+import { WorkspaceIdentityChangedError } from '../clients/workspaceAuthority'
 import { selectWorkspace } from '../clients/workspaceClient'
 import type { Workspace } from '../types'
 import type { WorkspaceSelectionOptions } from '../types/selection'
 import { workspaceDestination } from '../utils/workspaceNavigation'
+import { useWorkspaceIdentityRecovery } from './useWorkspaceIdentityRecovery'
 
 export function useWorkspaceSelection({
   state,
@@ -13,6 +15,8 @@ export function useWorkspaceSelection({
   const [confirmation, setConfirmation] = useState<Workspace | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [identityError, setIdentityError] = useState<Error | null>(null)
+  useWorkspaceIdentityRecovery(identityError)
   const active = useRef<AbortController | null>(null)
   useEffect(
     () => () => {
@@ -32,15 +36,21 @@ export function useWorkspaceSelection({
     try {
       // Check our source and proposed destination before committing anything.
       workspaceDestination(window.location.href, baseHost, workspace)
-      const authorized = await selectWorkspace(workspace.id, controller.signal)
+      const authorized = await selectWorkspace(workspace.id, state.identityId, controller.signal)
       if (controller.signal.aborted) return
       const destination = workspaceDestination(window.location.href, baseHost, authorized)
       window.location.assign(destination)
       composer?.discard()
       navigating = true
-    } catch {
-      if (!controller.signal.aborted)
-        setError('Workspace could not be changed. Your message has been preserved. Try again.')
+    } catch (failure) {
+      if (!controller.signal.aborted) {
+        if (failure instanceof WorkspaceIdentityChangedError) {
+          setIdentityError(failure)
+          setError('Your session changed. Reopening this workspace safely.')
+        } else {
+          setError('Workspace could not be changed. Your message has been preserved. Try again.')
+        }
+      }
     } finally {
       if (!navigating) {
         active.current = null

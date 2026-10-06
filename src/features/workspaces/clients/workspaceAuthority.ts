@@ -1,0 +1,38 @@
+import { getCurrentSession } from '../../auth/adapters/getCurrentSession'
+
+export class WorkspaceIdentityChangedError extends Error {
+  constructor() {
+    super('Workspace identity changed')
+    this.name = 'WorkspaceIdentityChangedError'
+  }
+}
+
+export async function readWorkspaceResponse(
+  path: string,
+  userId: string,
+  signal: AbortSignal,
+  init?: RequestInit,
+) {
+  const headers = new Headers(init?.headers)
+  headers.set('X-Workspace-Identity', userId)
+  const response = await fetch(path, {
+    ...init,
+    headers,
+    credentials: 'same-origin',
+    cache: 'no-store',
+    signal,
+  })
+  if (response.status === 401) throw new WorkspaceIdentityChangedError()
+  const identity = response.headers.get('x-workspace-identity')
+  if (identity && identity !== userId) throw new WorkspaceIdentityChangedError()
+  if (!response.ok) throw new Error('Workspace request failed')
+  if (!identity) throw new Error('Workspace identity could not be verified')
+  const data: unknown = await response.json()
+  signal.throwIfAborted()
+
+  // Recheck after receiving the body: a response may have been delayed across logout.
+  const current = await getCurrentSession({ signal })
+  if (!current || current.id !== userId) throw new WorkspaceIdentityChangedError()
+  signal.throwIfAborted()
+  return data
+}
