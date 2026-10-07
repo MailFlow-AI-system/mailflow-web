@@ -141,6 +141,14 @@ test('failed writes and stale memberships do not navigate or discard a message',
   const data = await fixture()
   await page.getByRole('button', { name: 'Compose', exact: true }).click()
   await page.getByRole('textbox', { name: 'Assunto', exact: true }).fill('Retain on failure')
+  await page.getByRole('textbox', { name: 'Corpo da mensagem', exact: true }).fill('Retained body')
+  const chooser = page.waitForEvent('filechooser')
+  await page.getByRole('button', { name: 'Anexar arquivo', exact: true }).click()
+  await (await chooser).setFiles({
+    name: 'qa-retained.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('Synthetic QA attachment'),
+  })
   await page.getByRole('button', { name: 'Minimizar janela' }).click()
   await control('fail-next')
   await page.getByRole('combobox', { name: 'Workspace: Acme Corp' }).click()
@@ -154,6 +162,10 @@ test('failed writes and stale memberships do not navigate or discard a message',
   await expect(page.getByRole('textbox', { name: 'Assunto', exact: true })).toHaveValue(
     'Retain on failure',
   )
+  await expect(page.getByRole('textbox', { name: 'Corpo da mensagem', exact: true })).toContainText(
+    'Retained body',
+  )
+  await expect(page.getByText('qa-retained.txt', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Minimizar janela' }).click()
   await control('revoke-northwind')
   await page.getByRole('combobox', { name: 'Workspace: Acme Corp' }).click()
@@ -162,6 +174,15 @@ test('failed writes and stale memberships do not navigate or discard a message',
   await expect(page.getByRole('alertdialog').getByRole('alert')).toContainText('preservada')
   expect((await fixture()).preference).toBeNull()
   expect(new URL(page.url()).hostname).toBe(data.host)
+  await page.getByRole('button', { name: 'Continuar editando' }).click()
+  await page.getByRole('button', { name: 'Restaurar mensagem' }).click()
+  await expect(page.getByRole('textbox', { name: 'Assunto', exact: true })).toHaveValue(
+    'Retain on failure',
+  )
+  await expect(page.getByRole('textbox', { name: 'Corpo da mensagem', exact: true })).toContainText(
+    'Retained body',
+  )
+  await expect(page.getByText('qa-retained.txt', { exact: true })).toBeVisible()
 })
 
 test('rejects unrelated selectors and cross-origin submissions despite same-site cookies', async ({

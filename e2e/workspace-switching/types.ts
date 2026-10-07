@@ -23,3 +23,10 @@ export type PausedWorkspaceResponse = {
   responseStatusCode?: number
   responseHeaders?: { name: string; value: string }[]
 }
+
+export type WorkspaceQaCase = {
+  name: string
+  theme: 'dark' | 'light'
+  viewport: { width: number; height: number }
+  isMobile: boolean
+}
