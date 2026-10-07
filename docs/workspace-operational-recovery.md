@@ -1,5 +1,9 @@
 # Workspace operational recovery — phase 6, local checkpoint
 
+For a step-by-step human acceptance run, use the Portuguese
+[local QA guide](workspace-qa-manual.md). Its scenarios are not marked as passed
+until a tester executes and records them; the evidence below is separate.
+
 ## Delivered
 
 The workspace client distinguishes 429 responses from identity changes and
