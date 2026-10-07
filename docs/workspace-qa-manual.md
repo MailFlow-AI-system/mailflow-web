@@ -14,6 +14,8 @@ não muda o workspace de outra aba nem concede acesso.
 Preparado em 2026-10-07 com Core `7116d89`, Web `def6983` e Site `6082242`.
 Os resultados automatizados anteriores estão em
 [evidências de validação](workspace-operational-recovery.md).
+O [resultado do QA automatizado de 2026-10-07](workspace-qa-results-2026-10-07.md)
+registra a execução posterior, a cobertura por cenário e as pendências humanas.
 
 ### O que não deve ser considerado bug nesta tarefa
 
@@ -25,6 +27,9 @@ Os resultados automatizados anteriores estão em
   falha de troca na mesma aba, sem refresh.
 - Convites, gestão de membros/roles, criação adicional de workspaces pela UI
   e migração de usuários antigos não fazem parte deste aceite.
+- Só Inbox possui navegação habilitada na sidebar atual. As demais coleções têm
+  rotas acessíveis por URL, mas seus itens ainda estão desabilitados. O item Theme
+  também não é um botão funcional; isso não será aprovado como navegação/toggle.
 - Cookies, DNS/TLS, email real e deploy exigem outro aceite:
   [checklist de ambiente real](workspace-rollout-manual.md).
 
@@ -125,7 +130,7 @@ O Inbox indisponível é o estado esperado, não uma falha de login.
 
 ### QA-02 — Troca sem rascunho e navegação
 
-1. Em A, abra **Sent** pela sidebar.
+1. Em A, abra `http://<host>:3003/sent` diretamente pela barra de endereços.
 2. No seletor, escolha **Northwind** sem ter escrito mensagem.
 3. Abra o seletor novamente na página de destino.
 
@@ -219,7 +224,11 @@ globais nem entra em loop de redirecionamento.
 3. Em A, repita a confirmação de rascunho usando apenas teclado; cancele.
 4. No DevTools, simule largura **390 px**. Abra a sidebar pelo botão de alternar
    e repita a seleção. Confira também desktop (por exemplo, 1440 px).
-5. Repita as verificações visuais nos temas claro e escuro.
+5. Repita as verificações visuais nos temas claro e escuro. Como o item Theme
+   ainda não funciona, antes de criar o rascunho execute no Console do DevTools:
+   `localStorage.setItem('mailflow-theme', 'light'); location.reload()`.
+   Para voltar, substitua `light` por `dark`. Isso valida a paleta suportada pelo
+   DS, não um toggle de tema da aplicação. Não rode o comando com rascunho aberto.
 
 Esperado: foco visível, nomes/opções legíveis, menu/diálogo operáveis sem mouse,
 sem armadilha de foco. No mobile, seletor acessível dentro da sidebar, ações sem
@@ -344,6 +353,10 @@ Esse teste cobre signup com workspace/subdomínio → refresh/resend → OTP cap
 → login explícito → contexto autorizado, desktop/mobile. **Não valida chegada de
 email numa caixa real**. O Site não é necessário para QA-01 a QA-14, que usam
 contas sintéticas já verificadas.
+
+A suíte de workspace também inclui seis cenários complementares de QA:
+teclado/marcador atual/cancelamento em desktop e mobile, nas duas paletas,
+e seleção por toque emulado em mobile. Emulação não substitui aparelho real.
 
 Registre também os checks de Core/Web/Site e, quando executada, a suíte separada
 de correlação Faro/OTLP descrita nas evidências. O collector local não comprova
