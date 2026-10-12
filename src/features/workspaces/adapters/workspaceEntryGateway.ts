@@ -1,6 +1,7 @@
 import { filterBetterAuthCookies } from '../../auth/adapters/authCookies'
 import { workspaceEntrySchema } from '../schemas'
 import { resolveWorkspaceHost } from '../utils/workspaceHost'
+import { createWorkspaceTransport, workspaceResponseHeaders } from './workspaceTransport'
 
 function failure(
   status: number,
@@ -16,6 +17,7 @@ export function createWorkspaceEntryGateway(
   enabled: boolean,
   fetcher: typeof fetch = fetch,
 ) {
+  const forward = createWorkspaceTransport(apiBaseUrl, fetcher)
   return async (request: Request) => {
     const url = new URL(request.url)
     if (request.method !== 'GET' || url.pathname !== '/api/v1/workspace-entry')
@@ -31,24 +33,8 @@ export function createWorkspaceEntryGateway(
     const cookie = filterBetterAuthCookies(request.headers.get('cookie'))
     if (!cookie) return failure(401, 'authentication_required')
     try {
-      const upstream = await fetcher(new URL('/api/v1/workspace-entry', apiBaseUrl), {
-        headers: {
-          Cookie: cookie,
-          Accept: 'application/json',
-          ...(request.headers.get('traceparent')
-            ? { traceparent: request.headers.get('traceparent') ?? '' }
-            : {}),
-          ...(request.headers.get('tracestate')
-            ? { tracestate: request.headers.get('tracestate') ?? '' }
-            : {}),
-        },
-        cache: 'no-store',
-        redirect: 'manual',
-        signal: AbortSignal.any([request.signal, AbortSignal.timeout(5000)]),
-      })
-      const headers = new Headers({ 'Cache-Control': 'private, no-store' })
-      const requestId = upstream.headers.get('x-request-id')
-      if (requestId) headers.set('X-Request-ID', requestId)
+      const upstream = await forward(request, '/api/v1/workspace-entry')
+      const headers = workspaceResponseHeaders(upstream, ['X-Request-ID'])
       if (!upstream.ok) {
         const status = [401, 429].includes(upstream.status) ? upstream.status : 502
         if (status === 429 && upstream.headers.get('retry-after'))
