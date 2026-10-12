@@ -28,7 +28,7 @@ function useIsClient() {
 }
 
 export function Trigger() {
-  const { triggerRef, theme, navigationPending } = useComposer()
+  const { triggerRef, theme } = useComposer()
   const isClient = useIsClient()
 
   return (
@@ -37,7 +37,7 @@ export function Trigger() {
       render={<Button size="sm" />}
       data-theme={theme}
       className="h-8 gap-1.5 px-3 disabled:opacity-100"
-      disabled={!isClient || navigationPending}
+      disabled={!isClient}
     >
       <SquarePen aria-hidden="true" className="size-3.5" /> Compose
     </WindowTrigger>
@@ -45,12 +45,10 @@ export function Trigger() {
 }
 
 export function Content({ children }: Pick<ComposerRootProps, 'children'>) {
-  const { theme, recipientRef, revision, navigationPending } = useComposer()
+  const { theme, recipientRef, revision } = useComposer()
   const lastFocus = useRef<ComposerFocusMemory>({ element: null, revision })
   return (
     <WindowContent
-      inert={navigationPending}
-      aria-busy={navigationPending}
       lang="pt-BR"
       data-theme={theme}
       initialFocus={() =>
@@ -112,12 +110,11 @@ export function Layout({ children, assistant }: ComposerLayoutProps) {
 }
 
 export function Minimized() {
-  const { theme, navigationPending } = useComposer()
+  const { theme } = useComposer()
   const { control } = useFormContext<DraftValues>()
   const subject = useWatch({ control, name: 'subject' })
   return (
     <WindowMinimized
-      inert={navigationPending}
       lang="pt-BR"
       className="bottom-20"
       aria-label="Mensagem minimizada"

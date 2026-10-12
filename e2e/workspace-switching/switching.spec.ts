@@ -85,104 +85,37 @@ test('rechecks membership at the destination without trusting the committed pref
   expect(state.globalMailCalls).toBe(0)
 })
 
-test('cancel preserves a saved minimized draft and attachments without any selection request', async ({
-  page,
-}) => {
+test('selects another workspace directly without composer draft confirmation', async ({ page }) => {
   const data = await fixture()
   await page.getByRole('button', { name: 'Compose', exact: true }).click()
-  await page.getByRole('textbox', { name: 'Assunto', exact: true }).fill('Saved only here')
   await page
-    .getByRole('textbox', { name: 'Corpo da mensagem', exact: true })
-    .fill('Private content')
-  const chooser = page.waitForEvent('filechooser')
-  await page.getByRole('button', { name: 'Anexar arquivo', exact: true }).click()
-  await (await chooser).setFiles({
-    name: 'private.txt',
-    mimeType: 'text/plain',
-    buffer: Buffer.from('private'),
-  })
-  await expect(page.getByText('private.txt', { exact: true })).toBeVisible()
-  await page.getByRole('button', { name: 'Rascunho', exact: true }).click()
+    .getByRole('textbox', { name: 'Assunto', exact: true })
+    .fill('Workspace scope regression')
   await page.getByRole('button', { name: 'Minimizar janela' }).click()
   await page.getByRole('combobox', { name: 'Workspace: Acme Corp' }).click()
   await page.getByRole('option', { name: 'Northwind' }).click()
-  await expect(page.getByRole('alertdialog')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Continuar editando' })).toBeFocused()
-  expect(
-    (await new AxeBuilder({ page }).include('[role="alertdialog"]').analyze()).violations,
-  ).toEqual([])
-  await page.getByRole('button', { name: 'Continuar editando' }).click()
-  expect(new URL(page.url()).hostname).toBe(data.host)
-  const state = await fixture()
-  expect(state.selections).toBe(0)
-  expect(state.preference).toBeNull()
-  await page.getByRole('button', { name: 'Restaurar mensagem' }).click()
-  await expect(page.getByRole('textbox', { name: 'Assunto', exact: true })).toHaveValue(
-    'Saved only here',
-  )
-  await expect(page.getByRole('textbox', { name: 'Corpo da mensagem', exact: true })).toContainText(
-    'Private content',
-  )
-  await expect(page.getByText('private.txt', { exact: true })).toBeVisible()
-  await page.getByRole('button', { name: 'Minimizar janela' }).click()
-  await page.getByRole('combobox', { name: 'Workspace: Acme Corp' }).click()
-  await page.getByRole('option', { name: 'Northwind' }).click()
-  await page.getByRole('button', { name: 'Descartar e trocar' }).click()
   await expect(page).toHaveURL(`http://${data.targetHost}:3003/inbox`)
   await expect(page.getByRole('combobox', { name: 'Workspace: Northwind' })).toBeVisible()
-  await page.getByRole('button', { name: 'Compose', exact: true }).click()
-  await expect(page.getByRole('textbox', { name: 'Assunto', exact: true })).toHaveValue('')
-  await expect(page.getByText('private.txt', { exact: true })).toHaveCount(0)
+  await expect(page.getByRole('alertdialog')).toHaveCount(0)
+  expect((await fixture()).preference).toBe(data.targetId)
 })
 
-test('failed writes and stale memberships do not navigate or discard a message', async ({
+test('failed writes and stale memberships do not navigate or change the preference', async ({
   page,
 }) => {
   const data = await fixture()
-  await page.getByRole('button', { name: 'Compose', exact: true }).click()
-  await page.getByRole('textbox', { name: 'Assunto', exact: true }).fill('Retain on failure')
-  await page.getByRole('textbox', { name: 'Corpo da mensagem', exact: true }).fill('Retained body')
-  const chooser = page.waitForEvent('filechooser')
-  await page.getByRole('button', { name: 'Anexar arquivo', exact: true }).click()
-  await (await chooser).setFiles({
-    name: 'qa-retained.txt',
-    mimeType: 'text/plain',
-    buffer: Buffer.from('Synthetic QA attachment'),
-  })
-  await page.getByRole('button', { name: 'Minimizar janela' }).click()
   await control('fail-next')
   await page.getByRole('combobox', { name: 'Workspace: Acme Corp' }).click()
   await page.getByRole('option', { name: 'Northwind' }).click()
-  await page.getByRole('button', { name: 'Descartar e trocar' }).click()
-  await expect(page.getByRole('alertdialog').getByRole('alert')).toContainText('preservada')
+  await expect(page.getByRole('alert')).toContainText('Workspace could not be changed. Try again.')
   expect(new URL(page.url()).hostname).toBe(data.host)
   expect((await fixture()).preference).toBeNull()
-  await page.getByRole('button', { name: 'Continuar editando' }).click()
-  await page.getByRole('button', { name: 'Restaurar mensagem' }).click()
-  await expect(page.getByRole('textbox', { name: 'Assunto', exact: true })).toHaveValue(
-    'Retain on failure',
-  )
-  await expect(page.getByRole('textbox', { name: 'Corpo da mensagem', exact: true })).toContainText(
-    'Retained body',
-  )
-  await expect(page.getByText('qa-retained.txt', { exact: true })).toBeVisible()
-  await page.getByRole('button', { name: 'Minimizar janela' }).click()
   await control('revoke-northwind')
   await page.getByRole('combobox', { name: 'Workspace: Acme Corp' }).click()
   await page.getByRole('option', { name: 'Northwind' }).click()
-  await page.getByRole('button', { name: 'Descartar e trocar' }).click()
-  await expect(page.getByRole('alertdialog').getByRole('alert')).toContainText('preservada')
+  await expect(page.getByRole('alert')).toContainText('Workspace could not be changed. Try again.')
   expect((await fixture()).preference).toBeNull()
   expect(new URL(page.url()).hostname).toBe(data.host)
-  await page.getByRole('button', { name: 'Continuar editando' }).click()
-  await page.getByRole('button', { name: 'Restaurar mensagem' }).click()
-  await expect(page.getByRole('textbox', { name: 'Assunto', exact: true })).toHaveValue(
-    'Retain on failure',
-  )
-  await expect(page.getByRole('textbox', { name: 'Corpo da mensagem', exact: true })).toContainText(
-    'Retained body',
-  )
-  await expect(page.getByText('qa-retained.txt', { exact: true })).toBeVisible()
 })
 
 test('rejects unrelated selectors and cross-origin submissions despite same-site cookies', async ({

@@ -7,13 +7,7 @@ import type { WorkspaceSelectionOptions } from '../types/selection'
 import { workspaceDestination } from '../utils/workspaceNavigation'
 import { useWorkspaceIdentityRecovery } from './useWorkspaceIdentityRecovery'
 
-export function useWorkspaceSelection({
-  state,
-  baseHost,
-  enabled,
-  composer,
-}: WorkspaceSelectionOptions) {
-  const [confirmation, setConfirmation] = useState<Workspace | null>(null)
+export function useWorkspaceSelection({ state, baseHost, enabled }: WorkspaceSelectionOptions) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [retryAfterSeconds, setRetryAfterSeconds] = useState<number | null>(null)
@@ -34,7 +28,6 @@ export function useWorkspaceSelection({
     setBusy(true)
     setError(null)
     setRetryAfterSeconds(null)
-    composer?.setNavigationPending(true)
     let navigating = false
     try {
       // Check our source and proposed destination before committing anything.
@@ -43,7 +36,6 @@ export function useWorkspaceSelection({
       if (controller.signal.aborted) return
       const destination = workspaceDestination(window.location.href, baseHost, authorized)
       window.location.assign(destination)
-      composer?.discard()
       navigating = true
     } catch (failure) {
       if (!controller.signal.aborted) {
@@ -55,15 +47,14 @@ export function useWorkspaceSelection({
           const wait = failure.retryAfterSeconds
             ? `Try again in ${failure.retryAfterSeconds} seconds.`
             : 'Please wait before trying again.'
-          setError(`Too many workspace requests. Your message has been preserved. ${wait}`)
+          setError(`Too many workspace requests. ${wait}`)
         } else {
-          setError('Workspace could not be changed. Your message has been preserved. Try again.')
+          setError('Workspace could not be changed. Try again.')
         }
       }
     } finally {
       if (!navigating) {
         active.current = null
-        composer?.setNavigationPending(false)
         if (!controller.signal.aborted) setBusy(false)
       }
     }
@@ -82,8 +73,7 @@ export function useWorkspaceSelection({
     if (!workspace) return
     setError(null)
     setRetryAfterSeconds(null)
-    if (composer?.hasLocalDraft()) setConfirmation(workspace)
-    else void perform(workspace)
+    void perform(workspace)
   }
 
   return {
@@ -91,16 +81,5 @@ export function useWorkspaceSelection({
     busy,
     error,
     retryAfterSeconds,
-    confirmation,
-    cancel: () => {
-      if (!active.current) {
-        setConfirmation(null)
-        setError(null)
-        setRetryAfterSeconds(null)
-      }
-    },
-    confirm: () => {
-      if (confirmation) void perform(confirmation)
-    },
   }
 }
