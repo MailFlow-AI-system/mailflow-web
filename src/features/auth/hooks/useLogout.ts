@@ -30,7 +30,7 @@ export function useLogout() {
       }
       await queryClient.cancelQueries()
       queryClient.clear()
-      if (clientEnvironment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED) {
+      if (clientEnvironment.workspaceSwitchingEnabled) {
         await navigate({ href: '/login#', replace: true, reloadDocument: true })
         return
       }

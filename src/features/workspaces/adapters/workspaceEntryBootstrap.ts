@@ -2,6 +2,7 @@ import { workspaceEntrySchema } from '../schemas'
 import type { WorkspaceEntry, WorkspaceEntryBootstrap } from '../types/entry'
 import { resolveWorkspaceHost } from '../utils/workspaceHost'
 import { workspaceDestination } from '../utils/workspaceNavigation'
+import { isWorkspaceRequestOrigin } from '../utils/workspaceOrigin'
 import { createWorkspaceEntryGateway } from './workspaceEntryGateway'
 
 export async function readWorkspaceEntryBootstrap(
@@ -15,7 +16,8 @@ export async function readWorkspaceEntryBootstrap(
   if (!baseHost || !enabled) return { kind: 'passthrough' }
   const url = new URL(request.url)
   const host = resolveWorkspaceHost(url.hostname, baseHost)
-  if (host.kind === 'invalid') return { kind: 'invalid' }
+  if (!isWorkspaceRequestOrigin(url, baseHost) || host.kind === 'invalid')
+    return { kind: 'invalid' }
   if (host.kind === 'workspace') return { kind: 'passthrough' }
   const response = await createWorkspaceEntryGateway(
     apiBaseUrl,

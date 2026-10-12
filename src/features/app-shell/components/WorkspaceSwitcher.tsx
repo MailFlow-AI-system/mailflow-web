@@ -11,7 +11,7 @@ export function WorkspaceSwitcher() {
 }
 
 function WorkspaceSwitcherControl({ state }: WorkspaceSwitcherProps) {
-  const enabled = clientEnvironment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED
+  const enabled = clientEnvironment.workspaceSwitchingEnabled
   const selection = useWorkspaceSelection({
     state,
     enabled,
