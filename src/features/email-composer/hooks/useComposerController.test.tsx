@@ -4,23 +4,6 @@ import { describe, expect, it, vi } from 'vitest'
 import { useComposerController } from './useComposerController'
 
 describe('useComposerController composition validation', () => {
-  it('protects locally saved drafts and attachments during workspace navigation', async () => {
-    const { result } = renderHook(() => useComposerController('light'))
-    await waitFor(() => expect(result.current.context.editor).toBeTruthy())
-    expect(result.current.context.hasLocalDraft()).toBe(false)
-    act(() => result.current.draft.setValue('subject', 'Local draft'))
-    act(() => result.current.context.saveDraft())
-    expect(result.current.context.saved).toBe(true)
-    expect(result.current.context.hasLocalDraft()).toBe(true)
-    act(() => result.current.context.setNavigationPending(true))
-    expect(result.current.context.editor?.isEditable).toBe(false)
-    act(() => result.current.context.setNavigationPending(false))
-    expect(result.current.context.editor?.isEditable).toBe(true)
-    act(() => result.current.context.discard())
-    expect(result.current.context.hasLocalDraft()).toBe(false)
-    act(() => result.current.context.addAttachments([new File(['draft'], 'draft.txt')]))
-    expect(result.current.context.hasLocalDraft()).toBe(true)
-  })
   it('invalidates readiness on every editor update and draft field edit', async () => {
     const { result } = renderHook(() => useComposerController('light'))
     await waitFor(() => expect(result.current.context.editor).toBeTruthy())

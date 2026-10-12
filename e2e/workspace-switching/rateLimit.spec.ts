@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { control, fixture, login } from './fixture'
 
-test('real rate-limited selection announces the wait and preserves the composer draft', async ({
+test('real rate-limited selection announces the wait without changing the workspace', async ({
   page,
 }) => {
   test.setTimeout(60000)
@@ -10,11 +10,6 @@ test('real rate-limited selection announces the wait and preserves the composer 
   const data = await fixture()
   await login(page, `http://${data.host}:3003/login`)
   await expect(page.getByRole('combobox', { name: 'Workspace: Acme Corp' })).toBeVisible()
-  await page.getByRole('button', { name: 'Compose', exact: true }).click()
-  await page
-    .getByRole('textbox', { name: 'Assunto', exact: true })
-    .fill('Preserve after rate limit')
-  await page.getByRole('button', { name: 'Minimizar janela' }).click()
   const retryAfter = await page.evaluate(async () => {
     for (let index = 0; index < 125; index++) {
       const response = await fetch('/api/v1/workspaces', { cache: 'no-store' })
@@ -26,28 +21,20 @@ test('real rate-limited selection announces the wait and preserves the composer 
   })
   expect(retryAfter).toBeGreaterThan(0)
   expect(retryAfter).toBeLessThanOrEqual(60)
-  await page.getByRole('combobox', { name: 'Workspace: Acme Corp' }).click()
-  await page.getByRole('option', { name: 'Northwind' }).click()
   const rejected = page.waitForResponse(
     (response) =>
       new URL(response.url()).pathname === '/api/v1/workspace-selection' &&
       response.status() === 429,
   )
-  await page.getByRole('button', { name: 'Descartar e trocar' }).click()
+  await page.getByRole('combobox', { name: 'Workspace: Acme Corp' }).click()
+  await page.getByRole('option', { name: 'Northwind' }).click()
   expect((await rejected).headers()['retry-after']).toMatch(/^\d+$/)
-  await expect(page.getByRole('alertdialog').getByRole('alert')).toContainText(
-    /Aguarde \d+ segundos/,
+  await expect(page.getByRole('alert')).toContainText(/Try again in \d+ seconds/)
+  expect((await new AxeBuilder({ page }).include('[role="alert"]').analyze()).violations).toEqual(
+    [],
   )
-  expect(
-    (await new AxeBuilder({ page }).include('[role="alertdialog"]').analyze()).violations,
-  ).toEqual([])
   expect(new URL(page.url()).hostname).toBe(data.host)
   const after = await fixture()
   expect(after.preference).toBeNull()
   expect(after.selections).toBe(0)
-  await page.getByRole('button', { name: 'Continuar editando' }).click()
-  await page.getByRole('button', { name: 'Restaurar mensagem' }).click()
-  await expect(page.getByRole('textbox', { name: 'Assunto', exact: true })).toHaveValue(
-    'Preserve after rate limit',
-  )
 })

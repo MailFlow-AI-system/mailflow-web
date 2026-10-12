@@ -12,16 +12,12 @@ vi.mock('#/config/env', () => ({
     VITE_WORKSPACE_BASE_HOST: 'workspace.test',
   },
 }))
-vi.mock('#/features/email-composer', () => ({ useComposerNavigationGuard: () => null }))
 vi.mock('#/features/workspaces/hooks/useWorkspaceContext', () => ({ useWorkspaceContext: vi.fn() }))
 vi.mock('#/features/workspaces/hooks/useWorkspaceSelection', () => ({
   useWorkspaceSelection: () => ({
     request,
     busy: false,
     error: null,
-    confirmation: null,
-    cancel: vi.fn(),
-    confirm: vi.fn(),
   }),
 }))
 
