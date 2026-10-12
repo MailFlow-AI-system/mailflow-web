@@ -2,6 +2,7 @@ import { filterBetterAuthCookies } from '#/features/auth/adapters/authCookies'
 import { workspaceSelectionResultSchema, workspaceSelectionSchema } from '../schemas'
 import { readBoundedJson } from '../utils/readBoundedJson'
 import { resolveWorkspaceHost } from '../utils/workspaceHost'
+import { createWorkspaceTransport, workspaceResponseHeaders } from './workspaceTransport'
 
 function failure(
   status: number,
@@ -17,6 +18,7 @@ export function createWorkspaceSelectionGateway(
   enabled: boolean,
   fetcher: typeof fetch = fetch,
 ) {
+  const forward = createWorkspaceTransport(apiBaseUrl, fetcher)
   return async (request: Request) => {
     const url = new URL(request.url)
     if (request.method !== 'POST' || url.pathname !== '/api/v1/workspace-selection')
@@ -39,33 +41,14 @@ export function createWorkspaceSelectionGateway(
     const parsed = workspaceSelectionSchema.safeParse(payload.body)
     if (!parsed.success) return failure(400, 'invalid_workspace_request')
     try {
-      const upstream = await fetcher(new URL('/api/v1/workspace-selection', apiBaseUrl), {
-        method: 'POST',
-        headers: {
-          Cookie: cookie,
-          Origin: url.origin,
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          ...(request.headers.get('x-workspace-identity')
-            ? { 'X-Workspace-Identity': request.headers.get('x-workspace-identity') ?? '' }
-            : {}),
-          ...(request.headers.get('traceparent')
-            ? { traceparent: request.headers.get('traceparent') ?? '' }
-            : {}),
-          ...(request.headers.get('tracestate')
-            ? { tracestate: request.headers.get('tracestate') ?? '' }
-            : {}),
-        },
+      const upstream = await forward(request, '/api/v1/workspace-selection', {
         body: JSON.stringify(parsed.data),
-        cache: 'no-store',
-        redirect: 'manual',
-        signal: AbortSignal.any([request.signal, AbortSignal.timeout(5000)]),
+        forwardIdentity: true,
       })
-      const responseHeaders = new Headers({ 'Cache-Control': 'private, no-store' })
-      const requestId = upstream.headers.get('x-request-id')
-      if (requestId) responseHeaders.set('X-Request-ID', requestId)
-      const identity = upstream.headers.get('x-workspace-identity')
-      if (identity) responseHeaders.set('X-Workspace-Identity', identity)
+      const responseHeaders = workspaceResponseHeaders(upstream, [
+        'X-Request-ID',
+        'X-Workspace-Identity',
+      ])
       if (!upstream.ok) {
         const status = [400, 401, 403, 404, 413, 429].includes(upstream.status)
           ? upstream.status
