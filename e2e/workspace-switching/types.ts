@@ -24,6 +24,8 @@ export type PausedWorkspaceResponse = {
   responseHeaders?: { name: string; value: string }[]
 }
 
+export type PausedWorkspacePath = '/api/workspace-context' | '/api/v1/workspace-selection'
+
 export type WorkspaceQaCase = {
   name: string
   theme: 'dark' | 'light'
