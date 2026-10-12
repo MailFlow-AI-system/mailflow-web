@@ -5,7 +5,7 @@ import { createWorkspaceEntryGateway } from '#/features/workspaces/adapters/work
 const gateway = createWorkspaceEntryGateway(
   clientEnvironment.VITE_API_BASE_URL,
   clientEnvironment.VITE_WORKSPACE_BASE_HOST,
-  clientEnvironment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED,
+  clientEnvironment.workspaceSwitchingEnabled,
 )
 export const Route = createFileRoute('/api/v1/workspace-entry')({
   server: { handlers: { GET: ({ request }) => gateway(request) } },

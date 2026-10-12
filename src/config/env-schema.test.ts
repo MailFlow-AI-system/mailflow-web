@@ -3,6 +3,40 @@ import { describe, expect, it } from 'vitest'
 import { createClientEnvironment } from './env-schema'
 
 describe('createClientEnvironment', () => {
+  it('enables a remote deployment explicitly, with local and remote modes kept separate', () => {
+    const remote = {
+      VITE_API_BASE_URL: 'https://api.staging.example.com',
+      VITE_WORKSPACE_BASE_HOST: 'app.staging.example.com',
+      VITE_WORKSPACE_SWITCHING_ENABLED: 'true',
+    }
+    const config = createClientEnvironment(remote)
+    expect(config.workspaceSwitchingEnabled).toBe(true)
+    expect(config.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED).toBe(false)
+    expect(
+      createClientEnvironment({ VITE_API_BASE_URL: remote.VITE_API_BASE_URL })
+        .workspaceSwitchingEnabled,
+    ).toBe(false)
+    for (const host of [undefined, 'workspace.test', 'example.com', '127.0.0.1', 'app.localhost']) {
+      expect(() => createClientEnvironment({ ...remote, VITE_WORKSPACE_BASE_HOST: host })).toThrow()
+    }
+    expect(() =>
+      createClientEnvironment({ ...remote, VITE_API_BASE_URL: 'http://api.staging.example.com' }),
+    ).toThrow('HTTPS')
+    expect(() =>
+      createClientEnvironment({
+        ...remote,
+        VITE_WORKSPACE_BASE_HOST: 'workspace.test',
+        VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED: 'true',
+      }),
+    ).toThrow('exclusive')
+    expect(
+      createClientEnvironment({
+        VITE_API_BASE_URL: 'http://localhost:8080',
+        VITE_WORKSPACE_BASE_HOST: 'workspace.test',
+        VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED: 'true',
+      }).workspaceSwitchingEnabled,
+    ).toBe(true)
+  })
   it('keeps switching dark by default and only enables it in the isolated test zone', () => {
     expect(
       createClientEnvironment({ VITE_API_BASE_URL: 'http://localhost:8080' })

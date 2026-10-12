@@ -1,7 +1,8 @@
 import { filterBetterAuthCookies } from '#/features/auth/adapters/authCookies'
+import { isRemoteWorkspaceBaseHost } from '../../../config/utils/workspaceBaseHost'
 import { workspaceSelectionResultSchema, workspaceSelectionSchema } from '../schemas'
 import { readBoundedJson } from '../utils/readBoundedJson'
-import { resolveWorkspaceHost } from '../utils/workspaceHost'
+import { isWorkspaceRequestOrigin } from '../utils/workspaceOrigin'
 import { createWorkspaceTransport, workspaceResponseHeaders } from './workspaceTransport'
 
 function failure(
@@ -23,10 +24,13 @@ export function createWorkspaceSelectionGateway(
     const url = new URL(request.url)
     if (request.method !== 'POST' || url.pathname !== '/api/v1/workspace-selection')
       return failure(404, 'route_not_found')
-    if (!enabled || baseHost !== 'workspace.test')
+    if (
+      !enabled ||
+      !baseHost ||
+      (baseHost !== 'workspace.test' && !isRemoteWorkspaceBaseHost(baseHost))
+    )
       return failure(503, 'workspace_switching_not_configured')
-    if (resolveWorkspaceHost(url.hostname, baseHost).kind === 'invalid')
-      return failure(404, 'workspace_unavailable')
+    if (!isWorkspaceRequestOrigin(url, baseHost)) return failure(404, 'workspace_unavailable')
     // Sibling subdomains are same-site, not same-origin. They cannot submit a selection here.
     if (request.headers.get('origin') !== url.origin) return failure(403, 'workspace_origin_denied')
     const cookie = filterBetterAuthCookies(request.headers.get('cookie'))

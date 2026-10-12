@@ -8,7 +8,7 @@ import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 const { request } = vi.hoisted(() => ({ request: vi.fn() }))
 vi.mock('#/config/env', () => ({
   clientEnvironment: {
-    VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED: true,
+    workspaceSwitchingEnabled: true,
     VITE_WORKSPACE_BASE_HOST: 'workspace.test',
   },
 }))

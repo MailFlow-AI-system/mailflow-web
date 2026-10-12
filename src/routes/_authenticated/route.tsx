@@ -12,12 +12,12 @@ export const Route = createFileRoute('/_authenticated')({
   beforeLoad: async ({ location }) => {
     const { user } = await requireAuthenticatedUser({
       location,
-      clearFragment: clientEnvironment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED,
+      clearFragment: clientEnvironment.workspaceSwitchingEnabled,
     })
     const entry = await resolveWorkspaceEntry(
       location.pathname,
       clientEnvironment.VITE_WORKSPACE_BASE_HOST,
-      clientEnvironment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED,
+      clientEnvironment.workspaceSwitchingEnabled,
     )
     if (entry.kind === 'redirect')
       throw redirect({ href: entry.href, reloadDocument: true, replace: true })
