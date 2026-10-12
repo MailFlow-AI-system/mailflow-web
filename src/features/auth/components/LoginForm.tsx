@@ -48,7 +48,7 @@ export function LoginForm({ returnTo }: LoginFormProps = {}) {
       }
       await queryClient.cancelQueries()
       queryClient.clear()
-      if (clientEnvironment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED) {
+      if (clientEnvironment.workspaceSwitchingEnabled) {
         await navigate({
           href: `${safeMailCollectionPath(returnTo)}#`,
           replace: true,
