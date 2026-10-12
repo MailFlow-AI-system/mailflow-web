@@ -23,7 +23,6 @@ export function useComposerController(
   const [open, setOpen] = useState(false)
   const [state, setState] = useState<WindowState>('normal')
   const [saved, setSaved] = useState(false)
-  const [navigationPending, setNavigationPending] = useState(false)
   const [confirm, setConfirm] = useState(false)
   const [showCc, setShowCc] = useState(false)
   const [baselineDraftSignature, setBaselineDraftSignature] = useState(
@@ -171,12 +170,6 @@ export function useComposerController(
       confirm,
       setConfirm,
       discard,
-      hasLocalDraft: () => readDraftSignature() !== draftSignature(emptyFields, emptyBody, []),
-      navigationPending,
-      setNavigationPending: (pending) => {
-        editorRef.current?.setEditable(!pending)
-        setNavigationPending(pending)
-      },
       state,
       theme,
       triggerRef,
@@ -194,10 +187,6 @@ export function useComposerController(
     state,
     setState,
     onOpenChange: (next: boolean, details: WindowOpenChangeDetails) => {
-      if (navigationPending) {
-        details.cancel()
-        return
-      }
       if (!next && isDirty()) {
         details.cancel()
         setConfirm(true)
