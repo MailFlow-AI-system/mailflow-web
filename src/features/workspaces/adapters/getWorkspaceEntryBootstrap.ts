@@ -13,6 +13,6 @@ export const getWorkspaceEntryBootstrap = createServerFn({ method: 'GET' })
       data.pathname,
       clientEnvironment.VITE_API_BASE_URL,
       clientEnvironment.VITE_WORKSPACE_BASE_HOST,
-      clientEnvironment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED,
+      clientEnvironment.workspaceSwitchingEnabled,
     )
   })

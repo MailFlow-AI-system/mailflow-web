@@ -19,7 +19,7 @@ const {
   cancelQueries: vi.fn(async () => {}),
 }))
 vi.mock('@tanstack/react-query', () => ({ useQueryClient: () => ({ clear, cancelQueries }) }))
-const environment = vi.hoisted(() => ({ VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED: false }))
+const environment = vi.hoisted(() => ({ workspaceSwitchingEnabled: false }))
 vi.mock('#/config/env', () => ({ clientEnvironment: environment }))
 
 vi.mock('@mailflow/ui/components', async (importOriginal) => {
@@ -38,7 +38,7 @@ import { LogoutButton } from './LogoutButton'
 describe('LogoutButton', () => {
   afterEach(cleanup)
   beforeEach(() => {
-    environment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED = false
+    environment.workspaceSwitchingEnabled = false
     signOut.mockReset()
     invalidate.mockReset()
     invalidate.mockImplementation(async () => {})
@@ -74,7 +74,7 @@ describe('LogoutButton', () => {
     expect(recordAuthTransportFailure).not.toHaveBeenCalled()
   })
   it('starts a fresh document in workspace mode without concurrent route invalidation', async () => {
-    environment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED = true
+    environment.workspaceSwitchingEnabled = true
     signOut.mockResolvedValue({ data: { success: true } })
     render(<LogoutButton />)
     fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))

@@ -11,7 +11,7 @@ const { signIn, invalidate, navigate, recordAuthTransportFailure, clear, cancelQ
     cancelQueries: vi.fn(async () => {}),
   }))
 vi.mock('@tanstack/react-query', () => ({ useQueryClient: () => ({ clear, cancelQueries }) }))
-const environment = vi.hoisted(() => ({ VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED: false }))
+const environment = vi.hoisted(() => ({ workspaceSwitchingEnabled: false }))
 vi.mock('#/config/env', () => ({ clientEnvironment: environment }))
 
 vi.mock('../clients/authClient', () => ({ authClient: { signIn: { email: signIn } } }))
@@ -27,7 +27,7 @@ import { LoginForm } from './LoginForm'
 describe('LoginForm', () => {
   afterEach(cleanup)
   beforeEach(() => {
-    environment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED = false
+    environment.workspaceSwitchingEnabled = false
     signIn.mockReset()
     invalidate.mockReset()
     invalidate.mockImplementation(async () => {})
@@ -118,7 +118,7 @@ describe('LoginForm', () => {
     expect(clear.mock.invocationCallOrder[0]).toBeLessThan(invalidate.mock.invocationCallOrder[0])
   })
   it('uses a single full-document navigation for workspace login without competing route invalidation', async () => {
-    environment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED = true
+    environment.workspaceSwitchingEnabled = true
     signIn.mockResolvedValue({ data: { user: { id: 'next-identity' } } })
     render(<LoginForm returnTo="/sent" />)
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'other@example.test' } })

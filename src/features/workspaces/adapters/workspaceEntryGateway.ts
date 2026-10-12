@@ -1,6 +1,8 @@
+import { isRemoteWorkspaceBaseHost } from '../../../config/utils/workspaceBaseHost'
 import { filterBetterAuthCookies } from '../../auth/adapters/authCookies'
 import { workspaceEntrySchema } from '../schemas'
 import { resolveWorkspaceHost } from '../utils/workspaceHost'
+import { isWorkspaceRequestOrigin } from '../utils/workspaceOrigin'
 import { createWorkspaceTransport, workspaceResponseHeaders } from './workspaceTransport'
 
 function failure(
@@ -22,10 +24,14 @@ export function createWorkspaceEntryGateway(
     const url = new URL(request.url)
     if (request.method !== 'GET' || url.pathname !== '/api/v1/workspace-entry')
       return failure(404, 'route_not_found')
-    if (!enabled || baseHost !== 'workspace.test')
+    if (
+      !enabled ||
+      !baseHost ||
+      (baseHost !== 'workspace.test' && !isRemoteWorkspaceBaseHost(baseHost))
+    )
       return failure(503, 'workspace_entry_not_configured')
     if (
-      !['http:', 'https:'].includes(url.protocol) ||
+      !isWorkspaceRequestOrigin(url, baseHost) ||
       resolveWorkspaceHost(url.hostname, baseHost).kind !== 'generic'
     )
       return failure(404, 'workspace_unavailable')

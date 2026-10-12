@@ -1,5 +1,6 @@
 import { filterBetterAuthCookies } from '../../auth/adapters/authCookies'
 import { resolveWorkspaceHost } from '../utils/workspaceHost'
+import { isWorkspaceRequestOrigin } from '../utils/workspaceOrigin'
 import { createWorkspaceTransport, workspaceResponseHeaders } from './workspaceTransport'
 
 function failure(status: number, code: string) {
@@ -17,7 +18,8 @@ export function createWorkspaceGateway(
     if (!baseHost) return failure(503, 'workspace_not_configured')
     const url = new URL(request.url)
     const host = resolveWorkspaceHost(url.hostname, baseHost)
-    if (host.kind === 'invalid') return failure(404, 'workspace_unavailable')
+    if (!isWorkspaceRequestOrigin(url, baseHost) || host.kind === 'invalid')
+      return failure(404, 'workspace_unavailable')
     const cookie = filterBetterAuthCookies(request.headers.get('cookie'))
     if (!cookie) return failure(401, 'authentication_required')
     let path: string
