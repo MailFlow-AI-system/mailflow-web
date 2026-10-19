@@ -65,6 +65,57 @@ describe('sanitizeTelemetryItem', () => {
     expect(item?.meta).toEqual({ page: { url: 'https://workspace.test/inbox' } })
     expect(JSON.stringify(item)).not.toMatch(/private-acme|private-id|secret/)
   })
+  it('removes dotted workspace attributes from Faro and OpenTelemetry payloads', () => {
+    const item = sanitizeTelemetryItem({
+      type: 'trace',
+      payload: {
+        attributes: {
+          'workspace.name': 'private-workspace',
+          'workspace.id': 'private-id',
+          'tenant.name': 'private-tenant',
+          'mailflow.workspace.slug': 'private-slug',
+          'mailflow.workspace.operation': 'selection',
+          'mailflow.workspace.result': 'denied',
+        },
+        spans: [
+          {
+            attributes: [
+              {
+                key: 'workspace.name',
+                value: { stringValue: 'private-workspace' },
+              },
+              { key: 'tenant.name', value: { stringValue: 'private-tenant' } },
+              { key: 'mailflow.workspace.slug', value: { stringValue: 'private-slug' } },
+              {
+                key: 'mailflow.workspace.operation',
+                value: { stringValue: 'selection' },
+              },
+              { key: 'mailflow.workspace.result', value: { stringValue: 'denied' } },
+            ],
+          },
+        ],
+      },
+      meta: {},
+    } as unknown as TransportItem)
+
+    expect(item?.payload).toEqual({
+      attributes: {
+        'mailflow.workspace.operation': 'selection',
+        'mailflow.workspace.result': 'denied',
+      },
+      spans: [
+        {
+          attributes: [
+            { key: 'mailflow.workspace.operation', value: { stringValue: 'selection' } },
+            { key: 'mailflow.workspace.result', value: { stringValue: 'denied' } },
+          ],
+        },
+      ],
+    })
+    expect(JSON.stringify(item)).not.toMatch(
+      /private-workspace|private-id|private-tenant|private-slug/,
+    )
+  })
   it('removes reset tokens from page URLs before transport', () => {
     const item = sanitizeTelemetryItem({
       type: 'view',
