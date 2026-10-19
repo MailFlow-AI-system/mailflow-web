@@ -4,7 +4,7 @@ import { normalizeRoute } from './config'
 import { maskWorkspaceHosts } from './utils/maskWorkspaceHosts'
 
 const blockedKeys =
-  /^(authorization|cookie|set-cookie|password|secret|token|accessToken|refreshToken|api[-_]?key|email|subject|recipient|recipients|prompt|content|body|payload|user|user[-_]?id|identity|identity[-_]?id|username|fullname|workspace[-_]?(id|slug|name|identity)|tenant[-_]?(id|slug)|host(name)?|job[-_]?id|email[-_]?id|detail)$/i
+  /^(authorization|cookie|set-cookie|password|secret|token|accessToken|refreshToken|api[-_]?key|email|subject|recipient|recipients|prompt|content|body|payload|user|user[-_]?id|identity|identity[-_]?id|username|fullname|workspace[-_]?(id|slug|name|identity)|tenant[-_]?(id|slug|name)|host(name)?|job[-_]?id|email[-_]?id|detail)$/i
 const emailPattern = /\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b/g
 const credentialPattern =
   /\b(?:authorization|cookie|set-cookie|password|secret|token|api[-_]?key|x-workspace-identity)\s*[:=]\s*(?:Bearer\s+)?[^\s,;]+/gi
@@ -70,7 +70,14 @@ function sanitizeValue(value: unknown, key: string, signalType: string): unknown
 }
 
 function isBlockedKey(key: string): boolean {
-  return key.split(/[._-]/).some((part) => blockedKeys.test(part)) || blockedKeys.test(key)
+  const parts = key.split(/[._-]/)
+  return (
+    blockedKeys.test(key) ||
+    parts.some((part) => blockedKeys.test(part)) ||
+    parts.some((part, index) =>
+      index < parts.length - 1 ? blockedKeys.test(`${part}-${parts[index + 1]}`) : false,
+    )
+  )
 }
 
 function stripUrlDetails(value: string): string {
