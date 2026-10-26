@@ -25,6 +25,8 @@ import { Route as AuthenticatedMailStarredRouteImport } from './routes/_authenti
 import { Route as AuthenticatedMailTrashRouteImport } from './routes/_authenticated/_mail/trash'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiMailMessagesRouteImport } from './routes/api/mail/messages'
+import { Route as ApiMailSendRouteImport } from './routes/api/mail/send'
+import { Route as ApiMailSentRouteImport } from './routes/api/mail/sent'
 import { Route as ApiV1WorkspaceEntryRouteImport } from './routes/api/v1/workspace-entry'
 import { Route as ApiV1WorkspaceSelectionRouteImport } from './routes/api/v1/workspace-selection'
 import { Route as ApiV1WorkspacesRouteImport } from './routes/api/v1/workspaces'
@@ -107,6 +109,16 @@ const ApiMailMessagesRoute = ApiMailMessagesRouteImport.update({
   path: '/api/mail/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMailSendRoute = ApiMailSendRouteImport.update({
+  id: '/api/mail/send',
+  path: '/api/mail/send',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMailSentRoute = ApiMailSentRouteImport.update({
+  id: '/api/mail/sent',
+  path: '/api/mail/sent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1WorkspaceEntryRoute = ApiV1WorkspaceEntryRouteImport.update({
   id: '/api/v1/workspace-entry',
   path: '/api/v1/workspace-entry',
@@ -137,6 +149,8 @@ export interface FileRoutesByFullPath {
   '/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/mail/messages': typeof ApiMailMessagesRoute
+  '/api/mail/send': typeof ApiMailSendRoute
+  '/api/mail/sent': typeof ApiMailSentRoute
   '/api/v1/workspace-entry': typeof ApiV1WorkspaceEntryRoute
   '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
@@ -155,6 +169,8 @@ export interface FileRoutesByTo {
   '/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/mail/messages': typeof ApiMailMessagesRoute
+  '/api/mail/send': typeof ApiMailSendRoute
+  '/api/mail/sent': typeof ApiMailSentRoute
   '/api/v1/workspace-entry': typeof ApiV1WorkspaceEntryRoute
   '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
@@ -177,6 +193,8 @@ export interface FileRoutesById {
   '/_authenticated/_mail/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/mail/messages': typeof ApiMailMessagesRoute
+  '/api/mail/send': typeof ApiMailSendRoute
+  '/api/mail/sent': typeof ApiMailSentRoute
   '/api/v1/workspace-entry': typeof ApiV1WorkspaceEntryRoute
   '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
@@ -197,6 +215,8 @@ export interface FileRouteTypes {
     | '/trash'
     | '/api/auth/$'
     | '/api/mail/messages'
+    | '/api/mail/send'
+    | '/api/mail/sent'
     | '/api/v1/workspace-entry'
     | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
@@ -215,6 +235,8 @@ export interface FileRouteTypes {
     | '/trash'
     | '/api/auth/$'
     | '/api/mail/messages'
+    | '/api/mail/send'
+    | '/api/mail/sent'
     | '/api/v1/workspace-entry'
     | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
@@ -236,6 +258,8 @@ export interface FileRouteTypes {
     | '/_authenticated/_mail/trash'
     | '/api/auth/$'
     | '/api/mail/messages'
+    | '/api/mail/send'
+    | '/api/mail/sent'
     | '/api/v1/workspace-entry'
     | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
@@ -247,6 +271,8 @@ export interface RootRouteChildren {
   ApiWorkspaceContextRoute: typeof ApiWorkspaceContextRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiMailMessagesRoute: typeof ApiMailMessagesRoute
+  ApiMailSendRoute: typeof ApiMailSendRoute
+  ApiMailSentRoute: typeof ApiMailSentRoute
   ApiV1WorkspaceEntryRoute: typeof ApiV1WorkspaceEntryRoute
   ApiV1WorkspaceSelectionRoute: typeof ApiV1WorkspaceSelectionRoute
   ApiV1WorkspacesRoute: typeof ApiV1WorkspacesRoute
@@ -366,6 +392,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMailMessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/mail/send': {
+      id: '/api/mail/send'
+      path: '/api/mail/send'
+      fullPath: '/api/mail/send'
+      preLoaderRoute: typeof ApiMailSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mail/sent': {
+      id: '/api/mail/sent'
+      path: '/api/mail/sent'
+      fullPath: '/api/mail/sent'
+      preLoaderRoute: typeof ApiMailSentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/workspace-entry': {
       id: '/api/v1/workspace-entry'
       path: '/api/v1/workspace-entry'
@@ -449,6 +489,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWorkspaceContextRoute: ApiWorkspaceContextRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiMailMessagesRoute: ApiMailMessagesRoute,
+  ApiMailSendRoute: ApiMailSendRoute,
+  ApiMailSentRoute: ApiMailSentRoute,
   ApiV1WorkspaceEntryRoute: ApiV1WorkspaceEntryRoute,
   ApiV1WorkspaceSelectionRoute: ApiV1WorkspaceSelectionRoute,
   ApiV1WorkspacesRoute: ApiV1WorkspacesRoute,

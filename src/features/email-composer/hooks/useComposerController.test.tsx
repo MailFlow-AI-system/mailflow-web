@@ -160,3 +160,63 @@ describe('useComposerController composition validation', () => {
     expect(result.current.draft.getValues('attachments')).toEqual([])
   })
 })
+
+describe('useComposerController email delivery', () => {
+  it('locks editing and closing during send, prevents duplicates, then clears and closes after success', async () => {
+    let resolve!: () => void
+    const onSend = vi.fn(
+      () =>
+        new Promise<void>((done) => {
+          resolve = done
+        }),
+    )
+    const { result } = renderHook(() => useComposerController('light', undefined, onSend))
+    await waitFor(() => expect(result.current.context.editor).toBeTruthy())
+    act(() => {
+      result.current.draft.setValue('to', 'ada@example.test')
+      result.current.draft.setValue('subject', 'Update')
+      result.current.context.editor?.commands.insertContent('Body')
+    })
+    let attempt!: Promise<void>
+    act(() => {
+      attempt = result.current.context.validation.validate()
+    })
+    await waitFor(() => expect(onSend).toHaveBeenCalledTimes(1))
+    expect(result.current.context.sending).toBe(true)
+    expect(result.current.context.editor?.isEditable).toBe(false)
+    const details = { cancel: vi.fn() } as never
+    act(() => result.current.onOpenChange(false, details))
+    expect((details as { cancel: () => void }).cancel).toHaveBeenCalled()
+    act(() => result.current.context.discard())
+    expect(result.current.draft.getValues('subject')).toBe('Update')
+    await act(async () => result.current.context.validation.validate())
+    expect(onSend).toHaveBeenCalledTimes(1)
+    await act(async () => {
+      resolve()
+      await attempt
+    })
+    expect(result.current.draft.getValues('to')).toBe('')
+    expect(result.current.draft.getValues('attachments')).toEqual([])
+    expect(result.current.open).toBe(false)
+    expect(result.current.context.sending).toBe(false)
+  })
+  it('retains recipients, content and attachments on failure and allows retry', async () => {
+    const onSend = vi.fn().mockRejectedValueOnce(new Error('failed')).mockResolvedValue(undefined)
+    const { result } = renderHook(() => useComposerController('light', undefined, onSend))
+    await waitFor(() => expect(result.current.context.editor).toBeTruthy())
+    act(() => {
+      result.current.draft.setValue('to', 'ada@example.test')
+      result.current.draft.setValue('subject', 'Update')
+      result.current.context.editor?.commands.insertContent('Body')
+      result.current.context.addAttachments([new File(['Hello'], 'hello.txt')])
+    })
+    await act(async () => result.current.context.validation.validate())
+    expect(result.current.context.sendFailed).toBe(true)
+    expect(result.current.draft.getValues('to')).toBe('ada@example.test')
+    expect(result.current.draft.getValues('attachments')).toHaveLength(1)
+    expect(result.current.context.editor?.isEditable).toBe(true)
+    await act(async () => result.current.context.validation.validate())
+    expect(onSend).toHaveBeenCalledTimes(2)
+    expect(result.current.draft.getValues('to')).toBe('')
+  })
+})
