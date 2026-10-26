@@ -3,7 +3,7 @@ import { createFileRoute, getRouteApi, Outlet, useRouterState } from '@tanstack/
 import { useCallback } from 'react'
 import { clientEnvironment } from '#/config/env'
 import { LogoutMenuItem } from '#/features/auth/LogoutMenuItem'
-import { useEmailSending } from '#/features/email-composer/hooks/useEmailSending'
+import { sendEmail } from '#/features/email-composer/clients/sendEmail'
 import { MailboxSearch } from '#/features/mail-list/components/MailboxSearch'
 import { normalizeMailSearch } from '#/features/mail-list/types/mailSearch'
 import { WorkspaceBoundary } from '#/features/workspaces/components/WorkspaceBoundary'
@@ -23,11 +23,10 @@ function MailLayout() {
   const onSent = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ['sent-emails', user.id] })
   }, [queryClient, user.id])
-  const send = useEmailSending(onSent)
   const pathname = useRouterState({ select: (state) => state.location.pathname })
 
   return (
-    <EmailComposer.Root onSend={send}>
+    <EmailComposer.Root onSend={sendEmail} onSent={onSent}>
       <AppShell.Root>
         <AppShell.Sidebar user={user} userMenu={<LogoutMenuItem />} />
         <AppShell.Main>
