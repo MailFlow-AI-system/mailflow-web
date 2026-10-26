@@ -17,7 +17,13 @@ import { useCompositionValidation } from './useCompositionValidation'
 import { emptyDraft, useDraftForm } from './useDraftForm'
 
 function recipientFields(values: DraftValues): DraftFields {
-  return { to: values.to, cc: values.cc, bcc: values.bcc, subject: values.subject }
+  return {
+    to: values.to,
+    cc: values.cc,
+    bcc: values.bcc,
+    recipientName: values.recipientName,
+    subject: values.subject,
+  }
 }
 
 export function useComposerController(
@@ -42,6 +48,7 @@ export function useComposerController(
   )
   const triggerRef = useRef<HTMLButtonElement>(null)
   const recipientRef = useRef<HTMLInputElement>(null)
+  const recipientNameRef = useRef<HTMLInputElement>(null)
   const ccRef = useRef<HTMLInputElement>(null)
   const bccRef = useRef<HTMLInputElement>(null)
   const attachmentTriggerRef = useRef<HTMLButtonElement>(null)
@@ -93,25 +100,32 @@ export function useComposerController(
   )
   editorRef.current = editor
 
-  const focusInvalidField = useCallback((field: 'to' | 'cc' | 'bcc' | 'attachments') => {
-    if (field === 'to') {
-      recipientRef.current?.focus()
-      return
-    }
-    if (field === 'attachments') {
-      attachmentTriggerRef.current?.focus()
-      return
-    }
+  const focusInvalidField = useCallback(
+    (field: 'to' | 'cc' | 'bcc' | 'recipientName' | 'attachments') => {
+      if (field === 'to') {
+        recipientRef.current?.focus()
+        return
+      }
+      if (field === 'recipientName') {
+        recipientNameRef.current?.focus()
+        return
+      }
+      if (field === 'attachments') {
+        attachmentTriggerRef.current?.focus()
+        return
+      }
 
-    const fieldRef = field === 'cc' ? ccRef : bccRef
-    if (fieldRef.current) {
-      pendingRecipientFocusRef.current = null
-      fieldRef.current.focus()
-      return
-    }
-    pendingRecipientFocusRef.current = field
-    setShowCc(true)
-  }, [])
+      const fieldRef = field === 'cc' ? ccRef : bccRef
+      if (fieldRef.current) {
+        pendingRecipientFocusRef.current = null
+        fieldRef.current.focus()
+        return
+      }
+      pendingRecipientFocusRef.current = field
+      setShowCc(true)
+    },
+    [],
+  )
   const deliverComposition = useCallback(
     async (composition: ValidatedComposition) => {
       if (!onSend || sendingRef.current) return
@@ -236,6 +250,7 @@ export function useComposerController(
       theme,
       triggerRef,
       recipientRef,
+      recipientNameRef,
       ccRef,
       bccRef,
       attachmentTriggerRef,

@@ -106,4 +106,38 @@ describe('SentMailList', () => {
       '/api/mail/sent?offset=20',
     ])
   })
+  it.each([undefined, '', '   ', 'Ada Lovelace'])(
+    'shows the recipient name when available and falls back to the email (%s)',
+    async (recipientName) => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn<typeof fetch>(async () =>
+          Response.json({
+            items: [
+              {
+                id: 'named',
+                to: ['ada@example.test'],
+                cc: [],
+                bcc: [],
+                recipientName,
+                subject: 'Named message',
+                text: 'Body',
+                sentAt: null,
+              },
+            ],
+            nextOffset: null,
+          }),
+        ),
+      )
+      mount()
+      await screen.findByText('Named message')
+      if (recipientName?.trim()) {
+        expect(screen.getByText('Ada Lovelace')).toBeVisible()
+        expect(screen.queryByText('ada@example.test')).toBeNull()
+        expect(screen.getByText('AL')).toBeInTheDocument()
+      } else {
+        expect(screen.getByText('ada@example.test')).toBeVisible()
+      }
+    },
+  )
 })

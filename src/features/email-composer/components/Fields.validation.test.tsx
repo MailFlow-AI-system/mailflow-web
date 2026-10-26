@@ -76,3 +76,14 @@ describe('recipient validation focus', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Informe e-mails válidos.')
   })
 })
+
+it('places an optional recipient name between the email and subject', () => {
+  render(<FieldsHarness />)
+  const email = screen.getByRole('textbox', { name: 'Para' })
+  const name = screen.getByRole('textbox', { name: 'Nome do destinatário (opcional)' })
+  const subject = screen.getByRole('textbox', { name: 'Assunto' })
+  expect(name).not.toBeRequired()
+  expect(name).toHaveValue('')
+  expect(email.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(name.compareDocumentPosition(subject) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+})

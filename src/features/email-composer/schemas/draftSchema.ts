@@ -5,6 +5,7 @@ import type { DraftValues } from '../types/DraftValues'
 import {
   getAttachmentSizeIssues,
   invalidRecipientAddresses,
+  recipientNameSchema,
   splitRecipientList,
 } from './compositionSchema'
 
@@ -41,6 +42,7 @@ export const draftSchema = z.object({
   to: recipientList,
   cc: recipientList,
   bcc: recipientList,
+  recipientName: recipientNameSchema,
   subject: z.string(),
   body: z.string(),
   attachments,

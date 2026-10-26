@@ -8,6 +8,7 @@ export type CompositionValidationInput = {
   to: string
   cc: string
   bcc: string
+  recipientName?: string
   subject: string
   body: string
   hasBodyContent: boolean
@@ -18,13 +19,14 @@ export type NormalizedComposition = {
   to: string[]
   cc: string[]
   bcc: string[]
+  recipientName?: string
   subject: string
   body: string
   attachments: CompositionAttachmentMetadata[]
 }
 
 export type CompositionValidationIssue = {
-  field: 'to' | 'cc' | 'bcc' | 'attachments'
+  field: 'to' | 'cc' | 'bcc' | 'recipientName' | 'attachments'
   message: string
   attachmentIndex?: number
 }
