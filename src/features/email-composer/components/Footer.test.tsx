@@ -92,9 +92,7 @@ describe('composer footer', () => {
   it('shows ready status even when draft fields or body remain dirty', () => {
     render(<ReadyComposer />)
 
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'Mensagem pronta; envio ainda indisponível',
-    )
+    expect(screen.getByRole('status')).toHaveTextContent('Mensagem pronta')
     expect(screen.getByRole('button', { name: 'Mensagem pronta' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Agendar envio' })).toBeVisible()
     expect(screen.getByRole('button', { name: 'Rascunho' })).toBeVisible()

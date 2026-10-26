@@ -7,17 +7,21 @@ import type { DraftValues } from '../types/DraftValues'
 import { CompositionWarnings } from './CompositionWarnings'
 
 export function Footer() {
-  const { saveDraft, validation } = useComposer()
+  const { saveDraft, validation, sending, sendFailed } = useComposer()
   const { control } = useFormContext<DraftValues>()
   const { errors, isSubmitting } = useFormState({ control })
   const { dirty, saved } = useDraftStatus()
-  const status = validation.ready
-    ? 'Mensagem pronta; envio ainda indisponível'
-    : dirty
-      ? 'Alterações não salvas'
-      : saved
-        ? 'Rascunho nesta aba'
-        : 'Não enviado'
+  const status = sending
+    ? 'Enviando e-mail…'
+    : sendFailed
+      ? 'Falha no envio. Tente novamente.'
+      : validation.ready
+        ? 'Mensagem pronta'
+        : dirty
+          ? 'Alterações não salvas'
+          : saved
+            ? 'Rascunho nesta aba'
+            : 'Não enviado'
 
   return (
     <>
@@ -26,13 +30,18 @@ export function Footer() {
           <Button
             type="button"
             className="gap-2"
-            title="Envio ainda não disponível"
-            disabled={validation.ready || isSubmitting}
-            aria-busy={isSubmitting}
+            disabled={validation.ready || isSubmitting || sending}
+            aria-busy={isSubmitting || sending}
             onClick={() => void validation.validate()}
           >
             <Send aria-hidden="true" className="size-4" />
-            {validation.ready ? 'Mensagem pronta' : 'Validar envio'}
+            {sending
+              ? 'Enviando…'
+              : sendFailed
+                ? 'Tentar novamente'
+                : validation.ready
+                  ? 'Mensagem pronta'
+                  : 'Enviar'}
           </Button>
           <Button
             type="button"
