@@ -3,18 +3,39 @@ import { useCallback, useRef } from 'react'
 
 import { useMailListAutoFill } from '../hooks/useMailListAutoFill'
 import { useMailMessages } from '../hooks/useMailMessages'
+import type { MailMessage } from '../types/mailMessage'
 import { MailMessageCard } from './MailMessageCard'
 import { MailMessageSkeletonRows } from './MailMessageSkeleton'
 
 type MailListProps = {
-  workspaceSlug: string
   userId: string
   q: string
   isSearching?: boolean
 }
 
-export function MailList({ userId, workspaceSlug, q, isSearching = false }: MailListProps) {
-  const mail = useMailMessages(userId, workspaceSlug, q)
+export function MailList({ userId, q, isSearching = false }: MailListProps) {
+  const mail = useMailMessages(userId, q)
+  return <MailListView mail={mail} q={q} isSearching={isSearching} label="Inbox message list" />
+}
+
+type MailListViewProps = {
+  mail: {
+    messages: MailMessage[]
+    isPending: boolean
+    isFetching: boolean
+    isFetchingNextPage: boolean
+    isError: boolean
+    hasNextPage: boolean
+    hasNextPageError: boolean
+    fetchNextPage: () => Promise<unknown>
+    refetch: () => Promise<unknown>
+  }
+  label: string
+  q?: string
+  isSearching?: boolean
+}
+
+export function MailListView({ mail, label, q = '', isSearching = false }: MailListViewProps) {
   const scrollRootRef = useRef<HTMLElement>(null)
   const previousQuery = useRef(q)
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -64,7 +85,7 @@ export function MailList({ userId, workspaceSlug, q, isSearching = false }: Mail
       </p>
       <section
         aria-busy={isBusy}
-        aria-label="Inbox message list"
+        aria-label={label}
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
         ref={setScrollRoot}
       >

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SentMailList } from './SentMailList'
 
@@ -39,11 +39,21 @@ describe('SentMailList', () => {
       .mockResolvedValueOnce(Response.json({ items: [], nextOffset: null }))
     vi.stubGlobal('fetch', fetcher)
     mount()
-    expect(screen.getByRole('status')).toHaveTextContent('Carregando')
+    expect(screen.getByRole('status')).toHaveTextContent('Loading messages')
+    expect(screen.getAllByTestId('mail-message-skeleton')).toHaveLength(8)
     expect(await screen.findByText('Hello')).toBeVisible()
-    expect(screen.getByText('Para: ada@example.test')).toBeVisible()
-    fireEvent.click(screen.getByRole('button', { name: 'Carregar mais' }))
-    await screen.findByText('1 e-mail enviado')
+    const region = screen.getByRole('region', { name: 'Sent message list' })
+    const row = within(region).getByRole('listitem')
+    expect(within(row).getByText('ada@example.test')).toBeVisible()
+    expect(within(row).getByText('A').closest('[aria-hidden="true"]')).toBeInTheDocument()
+    expect(within(row).getByText('Body')).toBeVisible()
+    expect(within(row).queryByRole('button')).toBeNull()
+    expect(within(row).queryByRole('link')).toBeNull()
+    expect(row.querySelector('time')).toBeNull()
+    fireEvent.click(row)
+    expect(screen.getByText('Hello')).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Load more messages' }))
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('1 message loaded'))
     expect(fetcher.mock.calls[1]?.[0]).toBe('/api/mail/sent?offset=20')
   })
   it('shows a retry action after failure', async () => {
@@ -55,8 +65,45 @@ describe('SentMailList', () => {
         .mockResolvedValueOnce(Response.json({ items: [], nextOffset: null })),
     )
     mount()
-    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível carregar')
-    fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }))
-    expect(await screen.findByText('Nenhum e-mail enviado.')).toBeVisible()
+    expect(await screen.findByRole('alert')).toHaveTextContent('Messages could not be loaded.')
+    fireEvent.click(screen.getByRole('button', { name: 'Retry loading messages' }))
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('No messages found.'))
+    expect(within(screen.getByRole('region')).getByText('No messages found.')).toBeVisible()
+  })
+  it('keeps loaded cards when the next page fails, retries, and removes duplicate messages', async () => {
+    const message = {
+      id: 'first',
+      to: ['ada@example.test'],
+      cc: ['cc@example.test'],
+      bcc: ['bcc@example.test'],
+      subject: 'First message',
+      text: 'Body preview',
+      sentAt: null,
+    }
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json({ items: [message], nextOffset: 20 }))
+      .mockResolvedValueOnce(new Response(null, { status: 502 }))
+      .mockResolvedValueOnce(
+        Response.json({
+          items: [message, { ...message, id: 'second', subject: 'Second message' }],
+          nextOffset: null,
+        }),
+      )
+    vi.stubGlobal('fetch', fetcher)
+    mount()
+    await screen.findByText('First message')
+    expect(screen.queryByText(/cc@example|bcc@example/)).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Load more messages' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Retry loading messages' }))
+    expect(screen.getByText('First message')).toBeVisible()
+    await screen.findByText('Second message')
+    expect(screen.getAllByRole('listitem')).toHaveLength(2)
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('2 messages loaded'))
+    expect(fetcher.mock.calls.map(([url]) => url)).toEqual([
+      '/api/mail/sent?offset=0',
+      '/api/mail/sent?offset=20',
+      '/api/mail/sent?offset=20',
+    ])
   })
 })
