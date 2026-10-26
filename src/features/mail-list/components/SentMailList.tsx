@@ -23,6 +23,7 @@ export function SentMailList({ userId }: { userId: string }) {
         ...mail,
         messages: messages.map((message) => ({
           id: message.id,
+          recipientEmail: message.to[0],
           senderName: message.recipientName || message.to.join(', '),
           subject: message.subject || '(Sem assunto)',
           body: message.text,

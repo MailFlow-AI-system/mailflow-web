@@ -9,11 +9,19 @@ const senderAvatarColors = [
   'bg-rose-500/20 text-rose-800 dark:text-rose-300',
 ] as const
 
-function getSenderAvatarColorClass(name: string) {
+function getSenderAvatarColorClass(name: string, recipientEmail?: string) {
   const trimmedName = name.trim()
   if (!trimmedName) return 'bg-muted text-foreground'
 
-  return senderAvatarColors[trimmedName.charCodeAt(0) % senderAvatarColors.length]
+  const identity = recipientEmail?.trim().toLowerCase()
+  let hash = trimmedName.charCodeAt(0)
+  if (identity) {
+    hash = 0
+    for (let index = 0; index < identity.length; index++) {
+      hash = (hash * 31 + identity.charCodeAt(index)) >>> 0
+    }
+  }
+  return senderAvatarColors[hash % senderAvatarColors.length]
 }
 
 export { getSenderAvatarColorClass }

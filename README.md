@@ -92,3 +92,10 @@ subject. The trimmed name travels with the Composition to Core and persists in
 Sent. It participates in local draft tracking and retry identity; failures retain
 it and successful sends or discard clear it. Addresses remain separate from this
 display metadata. Older unnamed messages continue to display their email addresses.
+
+
+Sent avatar colors use the normalized primary To address as a stable identity
+within the Inbox palette. Changing the optional display name or loading the
+message again keeps its color. The full address contributes to the color instead
+of only its first character; palette collisions remain possible. Inbox retains
+its existing sender-name color mapping.

@@ -140,4 +140,51 @@ describe('SentMailList', () => {
       }
     },
   )
+  it('keeps the avatar color fixed to the primary recipient independently of its display name', async () => {
+    const items = [
+      {
+        id: 'first',
+        to: ['ada@example.test'],
+        recipientName: 'Ada Lovelace',
+        subject: 'First send',
+      },
+      {
+        id: 'second',
+        to: ['ADA@EXAMPLE.TEST'],
+        recipientName: 'Different name',
+        subject: 'Second send',
+      },
+      {
+        id: 'third',
+        to: ['bea@example.test'],
+        recipientName: 'Ada Lovelace',
+        subject: 'Other recipient',
+      },
+      {
+        id: 'fourth',
+        to: ['amy@example.test'],
+        recipientName: 'Ada Lovelace',
+        subject: 'Another recipient',
+      },
+    ].map((message) => ({ ...message, cc: [], bcc: [], text: 'Body', sentAt: null }))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>(async () => Response.json({ items, nextOffset: null })),
+    )
+    const view = mount()
+    await screen.findByText('First send')
+    const color = (subject: string) =>
+      screen.getByText(subject).closest('li')?.querySelector('[data-slot="avatar-fallback"]')
+        ?.className
+    const firstColor = color('First send')
+    expect(firstColor).toBeTruthy()
+    expect(color('Second send')).toBe(firstColor)
+    expect(
+      new Set(['First send', 'Other recipient', 'Another recipient'].map(color)).size,
+    ).toBeGreaterThan(1)
+    view.unmount()
+    mount()
+    await screen.findByText('First send')
+    expect(color('First send')).toBe(firstColor)
+  })
 })
