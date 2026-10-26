@@ -67,7 +67,7 @@ and message actions are outside this feature. Virtualization remains future work
 Composer keeps selected files and local images in tab memory until sending.
 During delivery it requests an authenticated upload reservation from Core,
 uploads directly to a short-lived private R2 URL, and waits for Core to verify
-and scan the immutable file. The send request contains attachment ids and
+the immutable file. The send request contains attachment ids and
 optional inline content ids, never file bytes or storage credentials. Local
 images become deduplicated CID attachments; remote image URLs remain unchanged.
 
@@ -79,7 +79,7 @@ rejected files must be removed or replaced. Short-lived upload URLs may require
 the R2 bucket CORS policy to allow the current Web origin.
 
 The same-origin attachment routes proxy only fixed Core paths. Core owns upload
-permissions, verification, malware scanning, persistence, and authorized
+permissions, content verification, persistence, and authorized
 retrieval. The Web Worker never reads R2 credentials or talks to the database.
 No R2 secret belongs in a `VITE_*` variable. Message opening remains unavailable;
 the download proxy prepares the authenticated route for a future reader.
@@ -101,3 +101,6 @@ original attachment and message ids even if the outcome is uncertain. Associated
 clean files remain usable after that lifetime; missing or expired references
 require checking Sent before attempting a different delivery. This avoids
 replacing an attachment while an earlier send may still be committing.
+
+Antivirus scanning is deferred. The verification step checks stored file content
+and metadata; it does not require a scanner service.

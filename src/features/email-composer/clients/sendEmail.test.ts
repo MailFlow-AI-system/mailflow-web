@@ -117,7 +117,7 @@ describe('sendEmail private uploads', () => {
     expect(JSON.parse(String(sends[0]?.[1]?.body))).toEqual(JSON.parse(String(sends[1]?.[1]?.body)))
   })
 
-  it('retries completion without uploading another object when scanning was temporarily unavailable', async () => {
+  it('retries completion without uploading another object when verification was temporarily unavailable', async () => {
     const fetcher = provider()
     const normal = fetcher.getMockImplementation()
     if (!normal) throw new Error('Missing mock implementation')
