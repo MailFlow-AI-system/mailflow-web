@@ -1,11 +1,16 @@
-import type { WindowOpenChangeDetails, WindowState } from '@mailflow/ui/components'
+import { toast, type WindowOpenChangeDetails, type WindowState } from '@mailflow/ui/components'
 import { useEditor } from '@tiptap/react'
 import { cn } from 'cn'
 import { useCallback, useId, useRef, useState } from 'react'
 import { draftSignature, emptyBody, emptyFields } from '../draft'
 import { getEditorBodySnapshot } from '../editor/bodyContent'
 import { composerExtensions } from '../editor/extensions'
-import type { ComposerController, DraftFields, ValidatedComposition } from '../types/composer'
+import type {
+  ComposerController,
+  ComposerRootProps,
+  DraftFields,
+  ValidatedComposition,
+} from '../types/composer'
 import type { DraftValues } from '../types/DraftValues'
 import { createAttachmentId } from '../utils/attachmentId'
 import { useCompositionValidation } from './useCompositionValidation'
@@ -18,12 +23,14 @@ function recipientFields(values: DraftValues): DraftFields {
 export function useComposerController(
   theme: 'dark' | 'light',
   onValidated?: (composition: ValidatedComposition) => void | Promise<void>,
-  onSend?: (composition: ValidatedComposition) => Promise<void>,
+  onSend?: ComposerRootProps['onSend'],
+  onSent?: ComposerRootProps['onSent'],
 ): ComposerController {
   const draft = useDraftForm()
   const [sending, setSending] = useState(false)
   const [sendFailed, setSendFailed] = useState(false)
   const sendingRef = useRef(false)
+  const pendingDelivery = useRef<{ signature: string; id: string } | null>(null)
   const discardRef = useRef<() => void>(() => {})
   const [open, setOpen] = useState(false)
   const [state, setState] = useState<WindowState>('normal')
@@ -112,20 +119,36 @@ export function useComposerController(
       setSending(true)
       setSendFailed(false)
       editorRef.current?.setEditable(false)
+      const signature = JSON.stringify({
+        ...composition,
+        attachments: composition.attachments.map(({ id, file }) => ({
+          id,
+          name: file.name,
+          size: file.size,
+          lastModified: file.lastModified,
+        })),
+      })
+      if (pendingDelivery.current?.signature !== signature)
+        pendingDelivery.current = { signature, id: crypto.randomUUID() }
+      const notification = toast.loading('Enviando e-mail…')
       try {
-        await onSend(composition)
-        sendingRef.current = false
-        discardRef.current()
-      } catch (error) {
+        await onSend(composition, pendingDelivery.current.id)
+      } catch {
         setSendFailed(true)
-        throw error
+        const message =
+          'Não foi possível confirmar o envio. Sua mensagem foi mantida. Tente novamente.'
+        toast.error(message, { id: notification })
+        throw new Error(message)
       } finally {
         sendingRef.current = false
         setSending(false)
         editorRef.current?.setEditable(true)
       }
+      discardRef.current()
+      toast.success('E-mail enviado com sucesso.', { id: notification })
+      onSent?.()
     },
-    [onSend],
+    [onSend, onSent],
   )
   const validation = useCompositionValidation({
     draft,
@@ -149,6 +172,7 @@ export function useComposerController(
 
   const discard = useCallback(() => {
     if (sendingRef.current) return
+    pendingDelivery.current = null
     setSendFailed(false)
     sessionRef.current += 1
     setSession((previous) => previous + 1)
