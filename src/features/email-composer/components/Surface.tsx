@@ -66,7 +66,7 @@ export function Content({ children }: Pick<ComposerRootProps, 'children'>) {
       }}
     >
       <WindowDescription className="sr-only">
-        Edite sua mensagem. O envio e a IA ainda não estão disponíveis.
+        Escreva e envie sua mensagem. A IA ainda não está disponível.
       </WindowDescription>
       {children}
     </WindowContent>
@@ -97,12 +97,19 @@ export function Header() {
 }
 
 export function Layout({ children, assistant }: ComposerLayoutProps) {
+  const { sending } = useComposer()
   return (
     <WindowBody className="flex flex-col">
       <div
         className={`grid min-h-[520px] flex-1 grid-cols-1 ${assistant ? 'md:grid-cols-[minmax(0,1fr)_220px]' : ''}`}
       >
-        <div className="flex min-w-0 flex-col">{children}</div>
+        <fieldset
+          disabled={sending}
+          aria-busy={sending}
+          className="flex min-w-0 flex-col border-0 p-0"
+        >
+          {children}
+        </fieldset>
         {assistant}
       </div>
     </WindowBody>
