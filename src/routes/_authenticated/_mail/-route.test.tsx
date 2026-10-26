@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -74,10 +75,14 @@ describe('MailLayout', () => {
     environment.VITE_WORKSPACE_BASE_HOST = undefined
   })
 
-  it('mounts workspace search in workspace mode', () => {
+  it('does not mount the global search in workspace mode', () => {
     environment.VITE_WORKSPACE_BASE_HOST = 'workspace.test'
-    render(<MailLayout />)
-    expect(screen.getByTestId('global-mailbox-search')).toBeVisible()
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MailLayout />
+      </QueryClientProvider>,
+    )
+    expect(screen.queryByTestId('global-mailbox-search')).toBeNull()
     expect(screen.getByRole('button', { name: 'Compose' })).toBeVisible()
   })
 
@@ -91,7 +96,11 @@ describe('MailLayout', () => {
   })
 
   it('renders the mailbox toolbar in the header without breadcrumbs', () => {
-    render(<MailLayout />)
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MailLayout />
+      </QueryClientProvider>,
+    )
 
     const toolbar = screen.getByTestId('mailbox-toolbar')
     expect(screen.getByTestId('app-shell')).toBeInTheDocument()

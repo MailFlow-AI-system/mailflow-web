@@ -70,7 +70,7 @@ describe('validateComposition', () => {
     expect(result.success).toBe(false)
     expect(result.issues).toContainEqual({
       field: 'to',
-      message: 'Adicione pelo menos um destinatário.',
+      message: 'Adicione pelo menos um destinatário em Para.',
     })
     expect(result.warnings.map(({ code }) => code)).toEqual(['empty-subject', 'empty-body'])
   })

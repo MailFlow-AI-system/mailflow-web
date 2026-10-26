@@ -73,7 +73,7 @@ function fileWithSize(name: string, size: number): File {
 }
 
 describe('useCompositionValidation', () => {
-  it('validates recipient lists from Cc or Bcc and preserves original File references', async () => {
+  it('validates To, Cc and Bcc and preserves original File references', async () => {
     const onValidated = vi.fn()
     const { result } = setup({ onValidated })
     const attachment = {
@@ -82,7 +82,7 @@ describe('useCompositionValidation', () => {
     } satisfies Attachment
 
     act(() => {
-      result.current.draft.setValue('to', '')
+      result.current.draft.setValue('to', 'primary@example.test')
       result.current.draft.setValue('cc', 'grace@example.test; ada@example.test')
       result.current.draft.setValue('bcc', 'linus@example.test')
       result.current.draft.setValue('attachments', [attachment])
@@ -91,7 +91,7 @@ describe('useCompositionValidation', () => {
 
     expect(onValidated).toHaveBeenCalledTimes(1)
     expect(onValidated).toHaveBeenCalledWith({
-      to: [],
+      to: ['primary@example.test'],
       cc: ['grace@example.test', 'ada@example.test'],
       bcc: ['linus@example.test'],
       subject: 'Update',

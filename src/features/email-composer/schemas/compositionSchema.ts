@@ -66,7 +66,7 @@ export const compositionSchema = z
     attachments: z.array(attachmentMetadataSchema),
   })
   .superRefine((composition, context) => {
-    if (composition.to.length + composition.cc.length + composition.bcc.length === 0) {
+    if (composition.to.length === 0) {
       context.addIssue({
         code: 'custom',
         path: ['to'],

@@ -18,8 +18,13 @@ function recipientFields(values: DraftValues): DraftFields {
 export function useComposerController(
   theme: 'dark' | 'light',
   onValidated?: (composition: ValidatedComposition) => void | Promise<void>,
+  onSend?: (composition: ValidatedComposition) => Promise<void>,
 ): ComposerController {
   const draft = useDraftForm()
+  const [sending, setSending] = useState(false)
+  const [sendFailed, setSendFailed] = useState(false)
+  const sendingRef = useRef(false)
+  const discardRef = useRef<() => void>(() => {})
   const [open, setOpen] = useState(false)
   const [state, setState] = useState<WindowState>('normal')
   const [saved, setSaved] = useState(false)
@@ -100,7 +105,34 @@ export function useComposerController(
     pendingRecipientFocusRef.current = field
     setShowCc(true)
   }, [])
-  const validation = useCompositionValidation({ draft, editor, onValidated, focusInvalidField })
+  const deliverComposition = useCallback(
+    async (composition: ValidatedComposition) => {
+      if (!onSend || sendingRef.current) return
+      sendingRef.current = true
+      setSending(true)
+      setSendFailed(false)
+      editorRef.current?.setEditable(false)
+      try {
+        await onSend(composition)
+        sendingRef.current = false
+        discardRef.current()
+      } catch (error) {
+        setSendFailed(true)
+        throw error
+      } finally {
+        sendingRef.current = false
+        setSending(false)
+        editorRef.current?.setEditable(true)
+      }
+    },
+    [onSend],
+  )
+  const validation = useCompositionValidation({
+    draft,
+    editor,
+    onValidated: onSend ? deliverComposition : onValidated,
+    focusInvalidField,
+  })
   invalidateValidationRef.current = validation.invalidate
 
   const readDraftSignature = useCallback(() => {
@@ -116,6 +148,8 @@ export function useComposerController(
   )
 
   const discard = useCallback(() => {
+    if (sendingRef.current) return
+    setSendFailed(false)
     sessionRef.current += 1
     setSession((previous) => previous + 1)
     validation.reset()
@@ -128,6 +162,8 @@ export function useComposerController(
     setShowCc(false)
     pendingRecipientFocusRef.current = null
   }, [draft, validation.reset])
+
+  discardRef.current = discard
 
   const saveDraft = useCallback(() => {
     setBaselineDraftSignature(readDraftSignature())
@@ -159,6 +195,8 @@ export function useComposerController(
   return {
     draft,
     context: {
+      sending,
+      sendFailed,
       sessionRef,
       revision: session,
       editor,
@@ -187,6 +225,10 @@ export function useComposerController(
     state,
     setState,
     onOpenChange: (next: boolean, details: WindowOpenChangeDetails) => {
+      if (!next && sendingRef.current) {
+        details.cancel()
+        return
+      }
       if (!next && isDirty()) {
         details.cancel()
         setConfirm(true)

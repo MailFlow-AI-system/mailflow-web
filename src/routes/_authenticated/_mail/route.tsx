@@ -1,6 +1,9 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, getRouteApi, Outlet, useRouterState } from '@tanstack/react-router'
-
+import { useCallback } from 'react'
+import { clientEnvironment } from '#/config/env'
 import { LogoutMenuItem } from '#/features/auth/LogoutMenuItem'
+import { useEmailSending } from '#/features/email-composer/hooks/useEmailSending'
 import { MailboxSearch } from '#/features/mail-list/components/MailboxSearch'
 import { normalizeMailSearch } from '#/features/mail-list/types/mailSearch'
 import { WorkspaceBoundary } from '#/features/workspaces/components/WorkspaceBoundary'
@@ -16,16 +19,21 @@ export const Route = createFileRoute('/_authenticated/_mail')({
 
 function MailLayout() {
   const { user } = authenticatedRoute.useRouteContext()
+  const queryClient = useQueryClient()
+  const onSent = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ['sent-emails', user.id] })
+  }, [queryClient, user.id])
+  const send = useEmailSending(onSent)
   const pathname = useRouterState({ select: (state) => state.location.pathname })
 
   return (
-    <EmailComposer.Root>
+    <EmailComposer.Root onSend={send}>
       <AppShell.Root>
         <AppShell.Sidebar user={user} userMenu={<LogoutMenuItem />} />
         <AppShell.Main>
           <AppShell.Header>
             <AppShell.Header.Mailbox>
-              {pathname === '/inbox' ? (
+              {pathname === '/inbox' && !clientEnvironment.VITE_WORKSPACE_BASE_HOST ? (
                 <MailboxSearch userId={user.id} />
               ) : (
                 <AppShell.Header.Search />

@@ -16,7 +16,7 @@ bun run dev
 
 Development commands load Infisical `dev` secrets from `/mailflow-web`.
 Web runs at `http://localhost:3000` and requires Core at `http://localhost:8080`.
-For the workspace inbox, follow the local setup below. Configuration is documented in
+Keep both on `localhost` for authentication. Configuration is documented in
 [.env.example](.env.example); the app does not load `.env` files.
 
 ## Commands
@@ -54,7 +54,7 @@ never put secrets in them.
 
 `/` redirects to `/inbox` or `/login` based on the session. Authentication uses
 the same-origin `/api/auth/*` proxy; registration remains on Site. Protected
-mail routes share the application shell. Inbox is enabled in the sidebar; other
+mail routes share the application shell. Inbox and Sent are enabled in the sidebar; other
 folders remain disabled placeholders.
 
 Inbox reads persisted messages through `/api/mail/messages`. Apply Core's Mail
@@ -62,32 +62,10 @@ migration and run its explicit seed for local sample data. Search runs on Core;
 Web displays eight-item pages, prefetch, loading, empty, and retry states. Reader
 and message actions are outside this feature. Virtualization remains future work.
 
-## Local workspace setup
-
-First follow the Core's Local workspace setup: start its disposable Postgres, apply migrations,
-run `bun run db:setup:local` and `bun run dev:workspace-sample`, then seed mail with the printed workspace ID.
-Set `VITE_API_BASE_URL=http://localhost:8080`, `VITE_WORKSPACE_BASE_HOST=workspace.test`
-and `VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED=true`. Start with
-`bunx vite dev --port 3000 --host 0.0.0.0` using those environment variables.
-Add `127.0.0.1 workspace.test <printed-slug>.workspace.test` to hosts; use Windows hosts when the browser runs on Windows and the app on WSL.
-Open the printed tenant host and sign in with the sample credentials. The generic host resolves membership and redirects; an inbox requires a tenant host.
-Core needs `APP_ENV=development`, `WORKSPACE_READ_ENABLED=true`, `WORKSPACE_LOCAL_SWITCHING_ENABLED=true`,
-`SITE_URL=http://workspace.test:3000` and `WEB_APP_URL=http://<printed-slug>.workspace.test:3000`.
-
-Real-Core browser acceptance uses no auth stub:
-
-```bash
-MAILFLOW_CORE_WORKTREE=../mailflow-core \
-MAILFLOW_WORKSPACE_TEST_DATABASE_URL=postgresql://mailflow:mailflow@localhost:5432/mailflow \
-bun run test:e2e
-```
-
-The harness creates isolated sample memberships and seeded inboxes, resolves `workspace.test` in Chromium,
-and retains traces and screenshots for failures in `test-results/`. HTML results are in `playwright-report/`.
-
-CI runs the same browser suite against a pinned compatible revision of the public Core repository,
-with a disposable PostgreSQL service. The workflow checks out `web/` and `core/` side by side,
-installs both dependency trees and supplies the two harness environment variables.
-When adopting a newer Core harness, update its pinned SHA in `.github/workflows/ci.yml` deliberately.
-The harness applies migrations and creates its restricted role; no deployed API, shared database,
-or Infisical credentials are used by this job. Browser reports and traces are uploaded as a CI artifact.
+Local images stay as data URLs while editing and become CID image attachments
+at send time. Identical image data in the same message is attached once, and
+stable content ids keep retry payloads identical. Inline images and ordinary
+files share the 25 MiB total attachment limit. The Composer never uploads them
+to a bucket. Selecting an image or a file only reads it in the current tab;
+reloading an unsent draft loses those in-memory files. Durable object storage
+and retrieving sent attachment binaries are not implemented.

@@ -15,6 +15,7 @@ export type ValidatedComposition = Omit<NormalizedComposition, 'attachments'> & 
 export type ComposerRootProps = {
   children: ReactNode
   theme?: 'dark' | 'light'
+  onSend?: (composition: ValidatedComposition) => Promise<void>
   onValidated?: (composition: ValidatedComposition) => void | Promise<void>
 }
 export type ComposerLayoutProps = { children: ReactNode; assistant?: ReactNode }
@@ -30,6 +31,8 @@ export type ComposerValidationState = {
   warningsOpen: boolean
 }
 export type ComposerContextValue = {
+  sending: boolean
+  sendFailed: boolean
   revision: number
   sessionRef: RefObject<number>
   editor: Editor | null

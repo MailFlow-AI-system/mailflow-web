@@ -29,13 +29,16 @@ describe('compositionSchema', () => {
     }
   })
 
-  it('requires at least one recipient across To, Cc, and Bcc', () => {
+  it('requires at least one primary recipient', () => {
     const result = compositionSchema.safeParse({ ...validInput, to: ' ; , ', cc: '', bcc: '' })
 
     expect(result.success).toBe(false)
     if (!result.success) {
       expect(result.error.issues).toContainEqual(
-        expect.objectContaining({ path: ['to'], message: 'Adicione pelo menos um destinatário.' }),
+        expect.objectContaining({
+          path: ['to'],
+          message: 'Adicione pelo menos um destinatário em Para.',
+        }),
       )
     }
   })
@@ -43,11 +46,12 @@ describe('compositionSchema', () => {
   it.each([
     ['cc', 'grace@example.test'],
     ['bcc', 'lin@example.test'],
-  ] as const)('accepts a recipient in %s when To is empty', (field, address) => {
+  ] as const)('requires a primary recipient even with a recipient in %s', (field, address) => {
     const result = compositionSchema.safeParse({ ...validInput, to: '', [field]: address })
 
-    expect(result.success).toBe(true)
-    if (result.success) expect(result.data[field]).toEqual([address])
+    expect(result.success).toBe(false)
+    if (!result.success)
+      expect(result.error.issues).toContainEqual(expect.objectContaining({ path: ['to'] }))
   })
 
   it('validates every non-empty email address in recipient lists', () => {
