@@ -9,17 +9,28 @@ const fieldLabels: Record<RecipientField, string> = {
   to: 'Para',
   cc: 'Cc',
   bcc: 'Bcc',
+  recipientName: 'Nome',
   subject: 'Assunto',
 }
 
 export function Fields() {
-  const { recipientRef, ccRef, bccRef, pendingRecipientFocusRef, showCc, setShowCc } = useComposer()
+  const {
+    recipientRef,
+    recipientNameRef,
+    ccRef,
+    bccRef,
+    pendingRecipientFocusRef,
+    showCc,
+    setShowCc,
+  } = useComposer()
   const {
     register,
     formState: { errors },
   } = useFormContext<DraftValues>()
   const id = useId()
-  const visible: RecipientField[] = showCc ? ['to', 'cc', 'bcc', 'subject'] : ['to', 'subject']
+  const visible: RecipientField[] = showCc
+    ? ['to', 'cc', 'bcc', 'recipientName', 'subject']
+    : ['to', 'recipientName', 'subject']
   return (
     <div className="border-b border-border">
       {visible.map((field) => {
@@ -42,6 +53,7 @@ export function Fields() {
               ref={(node) => {
                 registration.ref(node)
                 if (field === 'to') recipientRef.current = node
+                if (field === 'recipientName') recipientNameRef.current = node
                 if (field === 'cc') ccRef.current = node
                 if (field === 'bcc') bccRef.current = node
                 if (
@@ -53,15 +65,19 @@ export function Fields() {
                   node.focus()
                 }
               }}
+              aria-label={field === 'recipientName' ? 'Nome do destinatário (opcional)' : undefined}
+              maxLength={field === 'recipientName' ? 200 : undefined}
               aria-invalid={Boolean(error)}
               aria-describedby={error ? `${id}-${field}-error` : undefined}
               className="h-8 min-w-0 flex-1 border-0 bg-transparent px-0 shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent"
               placeholder={
                 field === 'to'
                   ? 'destinatario@email.com'
-                  : field === 'subject'
-                    ? 'Assunto do email'
-                    : undefined
+                  : field === 'recipientName'
+                    ? 'Nome do destinatário (opcional)'
+                    : field === 'subject'
+                      ? 'Assunto do email'
+                      : undefined
               }
               autoComplete="off"
             />

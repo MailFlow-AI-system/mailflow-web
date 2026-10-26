@@ -32,7 +32,7 @@ function getWarnings(input: CompositionValidationInput): CompositionWarning[] {
 function mapIssue(issue: { path: PropertyKey[]; message: string }): CompositionValidationIssue {
   const field = issue.path[0]
 
-  if (field === 'to' || field === 'cc' || field === 'bcc') {
+  if (field === 'to' || field === 'cc' || field === 'bcc' || field === 'recipientName') {
     return { field, message: issue.message }
   }
 
@@ -55,11 +55,19 @@ export function validateComposition(
     return { success: false, issues: [firstIssue, ...remainingIssues], warnings }
   }
 
-  const { to, cc, bcc, subject, body, attachments } = parsed.data
+  const { to, cc, bcc, recipientName, subject, body, attachments } = parsed.data
   return {
     success: true,
     issues: [],
     warnings,
-    composition: { to, cc, bcc, subject, body, attachments },
+    composition: {
+      to,
+      cc,
+      bcc,
+      ...(recipientName ? { recipientName } : {}),
+      subject,
+      body,
+      attachments,
+    },
   }
 }

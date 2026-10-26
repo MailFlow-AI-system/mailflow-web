@@ -19,6 +19,7 @@ describe('sendEmail client', () => {
     await sendEmail(
       {
         ...composition,
+        recipientName: 'Ada Lovelace',
         attachments: [
           { id: 'file', file: new File(['Hello'], 'hello.txt', { type: 'text/plain' }) },
         ],
@@ -32,6 +33,7 @@ describe('sendEmail client', () => {
     const body = JSON.parse(fetcher.mock.calls[0]?.[1]?.body as string)
     expect(body).toMatchObject({
       id: 'request-id',
+      recipientName: 'Ada Lovelace',
       to: composition.to,
       bcc: composition.bcc,
       html: composition.body,

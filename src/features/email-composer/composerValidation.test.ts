@@ -82,3 +82,11 @@ describe('validateComposition', () => {
     expect('composition' in result).toBe(false)
   })
 })
+
+it('normalizes the optional recipient name and rejects an invalid name at its field', () => {
+  const named = validateComposition({ ...validInput, recipientName: '  Ada Lovelace  ' })
+  expect(named.success && named.composition.recipientName).toBe('Ada Lovelace')
+  const invalid = validateComposition({ ...validInput, recipientName: 'a'.repeat(201) })
+  expect(invalid.success).toBe(false)
+  expect(invalid.issues).toContainEqual(expect.objectContaining({ field: 'recipientName' }))
+})

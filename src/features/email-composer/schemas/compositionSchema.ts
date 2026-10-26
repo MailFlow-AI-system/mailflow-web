@@ -55,11 +55,18 @@ const attachmentMetadataSchema = z.object({
   size: z.number(),
 })
 
+export const recipientNameSchema = z
+  .string()
+  .trim()
+  .max(200, COMPOSITION_VALIDATION_MESSAGES.invalidRecipientName)
+  .regex(/^[^\r\n]*$/, COMPOSITION_VALIDATION_MESSAGES.invalidRecipientName)
+
 export const compositionSchema = z
   .object({
     to: compositionRecipientSchema,
     cc: compositionRecipientSchema,
     bcc: compositionRecipientSchema,
+    recipientName: recipientNameSchema.optional().transform((name) => name || undefined),
     subject: z.string(),
     body: z.string(),
     hasBodyContent: z.boolean(),
