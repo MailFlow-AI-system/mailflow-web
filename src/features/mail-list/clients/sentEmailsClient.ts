@@ -5,6 +5,7 @@ const sentEmailSchema = z.object({
   to: z.array(z.string()),
   cc: z.array(z.string()),
   bcc: z.array(z.string()),
+  recipientName: z.string().trim().default(''),
   subject: z.string(),
   text: z.string(),
   sentAt: z.string().nullable(),
