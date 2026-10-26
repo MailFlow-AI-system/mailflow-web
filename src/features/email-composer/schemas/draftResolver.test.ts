@@ -6,7 +6,7 @@ import { emptyBody, emptyFields } from '../draft'
 import type { DraftValues } from '../types/DraftValues'
 import { draftSchema } from './draftSchema'
 
-const mib = 1024 * 1024
+const mb = 1_000_000
 const resolver = zodResolver(draftSchema)
 const resolverOptions: ResolverOptions<DraftValues> = {
   criteriaMode: 'firstError',
@@ -38,35 +38,35 @@ async function resolveDraft(values: DraftValues) {
 
 describe('draft zodResolver attachment errors', () => {
   it('places an individual size error on the attachment file field', async () => {
-    const result = await resolveDraft(draftWithSizes(9 * mib, 10 * mib + 1))
+    const result = await resolveDraft(draftWithSizes(9 * mb, 10 * mb + 1))
 
     expect(result.errors.attachments?.[1]).toMatchObject({
-      file: { message: 'Cada anexo deve ter no máximo 10 MiB.' },
+      file: { message: 'Cada anexo deve ter no máximo 10 MB.' },
     })
   })
 
   it('places aggregate overflow on the attachment array root', async () => {
-    const result = await resolveDraft(draftWithSizes(9 * mib, 9 * mib, 7 * mib + 1))
+    const result = await resolveDraft(draftWithSizes(9 * mb, 9 * mb, 7 * mb + 1))
 
     expect(result.errors.attachments).toMatchObject({
-      root: { message: 'Os anexos devem somar no máximo 25 MiB.' },
+      root: { message: 'Os anexos devem somar no máximo 20 MB.' },
     })
   })
 
   it('keeps individual and aggregate errors together', async () => {
-    const result = await resolveDraft(draftWithSizes(10 * mib, 10 * mib + 1, 5 * mib))
+    const result = await resolveDraft(draftWithSizes(10 * mb, 10 * mb + 1, 5 * mb))
 
     expect(result.errors.attachments).toMatchObject({
-      1: { file: { message: 'Cada anexo deve ter no máximo 10 MiB.' } },
-      root: { message: 'Os anexos devem somar no máximo 25 MiB.' },
+      1: { file: { message: 'Cada anexo deve ter no máximo 10 MB.' } },
+      root: { message: 'Os anexos devem somar no máximo 20 MB.' },
     })
   })
 
   it('clears attachment errors after corrected values pass validation', async () => {
-    const invalid = await resolveDraft(draftWithSizes(9 * mib, 10 * mib + 1))
+    const invalid = await resolveDraft(draftWithSizes(9 * mb, 10 * mb + 1))
     expect(invalid.errors.attachments?.[1]).toBeDefined()
 
-    const corrected = await resolveDraft(draftWithSizes(9 * mib, 10 * mib))
+    const corrected = await resolveDraft(draftWithSizes(9 * mb, 10 * mb))
     expect(corrected.errors).toEqual({})
   })
 })

@@ -4,7 +4,7 @@ import { emptyBody, emptyFields } from '../draft'
 import { draftSchema } from './draftSchema'
 
 const emptyDraft = { ...emptyFields, body: emptyBody, attachments: [] }
-const mib = 1024 * 1024
+const mb = 1_000_000
 
 function fileWithSize(name: string, size: number): File {
   const file = new File([], name)
@@ -35,9 +35,9 @@ describe('draftSchema', () => {
     const result = draftSchema.safeParse({
       ...emptyDraft,
       attachments: [
-        { id: 'first', file: fileWithSize('first.pdf', 10 * mib) },
-        { id: 'second', file: fileWithSize('second.pdf', 10 * mib) },
-        { id: 'third', file: fileWithSize('third.pdf', 5 * mib) },
+        { id: 'first', file: fileWithSize('first.pdf', 10 * mb) },
+        { id: 'second', file: fileWithSize('second.pdf', 5 * mb) },
+        { id: 'third', file: fileWithSize('third.pdf', 5 * mb) },
       ],
     })
 
@@ -48,8 +48,8 @@ describe('draftSchema', () => {
     const result = draftSchema.safeParse({
       ...emptyDraft,
       attachments: [
-        { id: 'first', file: fileWithSize('first.pdf', 10 * mib) },
-        { id: 'too-large', file: fileWithSize('large.pdf', 10 * mib + 1) },
+        { id: 'first', file: fileWithSize('first.pdf', 10 * mb) },
+        { id: 'too-large', file: fileWithSize('large.pdf', 10 * mb + 1) },
       ],
     })
 
@@ -58,7 +58,7 @@ describe('draftSchema', () => {
       expect(result.error.issues).toContainEqual(
         expect.objectContaining({
           path: ['attachments', 1, 'file'],
-          message: 'Cada anexo deve ter no máximo 10 MiB.',
+          message: 'Cada anexo deve ter no máximo 10 MB.',
         }),
       )
     }
@@ -68,9 +68,9 @@ describe('draftSchema', () => {
     const result = draftSchema.safeParse({
       ...emptyDraft,
       attachments: [
-        { id: 'first', file: fileWithSize('first.pdf', 9 * mib) },
-        { id: 'second', file: fileWithSize('second.pdf', 9 * mib) },
-        { id: 'third', file: fileWithSize('third.pdf', 7 * mib + 1) },
+        { id: 'first', file: fileWithSize('first.pdf', 9 * mb) },
+        { id: 'second', file: fileWithSize('second.pdf', 9 * mb) },
+        { id: 'third', file: fileWithSize('third.pdf', 7 * mb + 1) },
       ],
     })
 
@@ -79,7 +79,7 @@ describe('draftSchema', () => {
       expect(result.error.issues).toContainEqual(
         expect.objectContaining({
           path: ['attachments', 'root'],
-          message: 'Os anexos devem somar no máximo 25 MiB.',
+          message: 'Os anexos devem somar no máximo 20 MB.',
         }),
       )
       expect(result.error.issues.some((issue) => typeof issue.path[1] === 'number')).toBe(false)

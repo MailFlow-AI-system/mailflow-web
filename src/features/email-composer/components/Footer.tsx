@@ -7,12 +7,12 @@ import type { DraftValues } from '../types/DraftValues'
 import { CompositionWarnings } from './CompositionWarnings'
 
 export function Footer() {
-  const { saveDraft, validation, sending, sendFailed } = useComposer()
+  const { saveDraft, validation, sending, sendFailed, sendProgress } = useComposer()
   const { control } = useFormContext<DraftValues>()
   const { errors, isSubmitting } = useFormState({ control })
   const { dirty, saved } = useDraftStatus()
   const status = sending
-    ? 'Enviando e-mail…'
+    ? sendProgress || 'Enviando e-mail…'
     : sendFailed
       ? 'Falha no envio. Tente novamente.'
       : validation.ready
