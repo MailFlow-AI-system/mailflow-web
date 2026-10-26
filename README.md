@@ -61,3 +61,43 @@ Inbox reads persisted messages through `/api/mail/messages`. Apply Core's Mail
 migration and run its explicit seed for local sample data. Search runs on Core;
 Web displays eight-item pages, prefetch, loading, empty, and retry states. Reader
 and message actions are outside this feature. Virtualization remains future work.
+
+## Private attachment storage
+
+Composer keeps selected files and local images in tab memory until sending.
+During delivery it requests an authenticated upload reservation from Core,
+uploads directly to a short-lived private R2 URL, and waits for Core to verify
+and scan the immutable file. The send request contains attachment ids and
+optional inline content ids, never file bytes or storage credentials. Local
+images become deduplicated CID attachments; remote image URLs remain unchanged.
+
+Limits are 10 MB per file, 20 MB in total, and ten files per message, including
+inline images (MB means 1,000,000 bytes). The existing local image picker retains
+its stricter 5 MiB editing limit. Upload and verification progress appears in the
+Composer status and toast. Files remain available in the draft after a failure;
+rejected files must be removed or replaced. Short-lived upload URLs may require
+the R2 bucket CORS policy to allow the current Web origin.
+
+The same-origin attachment routes proxy only fixed Core paths. Core owns upload
+permissions, verification, malware scanning, persistence, and authorized
+retrieval. The Web Worker never reads R2 credentials or talks to the database.
+No R2 secret belongs in a `VITE_*` variable. Message opening remains unavailable;
+the download proxy prepares the authenticated route for a future reader.
+
+## Listening
+
+Attachment reservations belong to one Composer session and authenticated user.
+Unchanged retries reuse clean upload ids, and a transient verification failure
+retries completion without creating another object. The cache is cleared after
+success or discard; account changes remount the Composer. Changed file bytes
+produce a new reservation. This preserves Core's immutable delivery snapshot
+and avoids a second upload identity after an uncertain send result. There is no
+global upload cache or browser persistence of file bytes and signed URLs.
+
+Upload URL expiry and the 24-hour unattached-file lifetime are separate. Before
+any send attempt, Core-confirmed expired or missing uploads can be replaced
+from the files still held in memory. After a send attempt, retries preserve the
+original attachment and message ids even if the outcome is uncertain. Associated
+clean files remain usable after that lifetime; missing or expired references
+require checking Sent before attempting a different delivery. This avoids
+replacing an attachment while an earlier send may still be committing.

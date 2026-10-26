@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { useFormState } from 'react-hook-form'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { ComposerRootProps } from '../types/composer'
 import { useComposerController } from './useComposerController'
 
 const { loading, success, error } = vi.hoisted(() => ({
@@ -160,7 +161,7 @@ describe('useComposerController composition validation', () => {
     const { result } = renderHook(() => useComposerController('light'))
     await waitFor(() => expect(result.current.context.editor).toBeTruthy())
     const oversizedFile = new File(['x'], 'oversized.bin')
-    Object.defineProperty(oversizedFile, 'size', { value: 10 * 1024 * 1024 + 1 })
+    Object.defineProperty(oversizedFile, 'size', { value: 10 * 1_000_000 + 1 })
 
     act(() => result.current.context.addAttachments([oversizedFile]))
     expect(result.current.draft.getFieldState('attachments.0.file').error?.message).toBeTruthy()
@@ -292,4 +293,46 @@ it('retains the recipient name on failure, changes retry identity after editing 
   expect(onSend.mock.calls[1]?.[0]).toMatchObject({ recipientName: 'Grace Hopper' })
   expect(onSend.mock.calls[1]?.[1]).not.toBe(onSend.mock.calls[0]?.[1])
   expect(result.current.draft.getValues('recipientName')).toBe('')
+})
+
+it('owns upload progress and retry cache within the Composition and clears them on discard', async () => {
+  const deliveries: unknown[] = []
+  const onSend = vi.fn<NonNullable<ComposerRootProps['onSend']>>(
+    async (_composition, _id, context) => {
+      if (!context) throw new Error('Missing delivery context')
+      deliveries.push(context)
+      context.uploads.set('file', {
+        id: 'uploaded',
+        uploadUrl: 'https://upload.example.test',
+        expiresAt: '2026-12-01T12:00:00.000Z',
+        headers: {},
+        uploaded: true,
+        clean: true,
+      })
+      context.onProgress?.({ phase: 'uploading', completed: 0, total: 1 })
+      throw new Error('failure')
+    },
+  )
+  const { result } = renderHook(() => useComposerController('light', undefined, onSend))
+  const compose = async () => {
+    await waitFor(() => expect(result.current.context.editor).toBeTruthy())
+    act(() => {
+      result.current.draft.setValue('to', 'ada@example.test')
+      result.current.draft.setValue('subject', 'With upload')
+      result.current.context.editor?.commands.setContent('<p>Hello</p>')
+    })
+  }
+  await compose()
+  await act(async () => result.current.context.validation.validate())
+  expect(loading).toHaveBeenCalledWith('Salvando arquivo 1 de 1…', { id: 'delivery-toast' })
+  expect(result.current.context.sendFailed).toBe(true)
+  await act(async () => result.current.context.validation.validate())
+  const first = deliveries[0] as { uploads: Map<string, unknown> }
+  expect((deliveries[1] as { uploads: Map<string, unknown> }).uploads).toBe(first.uploads)
+  expect(first.uploads.size).toBe(1)
+  act(() => result.current.context.discard())
+  expect(first.uploads.size).toBe(0)
+  await compose()
+  await act(async () => result.current.context.validation.validate())
+  expect((deliveries[2] as { uploads: Map<string, unknown> }).uploads).not.toBe(first.uploads)
 })
