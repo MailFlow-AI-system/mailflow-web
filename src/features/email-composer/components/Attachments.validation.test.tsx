@@ -21,8 +21,8 @@ function AttachmentsHarness() {
           type="button"
           onClick={() => {
             controller.draft.setValue('attachments', [
-              { id: 'first', file: fileWithSize('first.bin', 13 * 1024 * 1024) },
-              { id: 'second', file: fileWithSize('second.bin', 13 * 1024 * 1024) },
+              { id: 'first', file: fileWithSize('first.bin', 13 * 1_000_000) },
+              { id: 'second', file: fileWithSize('second.bin', 13 * 1_000_000) },
             ])
             void controller.draft.trigger('attachments')
           }}
@@ -43,12 +43,12 @@ describe('attachment validation presentation', () => {
     await waitFor(() => expect(alert.querySelectorAll('li')).toHaveLength(3))
     expect(alert).toHaveTextContent('Anexo 1:')
     expect(alert).toHaveTextContent('Anexo 2:')
-    expect(alert).toHaveTextContent('25 MiB')
+    expect(alert).toHaveTextContent('20 MB')
 
     fireEvent.click(screen.getByRole('button', { name: 'Remover first.bin' }))
     await waitFor(() => expect(alert.querySelectorAll('li')).toHaveLength(1))
     expect(alert).toHaveTextContent('Anexo 1:')
-    expect(alert).not.toHaveTextContent('25 MiB')
+    expect(alert).not.toHaveTextContent('20 MB')
 
     fireEvent.click(screen.getByRole('button', { name: 'Remover second.bin' }))
     await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())

@@ -3,8 +3,8 @@ import type { Editor } from '@tiptap/react'
 import type { ReactNode, RefObject } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import type { CompositionWarning, NormalizedComposition } from './CompositionValidation'
-
 import type { DraftValues } from './DraftValues'
+import type { EmailDeliveryContext } from './EmailDelivery'
 
 export type { Attachment } from './DraftValues'
 export type RecipientField = 'to' | 'cc' | 'bcc' | 'recipientName' | 'subject'
@@ -15,7 +15,11 @@ export type ValidatedComposition = Omit<NormalizedComposition, 'attachments'> & 
 export type ComposerRootProps = {
   children: ReactNode
   theme?: 'dark' | 'light'
-  onSend?: (composition: ValidatedComposition, id: string) => Promise<void>
+  onSend?: (
+    composition: ValidatedComposition,
+    id: string,
+    context?: EmailDeliveryContext,
+  ) => Promise<void>
   onSent?: () => void
   onValidated?: (composition: ValidatedComposition) => void | Promise<void>
 }
@@ -34,6 +38,7 @@ export type ComposerValidationState = {
 export type ComposerContextValue = {
   sending: boolean
   sendFailed: boolean
+  sendProgress: string
   revision: number
   sessionRef: RefObject<number>
   editor: Editor | null

@@ -68,3 +68,23 @@ describe('outgoing mail proxy', () => {
     expect(await response.text()).not.toContain('private')
   })
 })
+
+it('forwards only authenticated attachment routes with the same mutation origin guard', async () => {
+  const fetcher = vi.fn<typeof fetch>(async () => Response.json({ id: 'id' }))
+  const proxy = createOutgoingMailProxy('https://api.example.test', fetcher)
+  const id = '00000000-0000-4000-8000-000000000001'
+  for (const path of ['/api/mail/attachments', `/api/mail/attachments/${id}/complete`]) {
+    expect((await proxy(request(path))).status).toBe(200)
+    expect((await proxy(request(path, 'https://evil.test'))).status).toBe(403)
+  }
+  for (const path of [`/api/mail/attachments/${id}`, `/api/mail/attachments/${id}/download`]) {
+    expect((await proxy(new Request(`${origin}${path}?url=https://evil.test`))).status).toBe(200)
+    expect(String(fetcher.mock.calls.at(-1)?.[0])).toBe(
+      `https://api.example.test${path.replace('/api/mail/', '/api/v1/mail/')}`,
+    )
+  }
+  const before = fetcher.mock.calls.length
+  expect((await proxy(request('/api/mail/attachments/not-an-id/complete'))).status).toBe(404)
+  expect((await proxy(request(`/api/mail/attachments/${id}/delete`))).status).toBe(404)
+  expect(fetcher).toHaveBeenCalledTimes(before)
+})

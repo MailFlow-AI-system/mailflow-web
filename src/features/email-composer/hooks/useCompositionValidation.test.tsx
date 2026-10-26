@@ -256,7 +256,7 @@ describe('useCompositionValidation', () => {
     const { result } = setup({ onValidated, focusInvalidField })
     const tooLarge = {
       id: 'large',
-      file: fileWithSize('large.bin', 10 * 1024 * 1024 + 1),
+      file: fileWithSize('large.bin', 10 * 1_000_000 + 1),
     } satisfies Attachment
 
     act(() => {

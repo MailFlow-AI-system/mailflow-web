@@ -24,12 +24,16 @@ import { Route as AuthenticatedMailSpamRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedMailStarredRouteImport } from './routes/_authenticated/_mail/starred'
 import { Route as AuthenticatedMailTrashRouteImport } from './routes/_authenticated/_mail/trash'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiMailAttachmentsRouteImport } from './routes/api/mail/attachments'
 import { Route as ApiMailMessagesRouteImport } from './routes/api/mail/messages'
 import { Route as ApiMailSendRouteImport } from './routes/api/mail/send'
 import { Route as ApiMailSentRouteImport } from './routes/api/mail/sent'
 import { Route as ApiV1WorkspaceEntryRouteImport } from './routes/api/v1/workspace-entry'
 import { Route as ApiV1WorkspaceSelectionRouteImport } from './routes/api/v1/workspace-selection'
 import { Route as ApiV1WorkspacesRouteImport } from './routes/api/v1/workspaces'
+import { Route as ApiMailAttachmentsIdRouteImport } from './routes/api/mail/attachments.$id'
+import { Route as ApiMailAttachmentsIdCompleteRouteImport } from './routes/api/mail/attachments.$id.complete'
+import { Route as ApiMailAttachmentsIdDownloadRouteImport } from './routes/api/mail/attachments.$id.download'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -104,6 +108,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMailAttachmentsRoute = ApiMailAttachmentsRouteImport.update({
+  id: '/api/mail/attachments',
+  path: '/api/mail/attachments',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMailMessagesRoute = ApiMailMessagesRouteImport.update({
   id: '/api/mail/messages',
   path: '/api/mail/messages',
@@ -134,6 +143,23 @@ const ApiV1WorkspacesRoute = ApiV1WorkspacesRouteImport.update({
   path: '/api/v1/workspaces',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMailAttachmentsIdRoute = ApiMailAttachmentsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiMailAttachmentsRoute,
+} as any)
+const ApiMailAttachmentsIdCompleteRoute =
+  ApiMailAttachmentsIdCompleteRouteImport.update({
+    id: '/complete',
+    path: '/complete',
+    getParentRoute: () => ApiMailAttachmentsIdRoute,
+  } as any)
+const ApiMailAttachmentsIdDownloadRoute =
+  ApiMailAttachmentsIdDownloadRouteImport.update({
+    id: '/download',
+    path: '/download',
+    getParentRoute: () => ApiMailAttachmentsIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
@@ -148,12 +174,16 @@ export interface FileRoutesByFullPath {
   '/starred': typeof AuthenticatedMailStarredRoute
   '/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/mail/attachments': typeof ApiMailAttachmentsRouteWithChildren
   '/api/mail/messages': typeof ApiMailMessagesRoute
   '/api/mail/send': typeof ApiMailSendRoute
   '/api/mail/sent': typeof ApiMailSentRoute
   '/api/v1/workspace-entry': typeof ApiV1WorkspaceEntryRoute
   '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
+  '/api/mail/attachments/$id': typeof ApiMailAttachmentsIdRouteWithChildren
+  '/api/mail/attachments/$id/complete': typeof ApiMailAttachmentsIdCompleteRoute
+  '/api/mail/attachments/$id/download': typeof ApiMailAttachmentsIdDownloadRoute
 }
 export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
@@ -168,12 +198,16 @@ export interface FileRoutesByTo {
   '/starred': typeof AuthenticatedMailStarredRoute
   '/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/mail/attachments': typeof ApiMailAttachmentsRouteWithChildren
   '/api/mail/messages': typeof ApiMailMessagesRoute
   '/api/mail/send': typeof ApiMailSendRoute
   '/api/mail/sent': typeof ApiMailSentRoute
   '/api/v1/workspace-entry': typeof ApiV1WorkspaceEntryRoute
   '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
+  '/api/mail/attachments/$id': typeof ApiMailAttachmentsIdRouteWithChildren
+  '/api/mail/attachments/$id/complete': typeof ApiMailAttachmentsIdCompleteRoute
+  '/api/mail/attachments/$id/download': typeof ApiMailAttachmentsIdDownloadRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -192,12 +226,16 @@ export interface FileRoutesById {
   '/_authenticated/_mail/starred': typeof AuthenticatedMailStarredRoute
   '/_authenticated/_mail/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/mail/attachments': typeof ApiMailAttachmentsRouteWithChildren
   '/api/mail/messages': typeof ApiMailMessagesRoute
   '/api/mail/send': typeof ApiMailSendRoute
   '/api/mail/sent': typeof ApiMailSentRoute
   '/api/v1/workspace-entry': typeof ApiV1WorkspaceEntryRoute
   '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
+  '/api/mail/attachments/$id': typeof ApiMailAttachmentsIdRouteWithChildren
+  '/api/mail/attachments/$id/complete': typeof ApiMailAttachmentsIdCompleteRoute
+  '/api/mail/attachments/$id/download': typeof ApiMailAttachmentsIdDownloadRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -214,12 +252,16 @@ export interface FileRouteTypes {
     | '/starred'
     | '/trash'
     | '/api/auth/$'
+    | '/api/mail/attachments'
     | '/api/mail/messages'
     | '/api/mail/send'
     | '/api/mail/sent'
     | '/api/v1/workspace-entry'
     | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
+    | '/api/mail/attachments/$id'
+    | '/api/mail/attachments/$id/complete'
+    | '/api/mail/attachments/$id/download'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -234,12 +276,16 @@ export interface FileRouteTypes {
     | '/starred'
     | '/trash'
     | '/api/auth/$'
+    | '/api/mail/attachments'
     | '/api/mail/messages'
     | '/api/mail/send'
     | '/api/mail/sent'
     | '/api/v1/workspace-entry'
     | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
+    | '/api/mail/attachments/$id'
+    | '/api/mail/attachments/$id/complete'
+    | '/api/mail/attachments/$id/download'
   id:
     | '__root__'
     | '/_authenticated'
@@ -257,12 +303,16 @@ export interface FileRouteTypes {
     | '/_authenticated/_mail/starred'
     | '/_authenticated/_mail/trash'
     | '/api/auth/$'
+    | '/api/mail/attachments'
     | '/api/mail/messages'
     | '/api/mail/send'
     | '/api/mail/sent'
     | '/api/v1/workspace-entry'
     | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
+    | '/api/mail/attachments/$id'
+    | '/api/mail/attachments/$id/complete'
+    | '/api/mail/attachments/$id/download'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -270,6 +320,7 @@ export interface RootRouteChildren {
   PublicRouteRoute: typeof PublicRouteRouteWithChildren
   ApiWorkspaceContextRoute: typeof ApiWorkspaceContextRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiMailAttachmentsRoute: typeof ApiMailAttachmentsRouteWithChildren
   ApiMailMessagesRoute: typeof ApiMailMessagesRoute
   ApiMailSendRoute: typeof ApiMailSendRoute
   ApiMailSentRoute: typeof ApiMailSentRoute
@@ -385,6 +436,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/mail/attachments': {
+      id: '/api/mail/attachments'
+      path: '/api/mail/attachments'
+      fullPath: '/api/mail/attachments'
+      preLoaderRoute: typeof ApiMailAttachmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/mail/messages': {
       id: '/api/mail/messages'
       path: '/api/mail/messages'
@@ -426,6 +484,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/v1/workspaces'
       preLoaderRoute: typeof ApiV1WorkspacesRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/mail/attachments/$id': {
+      id: '/api/mail/attachments/$id'
+      path: '/$id'
+      fullPath: '/api/mail/attachments/$id'
+      preLoaderRoute: typeof ApiMailAttachmentsIdRouteImport
+      parentRoute: typeof ApiMailAttachmentsRoute
+    }
+    '/api/mail/attachments/$id/complete': {
+      id: '/api/mail/attachments/$id/complete'
+      path: '/complete'
+      fullPath: '/api/mail/attachments/$id/complete'
+      preLoaderRoute: typeof ApiMailAttachmentsIdCompleteRouteImport
+      parentRoute: typeof ApiMailAttachmentsIdRoute
+    }
+    '/api/mail/attachments/$id/download': {
+      id: '/api/mail/attachments/$id/download'
+      path: '/download'
+      fullPath: '/api/mail/attachments/$id/download'
+      preLoaderRoute: typeof ApiMailAttachmentsIdDownloadRouteImport
+      parentRoute: typeof ApiMailAttachmentsIdRoute
     }
   }
 }
@@ -483,11 +562,36 @@ const PublicRouteRouteWithChildren = PublicRouteRoute._addFileChildren(
   PublicRouteRouteChildren,
 )
 
+interface ApiMailAttachmentsIdRouteChildren {
+  ApiMailAttachmentsIdCompleteRoute: typeof ApiMailAttachmentsIdCompleteRoute
+  ApiMailAttachmentsIdDownloadRoute: typeof ApiMailAttachmentsIdDownloadRoute
+}
+
+const ApiMailAttachmentsIdRouteChildren: ApiMailAttachmentsIdRouteChildren = {
+  ApiMailAttachmentsIdCompleteRoute: ApiMailAttachmentsIdCompleteRoute,
+  ApiMailAttachmentsIdDownloadRoute: ApiMailAttachmentsIdDownloadRoute,
+}
+
+const ApiMailAttachmentsIdRouteWithChildren =
+  ApiMailAttachmentsIdRoute._addFileChildren(ApiMailAttachmentsIdRouteChildren)
+
+interface ApiMailAttachmentsRouteChildren {
+  ApiMailAttachmentsIdRoute: typeof ApiMailAttachmentsIdRouteWithChildren
+}
+
+const ApiMailAttachmentsRouteChildren: ApiMailAttachmentsRouteChildren = {
+  ApiMailAttachmentsIdRoute: ApiMailAttachmentsIdRouteWithChildren,
+}
+
+const ApiMailAttachmentsRouteWithChildren =
+  ApiMailAttachmentsRoute._addFileChildren(ApiMailAttachmentsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   PublicRouteRoute: PublicRouteRouteWithChildren,
   ApiWorkspaceContextRoute: ApiWorkspaceContextRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiMailAttachmentsRoute: ApiMailAttachmentsRouteWithChildren,
   ApiMailMessagesRoute: ApiMailMessagesRoute,
   ApiMailSendRoute: ApiMailSendRoute,
   ApiMailSentRoute: ApiMailSentRoute,

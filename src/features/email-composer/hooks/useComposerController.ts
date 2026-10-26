@@ -12,6 +12,7 @@ import type {
   ValidatedComposition,
 } from '../types/composer'
 import type { DraftValues } from '../types/DraftValues'
+import { type EmailDeliveryContext, EmailDeliveryError } from '../types/EmailDelivery'
 import { createAttachmentId } from '../utils/attachmentId'
 import { useCompositionValidation } from './useCompositionValidation'
 import { emptyDraft, useDraftForm } from './useDraftForm'
@@ -35,6 +36,8 @@ export function useComposerController(
   const draft = useDraftForm()
   const [sending, setSending] = useState(false)
   const [sendFailed, setSendFailed] = useState(false)
+  const [sendProgress, setSendProgress] = useState('')
+  const uploads = useRef<EmailDeliveryContext['uploads']>(new Map())
   const sendingRef = useRef(false)
   const pendingDelivery = useRef<{ signature: string; id: string } | null>(null)
   const discardRef = useRef<() => void>(() => {})
@@ -146,16 +149,31 @@ export function useComposerController(
         pendingDelivery.current = { signature, id: crypto.randomUUID() }
       const notification = toast.loading('Enviando e-mail…')
       try {
-        await onSend(composition, pendingDelivery.current.id)
-      } catch {
+        await onSend(composition, pendingDelivery.current.id, {
+          uploads: uploads.current,
+          onProgress: ({ phase, completed, total }) => {
+            const progress =
+              phase === 'uploading'
+                ? `Salvando arquivo ${completed + 1} de ${total}…`
+                : phase === 'verifying'
+                  ? `Verificando arquivo ${completed + 1} de ${total}…`
+                  : 'Enviando e-mail…'
+            setSendProgress(progress)
+            toast.loading(progress, { id: notification })
+          },
+        })
+      } catch (error) {
         setSendFailed(true)
         const message =
-          'Não foi possível confirmar o envio. Sua mensagem foi mantida. Tente novamente.'
+          error instanceof EmailDeliveryError
+            ? error.message
+            : 'Não foi possível confirmar o envio. Sua mensagem foi mantida. Tente novamente.'
         toast.error(message, { id: notification })
         throw new Error(message)
       } finally {
         sendingRef.current = false
         setSending(false)
+        setSendProgress('')
         editorRef.current?.setEditable(true)
       }
       discardRef.current()
@@ -187,6 +205,8 @@ export function useComposerController(
   const discard = useCallback(() => {
     if (sendingRef.current) return
     pendingDelivery.current = null
+    uploads.current.clear()
+    uploads.current = new Map()
     setSendFailed(false)
     sessionRef.current += 1
     setSession((previous) => previous + 1)
@@ -235,6 +255,7 @@ export function useComposerController(
     context: {
       sending,
       sendFailed,
+      sendProgress,
       sessionRef,
       revision: session,
       editor,
