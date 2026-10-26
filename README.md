@@ -79,3 +79,9 @@ retries. The route supplies the HTTP adapter and refreshes Sent after success; i
 no longer owns a separate delivery lifecycle. Controller interface tests replace
 the absorbed sending-hook tests. Unknown provider outcomes still require explicit
 reconciliation after Core's retry window expires.
+
+Inbox and Sent share the responsive mailbox panel, message cards, loading states,
+and list pagination controls. Sent displays To recipients in the card's identity
+line, followed by subject and plain-text preview. Both folders keep the reader
+empty and message opening unavailable. Separate query adapters preserve their
+respective cursor/offset pagination and owner-scoped caches.
