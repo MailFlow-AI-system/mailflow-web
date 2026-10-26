@@ -79,6 +79,7 @@ export async function sendEmail(composition: ValidatedComposition, id: string) {
         to: composition.to,
         cc: composition.cc,
         bcc: composition.bcc,
+        ...(composition.recipientName ? { recipientName: composition.recipientName } : {}),
         subject: composition.subject,
         html: document.body.innerHTML,
         text: getPlainText(document),

@@ -23,8 +23,8 @@ type UseCompositionValidationOptions = {
   focusInvalidField?: (field: FocusField) => void
 }
 
-function isRecipientField(field: FocusField): field is 'to' | 'cc' | 'bcc' {
-  return field === 'to' || field === 'cc' || field === 'bcc'
+function isRecipientField(field: FocusField): field is 'to' | 'cc' | 'bcc' | 'recipientName' {
+  return field === 'to' || field === 'cc' || field === 'bcc' || field === 'recipientName'
 }
 
 export function useCompositionValidation({
@@ -64,6 +64,7 @@ export function useCompositionValidation({
         to: values.to,
         cc: values.cc,
         bcc: values.bcc,
+        recipientName: values.recipientName,
         subject: values.subject,
         body: bodySnapshot.body,
         hasBodyContent: bodySnapshot.hasBodyContent,
@@ -293,9 +294,9 @@ export function useCompositionValidation({
       formState: { values: true },
       callback: () => {
         invalidate()
-        const hasValidationErrors = (['to', 'cc', 'bcc', 'attachments'] as const).some(
-          (field) => draft.getFieldState(field).error,
-        )
+        const hasValidationErrors = (
+          ['to', 'cc', 'bcc', 'recipientName', 'attachments'] as const
+        ).some((field) => draft.getFieldState(field).error)
         if (hasValidationErrors) {
           const result = validateComposition(snapshot())
           applyIssues(result.success ? [] : result.issues)

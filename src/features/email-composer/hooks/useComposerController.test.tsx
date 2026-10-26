@@ -68,6 +68,7 @@ describe('useComposerController composition validation', () => {
       to: '',
       cc: '',
       bcc: '',
+      recipientName: '',
       subject: '',
       body: '<p></p>',
       attachments: [],
@@ -271,4 +272,24 @@ describe('Composition delivery identity', () => {
       expect(onSend.mock.calls[1]?.[1]).not.toBe(firstId)
     },
   )
+})
+
+it('retains the recipient name on failure, changes retry identity after editing it, and clears it on success', async () => {
+  const onSend = vi.fn().mockRejectedValueOnce(new Error('failed')).mockResolvedValue(undefined)
+  const { result } = renderHook(() => useComposerController('light', undefined, onSend))
+  await waitFor(() => expect(result.current.context.editor).toBeTruthy())
+  act(() => {
+    result.current.draft.setValue('to', 'ada@example.test')
+    result.current.draft.setValue('recipientName', '  Ada Lovelace  ')
+    result.current.draft.setValue('subject', 'Named message')
+    result.current.context.editor?.commands.setContent('<p>Hello</p>')
+  })
+  await act(async () => result.current.context.validation.validate())
+  expect(onSend.mock.calls[0]?.[0]).toMatchObject({ recipientName: 'Ada Lovelace' })
+  expect(result.current.draft.getValues('recipientName')).toBe('  Ada Lovelace  ')
+  act(() => result.current.draft.setValue('recipientName', 'Grace Hopper'))
+  await act(async () => result.current.context.validation.validate())
+  expect(onSend.mock.calls[1]?.[0]).toMatchObject({ recipientName: 'Grace Hopper' })
+  expect(onSend.mock.calls[1]?.[1]).not.toBe(onSend.mock.calls[0]?.[1])
+  expect(result.current.draft.getValues('recipientName')).toBe('')
 })

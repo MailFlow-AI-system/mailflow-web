@@ -4,6 +4,7 @@ export type DraftValues = {
   to: string
   cc: string
   bcc: string
+  recipientName: string
   subject: string
   body: string
   attachments: Attachment[]

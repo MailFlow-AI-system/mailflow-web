@@ -6,12 +6,18 @@ import type { DraftValues } from '../types/DraftValues'
 export function useDraftStatus() {
   const { saved, baselineDraftSignature } = useComposer()
   const { control } = useFormContext<DraftValues>()
-  const [to, cc, bcc, subject, body, attachments] = useWatch({
+  const [to, cc, bcc, recipientName, subject, body, attachments] = useWatch({
     control,
-    name: ['to', 'cc', 'bcc', 'subject', 'body', 'attachments'],
+    name: ['to', 'cc', 'bcc', 'recipientName', 'subject', 'body', 'attachments'],
   })
   const signature = draftSignature(
-    { to: to ?? '', cc: cc ?? '', bcc: bcc ?? '', subject: subject ?? '' },
+    {
+      to: to ?? '',
+      cc: cc ?? '',
+      bcc: bcc ?? '',
+      recipientName: recipientName ?? '',
+      subject: subject ?? '',
+    },
     body ?? emptyBody,
     attachments ?? [],
   )

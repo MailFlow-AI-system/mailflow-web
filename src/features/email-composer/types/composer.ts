@@ -7,7 +7,7 @@ import type { CompositionWarning, NormalizedComposition } from './CompositionVal
 import type { DraftValues } from './DraftValues'
 
 export type { Attachment } from './DraftValues'
-export type RecipientField = 'to' | 'cc' | 'bcc' | 'subject'
+export type RecipientField = 'to' | 'cc' | 'bcc' | 'recipientName' | 'subject'
 export type DraftFields = Record<RecipientField, string>
 export type ValidatedComposition = Omit<NormalizedComposition, 'attachments'> & {
   attachments: DraftValues['attachments']
@@ -49,6 +49,7 @@ export type ComposerContextValue = {
   theme: 'dark' | 'light'
   triggerRef: RefObject<HTMLButtonElement | null>
   recipientRef: RefObject<HTMLInputElement | null>
+  recipientNameRef: RefObject<HTMLInputElement | null>
   ccRef: RefObject<HTMLInputElement | null>
   bccRef: RefObject<HTMLInputElement | null>
   attachmentTriggerRef: RefObject<HTMLButtonElement | null>

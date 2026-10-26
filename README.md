@@ -81,7 +81,14 @@ the absorbed sending-hook tests. Unknown provider outcomes still require explici
 reconciliation after Core's retry window expires.
 
 Inbox and Sent share the responsive mailbox panel, message cards, loading states,
-and list pagination controls. Sent displays To recipients in the card's identity
-line, followed by subject and plain-text preview. Both folders keep the reader
+and list pagination controls. Sent displays the optional recipient name in the card's identity line, falling
+back to To addresses when it is blank, followed by subject and plain-text preview. Both folders keep the reader
 empty and message opening unavailable. Separate query adapters preserve their
 respective cursor/offset pagination and owner-scoped caches.
+
+
+Composer includes an optional recipient name between the address fields and
+subject. The trimmed name travels with the Composition to Core and persists in
+Sent. It participates in local draft tracking and retry identity; failures retain
+it and successful sends or discard clear it. Addresses remain separate from this
+display metadata. Older unnamed messages continue to display their email addresses.
