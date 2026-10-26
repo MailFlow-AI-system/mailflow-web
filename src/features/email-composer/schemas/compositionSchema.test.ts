@@ -90,9 +90,9 @@ describe('compositionSchema', () => {
     const result = compositionSchema.safeParse({
       ...validInput,
       attachments: [
-        { id: 'first', name: 'first.pdf', size: 10 * 1024 * 1024 },
-        { id: 'second', name: 'second.pdf', size: 10 * 1024 * 1024 },
-        { id: 'third', name: 'third.pdf', size: 5 * 1024 * 1024 },
+        { id: 'first', name: 'first.pdf', size: 10 * 1_000_000 },
+        { id: 'second', name: 'second.pdf', size: 5 * 1_000_000 },
+        { id: 'third', name: 'third.pdf', size: 5 * 1_000_000 },
       ],
     })
 
@@ -106,9 +106,9 @@ describe('compositionSchema', () => {
     const result = compositionSchema.safeParse({
       ...validInput,
       attachments: [
-        { id: 'first', name: 'first.pdf', size: 10 * 1024 * 1024 },
-        { id: 'too-large', name: 'large.pdf', size: 10 * 1024 * 1024 + 1 },
-        { id: 'third', name: 'third.pdf', size: 5 * 1024 * 1024 },
+        { id: 'first', name: 'first.pdf', size: 10 * 1_000_000 },
+        { id: 'too-large', name: 'large.pdf', size: 10 * 1_000_000 + 1 },
+        { id: 'third', name: 'third.pdf', size: 5 * 1_000_000 },
       ],
     })
 
@@ -118,11 +118,11 @@ describe('compositionSchema', () => {
         expect.arrayContaining([
           expect.objectContaining({
             path: ['attachments', 1],
-            message: 'Cada anexo deve ter no máximo 10 MiB.',
+            message: 'Cada anexo deve ter no máximo 10 MB.',
           }),
           expect.objectContaining({
             path: ['attachments'],
-            message: 'Os anexos devem somar no máximo 25 MiB.',
+            message: 'Os anexos devem somar no máximo 20 MB.',
           }),
         ]),
       )
@@ -133,9 +133,9 @@ describe('compositionSchema', () => {
     const result = compositionSchema.safeParse({
       ...validInput,
       attachments: [
-        { id: 'first', name: 'first.pdf', size: 9 * 1024 * 1024 },
-        { id: 'second', name: 'second.pdf', size: 9 * 1024 * 1024 },
-        { id: 'third', name: 'third.pdf', size: 8 * 1024 * 1024 + 1 },
+        { id: 'first', name: 'first.pdf', size: 9 * 1_000_000 },
+        { id: 'second', name: 'second.pdf', size: 9 * 1_000_000 },
+        { id: 'third', name: 'third.pdf', size: 8 * 1_000_000 + 1 },
       ],
     })
 
@@ -144,7 +144,7 @@ describe('compositionSchema', () => {
       expect(result.error.issues).toContainEqual(
         expect.objectContaining({
           path: ['attachments'],
-          message: 'Os anexos devem somar no máximo 25 MiB.',
+          message: 'Os anexos devem somar no máximo 20 MB.',
         }),
       )
       expect(result.error.issues.some((issue) => issue.path.length === 2)).toBe(false)

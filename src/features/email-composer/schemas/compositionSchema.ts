@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import {
   COMPOSITION_ATTACHMENT_MAX_SIZE,
+  COMPOSITION_ATTACHMENTS_MAX_COUNT,
   COMPOSITION_ATTACHMENTS_MAX_TOTAL_SIZE,
   COMPOSITION_VALIDATION_MESSAGES,
 } from '../composerValidationConstants'
@@ -23,6 +24,9 @@ type AttachmentSizeIssue = { attachmentIndex: number; message: string } | { mess
 
 export function getAttachmentSizeIssues(sizes: readonly number[]): AttachmentSizeIssue[] {
   const issues: AttachmentSizeIssue[] = []
+  if (sizes.length > COMPOSITION_ATTACHMENTS_MAX_COUNT) {
+    issues.push({ message: COMPOSITION_VALIDATION_MESSAGES.tooManyAttachments })
+  }
 
   sizes.forEach((size, attachmentIndex) => {
     if (size > COMPOSITION_ATTACHMENT_MAX_SIZE) {

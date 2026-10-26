@@ -26,7 +26,7 @@ function MailLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
 
   return (
-    <EmailComposer.Root onSend={sendEmail} onSent={onSent}>
+    <EmailComposer.Root key={user.id} onSend={sendEmail} onSent={onSent}>
       <AppShell.Root>
         <AppShell.Sidebar user={user} userMenu={<LogoutMenuItem />} />
         <AppShell.Main>
