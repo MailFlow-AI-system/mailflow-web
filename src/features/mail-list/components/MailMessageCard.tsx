@@ -20,7 +20,7 @@ export function MailMessageCard({ message }: MailMessageCardProps) {
       <div className="flex min-w-0 items-start gap-3">
         <Avatar aria-hidden="true" className="size-9">
           <AvatarFallback
-            className={`text-[11px] font-medium ${getSenderAvatarColorClass(message.senderName)}`}
+            className={`text-[11px] font-medium ${getSenderAvatarColorClass(message.senderName, message.recipientEmail)}`}
           >
             {senderInitials(message.senderName) || '?'}
           </AvatarFallback>
