@@ -31,4 +31,16 @@ describe('getSenderAvatarColorClass', () => {
     expect(getSenderAvatarColorClass('')).toBe('bg-muted text-foreground')
     expect(getSenderAvatarColorClass(' \t\n ')).toBe('bg-muted text-foreground')
   })
+  it('keeps a recipient color stable when the display name, casing or surrounding spaces change', () => {
+    expect(getSenderAvatarColorClass('Ada Lovelace', 'ada@example.test')).toBe(
+      getSenderAvatarColorClass('Different name', '  ADA@EXAMPLE.TEST  '),
+    )
+  })
+
+  it('uses the complete recipient address so shared initials do not collapse the palette', () => {
+    const colors = ['ada@example.test', 'amy@example.test', 'alex@example.test'].map((email) =>
+      getSenderAvatarColorClass('Recipient', email),
+    )
+    expect(new Set(colors).size).toBeGreaterThan(1)
+  })
 })
