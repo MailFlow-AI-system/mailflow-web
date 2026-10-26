@@ -15,7 +15,8 @@ export type ValidatedComposition = Omit<NormalizedComposition, 'attachments'> & 
 export type ComposerRootProps = {
   children: ReactNode
   theme?: 'dark' | 'light'
-  onSend?: (composition: ValidatedComposition) => Promise<void>
+  onSend?: (composition: ValidatedComposition, id: string) => Promise<void>
+  onSent?: () => void
   onValidated?: (composition: ValidatedComposition) => void | Promise<void>
 }
 export type ComposerLayoutProps = { children: ReactNode; assistant?: ReactNode }

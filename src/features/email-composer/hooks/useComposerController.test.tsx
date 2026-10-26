@@ -1,7 +1,18 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { useFormState } from 'react-hook-form'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useComposerController } from './useComposerController'
+
+const { loading, success, error } = vi.hoisted(() => ({
+  loading: vi.fn(() => 'delivery-toast'),
+  success: vi.fn(),
+  error: vi.fn(),
+}))
+vi.mock('@mailflow/ui/components', async (original) => ({
+  ...(await original<object>()),
+  toast: { loading, success, error },
+}))
+afterEach(() => vi.clearAllMocks())
 
 describe('useComposerController composition validation', () => {
   it('invalidates readiness on every editor update and draft field edit', async () => {
@@ -170,7 +181,8 @@ describe('useComposerController email delivery', () => {
           resolve = done
         }),
     )
-    const { result } = renderHook(() => useComposerController('light', undefined, onSend))
+    const onSent = vi.fn()
+    const { result } = renderHook(() => useComposerController('light', undefined, onSend, onSent))
     await waitFor(() => expect(result.current.context.editor).toBeTruthy())
     act(() => {
       result.current.draft.setValue('to', 'ada@example.test')
@@ -182,6 +194,8 @@ describe('useComposerController email delivery', () => {
       attempt = result.current.context.validation.validate()
     })
     await waitFor(() => expect(onSend).toHaveBeenCalledTimes(1))
+    expect(loading).toHaveBeenCalledWith('Enviando e-mail…')
+    expect(onSent).not.toHaveBeenCalled()
     expect(result.current.context.sending).toBe(true)
     expect(result.current.context.editor?.isEditable).toBe(false)
     const details = { cancel: vi.fn() } as never
@@ -199,6 +213,8 @@ describe('useComposerController email delivery', () => {
     expect(result.current.draft.getValues('attachments')).toEqual([])
     expect(result.current.open).toBe(false)
     expect(result.current.context.sending).toBe(false)
+    expect(success).toHaveBeenCalledWith('E-mail enviado com sucesso.', { id: 'delivery-toast' })
+    expect(onSent).toHaveBeenCalledTimes(1)
   })
   it('retains recipients, content and attachments on failure and allows retry', async () => {
     const onSend = vi.fn().mockRejectedValueOnce(new Error('failed')).mockResolvedValue(undefined)
@@ -212,11 +228,47 @@ describe('useComposerController email delivery', () => {
     })
     await act(async () => result.current.context.validation.validate())
     expect(result.current.context.sendFailed).toBe(true)
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('mantida'), { id: 'delivery-toast' })
     expect(result.current.draft.getValues('to')).toBe('ada@example.test')
     expect(result.current.draft.getValues('attachments')).toHaveLength(1)
     expect(result.current.context.editor?.isEditable).toBe(true)
     await act(async () => result.current.context.validation.validate())
     expect(onSend).toHaveBeenCalledTimes(2)
+    expect(onSend.mock.calls[0]?.[1]).toEqual(expect.any(String))
+    expect(onSend.mock.calls[1]?.[1]).toBe(onSend.mock.calls[0]?.[1])
     expect(result.current.draft.getValues('to')).toBe('')
   })
+})
+
+describe('Composition delivery identity', () => {
+  it.each(['discard', 'edit', 'success'] as const)(
+    'starts a new delivery after %s, even when content is reused',
+    async (transition) => {
+      const onSend = vi.fn().mockImplementation(async (_composition: unknown, _id: string) => {
+        if (transition !== 'success') throw new Error('uncertain delivery')
+      })
+      const { result } = renderHook(() => useComposerController('light', undefined, onSend))
+      const compose = async () => {
+        await waitFor(() => expect(result.current.context.editor).toBeTruthy())
+        act(() => {
+          result.current.draft.setValue('to', 'ada@example.test')
+          result.current.draft.setValue('subject', 'Same composition')
+          result.current.context.editor?.commands.setContent('<p>Body</p>')
+        })
+      }
+      await compose()
+      await act(async () => result.current.context.validation.validate())
+      const firstId = onSend.mock.calls[0]?.[1]
+      expect(firstId).toEqual(expect.any(String))
+      if (transition === 'discard') act(() => result.current.context.discard())
+      if (transition === 'edit') {
+        act(() => result.current.draft.setValue('subject', 'Edited composition'))
+      } else {
+        await compose()
+      }
+      await act(async () => result.current.context.validation.validate())
+      expect(onSend).toHaveBeenCalledTimes(2)
+      expect(onSend.mock.calls[1]?.[1]).not.toBe(firstId)
+    },
+  )
 })

@@ -69,3 +69,13 @@ files share the 25 MiB total attachment limit. The Composer never uploads them
 to a bucket. Selecting an image or a file only reads it in the current tab;
 reloading an unsent draft loses those in-memory files. Durable object storage
 and retrieving sent attachment binaries are not implemented.
+
+## Listening
+
+The Composition module owns delivery progress, notifications, and retry identity.
+Discarding a failed Composition resets its delivery id so an identical new message
+can be sent intentionally. An unchanged failed Composition keeps its id for safe
+retries. The route supplies the HTTP adapter and refreshes Sent after success; it
+no longer owns a separate delivery lifecycle. Controller interface tests replace
+the absorbed sending-hook tests. Unknown provider outcomes still require explicit
+reconciliation after Core's retry window expires.
