@@ -1,13 +1,9 @@
 import { getCurrentSession } from '../../auth/adapters/getCurrentSession'
 import { workspaceRetryAfter } from '../utils/workspaceRetryAfter'
+import { WorkspaceIdentityChangedError } from './workspaceIdentityChangedError'
 import { WorkspaceRateLimitedError } from './workspaceRateLimitedError'
 
-export class WorkspaceIdentityChangedError extends Error {
-  constructor() {
-    super('Workspace identity changed')
-    this.name = 'WorkspaceIdentityChangedError'
-  }
-}
+export { WorkspaceIdentityChangedError } from './workspaceIdentityChangedError'
 
 export async function readWorkspaceResponse(
   path: string,
