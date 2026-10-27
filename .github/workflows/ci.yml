@@ -25,13 +25,75 @@ jobs:
           CLOUDFLARE_ENV: development
 
   e2e:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: web
+    env:
+      MAILFLOW_CORE_WORKTREE: ${{ github.workspace }}/core
+      MAILFLOW_WORKSPACE_TEST_DATABASE_URL: postgresql://mailflow:mailflow@localhost:5432/mailflow
+    services:
+      database:
+        image: postgres:18.6-alpine
+        env:
+          POSTGRES_USER: mailflow
+          POSTGRES_PASSWORD: mailflow
+          POSTGRES_DB: mailflow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mailflow -d mailflow"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
-      - uses: actions/checkout@v5
+      - name: Check out Web
+        uses: actions/checkout@v5
+        with:
+          path: web
+          persist-credentials: false
+
+      - name: Check out compatible Core
+        uses: actions/checkout@v5
+        with:
+          repository: MailFlow-AI-system/mailflow-core
+          # Update deliberately when adopting a newer Core browser harness.
+          ref: 9918c0dd54fa5cbf5fdf160dd10ab73836a41964
+          path: core
+          persist-credentials: false
+
+      - name: Set up Core Node.js runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: core/.node-version
+
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.1
-      - run: bun install --frozen-lockfile
-      - run: bunx playwright install --with-deps chromium
-      - run: bun run test:e2e
+
+      - name: Install Core dependencies
+        working-directory: core
+        run: bun install --frozen-lockfile
+
+      - name: Install Web dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Chromium and system dependencies
+        run: bunx playwright install --with-deps chromium
+
+      - name: Test browser flows against real Core and PostgreSQL
+        run: bun run test:e2e
+
+      - name: Upload browser report and failure traces
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: workspace-browser-results
+          path: |
+            web/playwright-report/
+            web/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
