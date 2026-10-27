@@ -144,3 +144,21 @@ it('forwards only authenticated attachment routes with the same mutation origin 
   expect((await proxy(request(`/api/mail/attachments/${id}/delete`))).status).toBe(404)
   expect(fetcher).toHaveBeenCalledTimes(before)
 })
+
+it('forwards discard only to its fixed Core path with mutation and workspace guards', async () => {
+  const fetcher = vi.fn<typeof fetch>(async () =>
+    Response.json({ status: 'discarded', retainedMessageIds: [] }),
+  )
+  const proxy = createOutgoingMailProxy('https://api.example.test', fetcher, true)
+  const incoming = request('/api/mail/discard?url=https://evil.test')
+  incoming.headers.set('X-Workspace-Id', 'workspace-a')
+  incoming.headers.set('X-Workspace-Identity', 'user-one')
+  expect((await proxy(incoming)).status).toBe(200)
+  expect(String(fetcher.mock.calls[0]?.[0])).toBe('https://api.example.test/api/v1/mail/discard')
+  const headers = new Headers(fetcher.mock.calls[0]?.[1]?.headers)
+  expect(headers.get('X-Workspace-Id')).toBe('workspace-a')
+  expect(headers.get('X-Workspace-Identity')).toBe('user-one')
+  expect((await proxy(request('/api/mail/discard', 'https://evil.test'))).status).toBe(403)
+  expect((await proxy(new Request(`${origin}/api/mail/discard`))).status).toBe(404)
+  expect(fetcher).toHaveBeenCalledTimes(1)
+})

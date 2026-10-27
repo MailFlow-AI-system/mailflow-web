@@ -26,6 +26,7 @@ import { Route as AuthenticatedMailTrashRouteImport } from './routes/_authentica
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiMailAttachmentsRouteImport } from './routes/api/mail/attachments'
 import { Route as ApiMailContextRouteImport } from './routes/api/mail/context'
+import { Route as ApiMailDiscardRouteImport } from './routes/api/mail/discard'
 import { Route as ApiMailMessagesRouteImport } from './routes/api/mail/messages'
 import { Route as ApiMailSendRouteImport } from './routes/api/mail/send'
 import { Route as ApiMailSentRouteImport } from './routes/api/mail/sent'
@@ -119,6 +120,11 @@ const ApiMailContextRoute = ApiMailContextRouteImport.update({
   path: '/api/mail/context',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMailDiscardRoute = ApiMailDiscardRouteImport.update({
+  id: '/api/mail/discard',
+  path: '/api/mail/discard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMailMessagesRoute = ApiMailMessagesRouteImport.update({
   id: '/api/mail/messages',
   path: '/api/mail/messages',
@@ -182,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/mail/attachments': typeof ApiMailAttachmentsRouteWithChildren
   '/api/mail/context': typeof ApiMailContextRoute
+  '/api/mail/discard': typeof ApiMailDiscardRoute
   '/api/mail/messages': typeof ApiMailMessagesRoute
   '/api/mail/send': typeof ApiMailSendRoute
   '/api/mail/sent': typeof ApiMailSentRoute
@@ -207,6 +214,7 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/mail/attachments': typeof ApiMailAttachmentsRouteWithChildren
   '/api/mail/context': typeof ApiMailContextRoute
+  '/api/mail/discard': typeof ApiMailDiscardRoute
   '/api/mail/messages': typeof ApiMailMessagesRoute
   '/api/mail/send': typeof ApiMailSendRoute
   '/api/mail/sent': typeof ApiMailSentRoute
@@ -236,6 +244,7 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/mail/attachments': typeof ApiMailAttachmentsRouteWithChildren
   '/api/mail/context': typeof ApiMailContextRoute
+  '/api/mail/discard': typeof ApiMailDiscardRoute
   '/api/mail/messages': typeof ApiMailMessagesRoute
   '/api/mail/send': typeof ApiMailSendRoute
   '/api/mail/sent': typeof ApiMailSentRoute
@@ -263,6 +272,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/mail/attachments'
     | '/api/mail/context'
+    | '/api/mail/discard'
     | '/api/mail/messages'
     | '/api/mail/send'
     | '/api/mail/sent'
@@ -288,6 +298,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/mail/attachments'
     | '/api/mail/context'
+    | '/api/mail/discard'
     | '/api/mail/messages'
     | '/api/mail/send'
     | '/api/mail/sent'
@@ -316,6 +327,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/mail/attachments'
     | '/api/mail/context'
+    | '/api/mail/discard'
     | '/api/mail/messages'
     | '/api/mail/send'
     | '/api/mail/sent'
@@ -334,6 +346,7 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiMailAttachmentsRoute: typeof ApiMailAttachmentsRouteWithChildren
   ApiMailContextRoute: typeof ApiMailContextRoute
+  ApiMailDiscardRoute: typeof ApiMailDiscardRoute
   ApiMailMessagesRoute: typeof ApiMailMessagesRoute
   ApiMailSendRoute: typeof ApiMailSendRoute
   ApiMailSentRoute: typeof ApiMailSentRoute
@@ -461,6 +474,13 @@ declare module '@tanstack/react-router' {
       path: '/api/mail/context'
       fullPath: '/api/mail/context'
       preLoaderRoute: typeof ApiMailContextRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mail/discard': {
+      id: '/api/mail/discard'
+      path: '/api/mail/discard'
+      fullPath: '/api/mail/discard'
+      preLoaderRoute: typeof ApiMailDiscardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/mail/messages': {
@@ -613,6 +633,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiMailAttachmentsRoute: ApiMailAttachmentsRouteWithChildren,
   ApiMailContextRoute: ApiMailContextRoute,
+  ApiMailDiscardRoute: ApiMailDiscardRoute,
   ApiMailMessagesRoute: ApiMailMessagesRoute,
   ApiMailSendRoute: ApiMailSendRoute,
   ApiMailSentRoute: ApiMailSentRoute,
