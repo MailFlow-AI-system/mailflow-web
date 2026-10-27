@@ -10,7 +10,7 @@ export default {
   testIgnore: ['**/workspaces/**', '**/workspace-telemetry/**'],
   outputDir: './test-results',
   reporter: [['list'], ['html', { open: 'never' }]],
-  use: { ...switching.use, baseURL: 'http://workspace.test:3003' },
+  use: { ...switching.use, baseURL: 'http://localhost:3003' },
   webServer: [
     servers[0],
     {

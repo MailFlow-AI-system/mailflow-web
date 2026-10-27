@@ -12,13 +12,12 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: 0,
+  // First visits include the localhost binding handshake and SSR hydration.
+  expect: { timeout: 15000 },
   use: {
     ...devices['Desktop Chrome'],
     reducedMotion: 'reduce',
     trace: 'retain-on-failure',
-    launchOptions: {
-      args: ['--host-resolver-rules=MAP *.workspace.test 127.0.0.1, MAP workspace.test 127.0.0.1'],
-    },
   },
   webServer: [
     {
@@ -26,6 +25,7 @@ export default defineConfig({
       cwd: coreDirectory,
       url: 'http://127.0.0.1:8083/__fixture',
       reuseExistingServer: false,
+      env: { MAILFLOW_WORKSPACE_TEST_BASE_HOST: 'localhost' },
       timeout: 30000,
     },
     {
@@ -33,8 +33,9 @@ export default defineConfig({
       url: 'http://127.0.0.1:3003',
       reuseExistingServer: false,
       env: {
+        MAILFLOW_VITE_CACHE_DIR: 'node_modules/.vite-workspace-tests',
         VITE_API_BASE_URL: 'http://127.0.0.1:8083',
-        VITE_WORKSPACE_BASE_HOST: 'workspace.test',
+        VITE_WORKSPACE_BASE_HOST: 'localhost',
         VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED: 'true',
       },
     },

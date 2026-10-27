@@ -27,7 +27,7 @@ export function createWorkspaceSelectionGateway(
     if (
       !enabled ||
       !baseHost ||
-      (baseHost !== 'workspace.test' && !isRemoteWorkspaceBaseHost(baseHost))
+      (!['localhost', 'workspace.test'].includes(baseHost) && !isRemoteWorkspaceBaseHost(baseHost))
     )
       return failure(503, 'workspace_switching_not_configured')
     if (!isWorkspaceRequestOrigin(url, baseHost)) return failure(404, 'workspace_unavailable')

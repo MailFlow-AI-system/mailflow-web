@@ -43,9 +43,20 @@ export const createClientEnvironment = (runtimeEnv: RuntimeEnvironment) => {
   })
   if (
     environment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED &&
-    environment.VITE_WORKSPACE_BASE_HOST !== 'workspace.test'
+    !['localhost', 'workspace.test'].includes(environment.VITE_WORKSPACE_BASE_HOST ?? '')
   )
-    throw new Error('Local workspace switching requires the isolated workspace.test zone')
+    throw new Error(
+      'Local workspace switching requires the isolated localhost or workspace.test zone',
+    )
+  if (environment.VITE_WORKSPACE_BASE_HOST === 'localhost') {
+    const api = new URL(environment.VITE_API_BASE_URL)
+    if (
+      !environment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED ||
+      api.protocol !== 'http:' ||
+      !['localhost', '127.0.0.1', '[::1]'].includes(api.hostname)
+    )
+      throw new Error('Localhost workspaces require local switching and a loopback HTTP Core')
+  }
   if (environment.VITE_WORKSPACE_SWITCHING_ENABLED) {
     if (environment.VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED)
       throw new Error('Local and remote workspace switching are mutually exclusive')

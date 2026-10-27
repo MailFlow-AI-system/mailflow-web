@@ -1,40 +1,17 @@
 import { expect, test } from '@playwright/test'
-import { control, fixture } from './fixture'
+import { control, fixture, login } from './fixture'
 
 test('six authenticated pages cold-start together with workspace authority enabled', async ({
   browser,
-  request,
 }) => {
   test.setTimeout(60000)
   await control('reset')
   const data = await fixture()
-  const signIn = await request.post('http://127.0.0.1:8083/api/auth/sign-in/email', {
-    headers: { Origin: `http://${data.host}:3003` },
-    data: { email: data.email, password: data.password },
-  })
-  expect(signIn.status()).toBe(200)
-  const cookie = signIn
-    .headersArray()
-    .find(
-      (header) =>
-        header.name.toLowerCase() === 'set-cookie' &&
-        header.value.startsWith('better-auth.session_token='),
-    )
-  expect(cookie).toBeDefined()
-  const value = cookie?.value.split(';')[0]?.slice('better-auth.session_token='.length)
-  expect(value).toBeTruthy()
   const context = await browser.newContext()
-  await context.addCookies([
-    {
-      name: 'better-auth.session_token',
-      value: value ?? '',
-      domain: '.workspace.test',
-      path: '/',
-      httpOnly: true,
-      secure: false,
-      sameSite: 'Lax',
-    },
-  ])
+  const loginPage = await context.newPage()
+  await login(loginPage, 'http://localhost:3003/login')
+  await expect(loginPage.getByRole('button', { name: 'Compose', exact: true })).toBeEnabled()
+  await loginPage.close()
   try {
     const pages = await Promise.all(Array.from({ length: 6 }, () => context.newPage()))
     const startupMs = await Promise.all(

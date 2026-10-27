@@ -36,3 +36,9 @@ describe('workspace destination', () => {
     ).toThrow()
   })
 })
+
+it('navigates between localhost hosts while clearing selectors', () => {
+  expect(
+    workspaceDestination('http://localhost:3000/sent?q=private#old', 'localhost', workspace),
+  ).toBe('http://northwind.localhost:3000/sent')
+})
