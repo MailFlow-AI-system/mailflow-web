@@ -15,6 +15,7 @@ export type ValidatedComposition = Omit<NormalizedComposition, 'attachments'> & 
 export type ComposerRootProps = {
   children: ReactNode
   theme?: 'dark' | 'light'
+  userId?: string
   onSend?: (
     composition: ValidatedComposition,
     id: string,

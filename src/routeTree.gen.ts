@@ -25,6 +25,7 @@ import { Route as AuthenticatedMailStarredRouteImport } from './routes/_authenti
 import { Route as AuthenticatedMailTrashRouteImport } from './routes/_authenticated/_mail/trash'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiMailAttachmentsRouteImport } from './routes/api/mail/attachments'
+import { Route as ApiMailContextRouteImport } from './routes/api/mail/context'
 import { Route as ApiMailMessagesRouteImport } from './routes/api/mail/messages'
 import { Route as ApiMailSendRouteImport } from './routes/api/mail/send'
 import { Route as ApiMailSentRouteImport } from './routes/api/mail/sent'
@@ -113,6 +114,11 @@ const ApiMailAttachmentsRoute = ApiMailAttachmentsRouteImport.update({
   path: '/api/mail/attachments',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMailContextRoute = ApiMailContextRouteImport.update({
+  id: '/api/mail/context',
+  path: '/api/mail/context',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMailMessagesRoute = ApiMailMessagesRouteImport.update({
   id: '/api/mail/messages',
   path: '/api/mail/messages',
@@ -175,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/mail/attachments': typeof ApiMailAttachmentsRouteWithChildren
+  '/api/mail/context': typeof ApiMailContextRoute
   '/api/mail/messages': typeof ApiMailMessagesRoute
   '/api/mail/send': typeof ApiMailSendRoute
   '/api/mail/sent': typeof ApiMailSentRoute
@@ -199,6 +206,7 @@ export interface FileRoutesByTo {
   '/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/mail/attachments': typeof ApiMailAttachmentsRouteWithChildren
+  '/api/mail/context': typeof ApiMailContextRoute
   '/api/mail/messages': typeof ApiMailMessagesRoute
   '/api/mail/send': typeof ApiMailSendRoute
   '/api/mail/sent': typeof ApiMailSentRoute
@@ -227,6 +235,7 @@ export interface FileRoutesById {
   '/_authenticated/_mail/trash': typeof AuthenticatedMailTrashRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/mail/attachments': typeof ApiMailAttachmentsRouteWithChildren
+  '/api/mail/context': typeof ApiMailContextRoute
   '/api/mail/messages': typeof ApiMailMessagesRoute
   '/api/mail/send': typeof ApiMailSendRoute
   '/api/mail/sent': typeof ApiMailSentRoute
@@ -253,6 +262,7 @@ export interface FileRouteTypes {
     | '/trash'
     | '/api/auth/$'
     | '/api/mail/attachments'
+    | '/api/mail/context'
     | '/api/mail/messages'
     | '/api/mail/send'
     | '/api/mail/sent'
@@ -277,6 +287,7 @@ export interface FileRouteTypes {
     | '/trash'
     | '/api/auth/$'
     | '/api/mail/attachments'
+    | '/api/mail/context'
     | '/api/mail/messages'
     | '/api/mail/send'
     | '/api/mail/sent'
@@ -304,6 +315,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_mail/trash'
     | '/api/auth/$'
     | '/api/mail/attachments'
+    | '/api/mail/context'
     | '/api/mail/messages'
     | '/api/mail/send'
     | '/api/mail/sent'
@@ -321,6 +333,7 @@ export interface RootRouteChildren {
   ApiWorkspaceContextRoute: typeof ApiWorkspaceContextRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiMailAttachmentsRoute: typeof ApiMailAttachmentsRouteWithChildren
+  ApiMailContextRoute: typeof ApiMailContextRoute
   ApiMailMessagesRoute: typeof ApiMailMessagesRoute
   ApiMailSendRoute: typeof ApiMailSendRoute
   ApiMailSentRoute: typeof ApiMailSentRoute
@@ -441,6 +454,13 @@ declare module '@tanstack/react-router' {
       path: '/api/mail/attachments'
       fullPath: '/api/mail/attachments'
       preLoaderRoute: typeof ApiMailAttachmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mail/context': {
+      id: '/api/mail/context'
+      path: '/api/mail/context'
+      fullPath: '/api/mail/context'
+      preLoaderRoute: typeof ApiMailContextRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/mail/messages': {
@@ -592,6 +612,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWorkspaceContextRoute: ApiWorkspaceContextRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiMailAttachmentsRoute: ApiMailAttachmentsRouteWithChildren,
+  ApiMailContextRoute: ApiMailContextRoute,
   ApiMailMessagesRoute: ApiMailMessagesRoute,
   ApiMailSendRoute: ApiMailSendRoute,
   ApiMailSentRoute: ApiMailSentRoute,

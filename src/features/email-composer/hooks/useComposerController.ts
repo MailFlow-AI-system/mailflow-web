@@ -32,12 +32,14 @@ export function useComposerController(
   onValidated?: (composition: ValidatedComposition) => void | Promise<void>,
   onSend?: ComposerRootProps['onSend'],
   onSent?: ComposerRootProps['onSent'],
+  userId?: string,
 ): ComposerController {
   const draft = useDraftForm()
   const [sending, setSending] = useState(false)
   const [sendFailed, setSendFailed] = useState(false)
   const [sendProgress, setSendProgress] = useState('')
   const uploads = useRef<EmailDeliveryContext['uploads']>(new Map())
+  const scope = useRef<EmailDeliveryContext['scope']>({ current: null })
   const sendingRef = useRef(false)
   const pendingDelivery = useRef<{ signature: string; id: string } | null>(null)
   const discardRef = useRef<() => void>(() => {})
@@ -151,6 +153,8 @@ export function useComposerController(
       try {
         await onSend(composition, pendingDelivery.current.id, {
           uploads: uploads.current,
+          scope: scope.current,
+          userId,
           onProgress: ({ phase, completed, total }) => {
             const progress =
               phase === 'uploading'
@@ -180,7 +184,7 @@ export function useComposerController(
       toast.success('E-mail enviado com sucesso.', { id: notification })
       onSent?.()
     },
-    [onSend, onSent],
+    [onSend, onSent, userId],
   )
   const validation = useCompositionValidation({
     draft,
@@ -207,6 +211,8 @@ export function useComposerController(
     pendingDelivery.current = null
     uploads.current.clear()
     uploads.current = new Map()
+    scope.current.current = null
+    scope.current = { current: null }
     setSendFailed(false)
     sessionRef.current += 1
     setSession((previous) => previous + 1)
