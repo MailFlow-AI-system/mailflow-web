@@ -11,14 +11,12 @@ test.beforeEach(async ({ page }) => {
   })
 })
 
-test('selects B with a real shared HttpOnly cookie, persists preference, refreshes and blocks global mail', async ({
+test('selects B with a real shared HttpOnly cookie, persists preference, refreshes and lists tenant mail', async ({
   page,
   context,
 }, testInfo) => {
   const data = await fixture()
-  await expect(
-    page.getByRole('heading', { name: 'Workspace mail is not available yet' }),
-  ).toBeVisible()
+  await expect(page.getByText('Acme private message', { exact: true })).toBeVisible()
   await page.goto(`http://${data.host}:3003/sent?q=old-private#old-message`)
   await page.getByRole('combobox', { name: 'Workspace: Acme Corp' }).click()
   await page.screenshot({
@@ -58,12 +56,12 @@ test('selects B with a real shared HttpOnly cookie, persists preference, refresh
   ).toBe(true)
   expect(await context.cookies('http://other-environment.test:3003')).toEqual([])
   const blocked = await page.evaluate(async () => (await fetch('/api/mail/messages')).status)
-  expect(blocked).toBe(503)
+  expect(blocked).toBe(200)
   const direct = await fetch('http://127.0.0.1:8083/api/v1/mail/messages', {
     headers: { Cookie: `${sessionCookie?.name}=${sessionCookie?.value}` },
   })
-  expect(direct.status).toBe(503)
-  expect(await direct.json()).toMatchObject({ code: 'workspace_mail_unavailable' })
+  expect(direct.status).toBe(404)
+  expect(await direct.json()).toMatchObject({ code: 'route_not_found' })
   const state = await fixture()
   expect(state.preference).toBe(data.targetId)
   expect(state.globalMailCalls).toBe(0)
