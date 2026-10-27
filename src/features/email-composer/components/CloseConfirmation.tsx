@@ -10,7 +10,7 @@ import { useRef } from 'react'
 import { useComposer } from '../context'
 
 export function CloseConfirmation() {
-  const { confirm, setConfirm, discard, triggerRef, theme } = useComposer()
+  const { confirm, setConfirm, discard, sending, triggerRef, theme } = useComposer()
   const safeRef = useRef<HTMLButtonElement>(null)
   const confirmed = useRef(false)
   return (
@@ -35,9 +35,10 @@ export function CloseConfirmation() {
           </AlertDialogClose>
           <Button
             variant="destructive"
+            disabled={sending}
             onClick={() => {
               confirmed.current = true
-              discard()
+              void discard()
             }}
           >
             Descartar mensagem

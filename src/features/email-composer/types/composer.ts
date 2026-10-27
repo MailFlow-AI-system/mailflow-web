@@ -38,19 +38,20 @@ export type ComposerValidationState = {
 }
 export type ComposerContextValue = {
   sending: boolean
+  discarding: boolean
   sendFailed: boolean
   sendProgress: string
   revision: number
   sessionRef: RefObject<number>
   editor: Editor | null
   addAttachments: (files: File[]) => void
-  removeAttachment: (id: string) => void
+  removeAttachment: (id: string) => void | Promise<void>
   baselineDraftSignature: string
   saved: boolean
   saveDraft: () => void
   confirm: boolean
   setConfirm: (value: boolean) => void
-  discard: () => void
+  discard: () => void | Promise<void>
   state: WindowState
   theme: 'dark' | 'light'
   triggerRef: RefObject<HTMLButtonElement | null>

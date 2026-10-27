@@ -2,6 +2,7 @@ import { toast, type WindowOpenChangeDetails, type WindowState } from '@mailflow
 import { useEditor } from '@tiptap/react'
 import { cn } from 'cn'
 import { useCallback, useId, useRef, useState } from 'react'
+import { discardEmail } from '../clients/discardEmail'
 import { draftSignature, emptyBody, emptyFields } from '../draft'
 import { getEditorBodySnapshot } from '../editor/bodyContent'
 import { composerExtensions } from '../editor/extensions'
@@ -36,13 +37,28 @@ export function useComposerController(
 ): ComposerController {
   const draft = useDraftForm()
   const [sending, setSending] = useState(false)
+  const [discarding, setDiscarding] = useState(false)
+  const discardingRef = useRef(false)
   const [sendFailed, setSendFailed] = useState(false)
   const [sendProgress, setSendProgress] = useState('')
+  const messageIds = useRef(new Set<string>())
+  const attachmentIds = useRef(new Set<string>())
   const uploads = useRef<EmailDeliveryContext['uploads']>(new Map())
   const scope = useRef<EmailDeliveryContext['scope']>({ current: null })
   const sendingRef = useRef(false)
   const pendingDelivery = useRef<{ signature: string; id: string } | null>(null)
   const discardRef = useRef<() => void>(() => {})
+  const releaseRemovedInlineRef = useRef<(body: string) => void>(() => {})
+  const deliveryContext = useCallback(
+    (): EmailDeliveryContext => ({
+      uploads: uploads.current,
+      scope: scope.current,
+      messageIds: messageIds.current,
+      attachmentIds: attachmentIds.current,
+      userId,
+    }),
+    [userId],
+  )
   const [open, setOpen] = useState(false)
   const [state, setState] = useState<WindowState>('normal')
   const [saved, setSaved] = useState(false)
@@ -97,6 +113,7 @@ export function useComposerController(
         if (currentEditor) {
           const bodySnapshot = getEditorBodySnapshot(currentEditor)
           setDraftBodyRef.current('body', bodySnapshot.body, { shouldDirty: true })
+          releaseRemovedInlineRef.current(bodySnapshot.body)
         }
         invalidateValidationRef.current()
       },
@@ -133,7 +150,7 @@ export function useComposerController(
   )
   const deliverComposition = useCallback(
     async (composition: ValidatedComposition) => {
-      if (!onSend || sendingRef.current) return
+      if (!onSend || sendingRef.current || discardingRef.current) return
       sendingRef.current = true
       setSending(true)
       setSendFailed(false)
@@ -147,14 +164,26 @@ export function useComposerController(
           lastModified: file.lastModified,
         })),
       })
-      if (pendingDelivery.current?.signature !== signature)
-        pendingDelivery.current = { signature, id: crypto.randomUUID() }
       const notification = toast.loading('Enviando e-mail…')
       try {
+        if (
+          pendingDelivery.current &&
+          pendingDelivery.current.signature !== signature &&
+          messageIds.current.size
+        ) {
+          const result = await discardEmail(deliveryContext())
+          if (result.retainedMessageIds.length)
+            throw new EmailDeliveryError(
+              'Não foi possível descartar o envio anterior com segurança. Seus anexos foram preservados. Verifique Enviados antes de iniciar outra mensagem.',
+            )
+          messageIds.current.clear()
+          attachmentIds.current.clear()
+          uploads.current.clear()
+        }
+        if (pendingDelivery.current?.signature !== signature)
+          pendingDelivery.current = { signature, id: crypto.randomUUID() }
         await onSend(composition, pendingDelivery.current.id, {
-          uploads: uploads.current,
-          scope: scope.current,
-          userId,
+          ...deliveryContext(),
           onProgress: ({ phase, completed, total }) => {
             const progress =
               phase === 'uploading'
@@ -184,7 +213,7 @@ export function useComposerController(
       toast.success('E-mail enviado com sucesso.', { id: notification })
       onSent?.()
     },
-    [onSend, onSent, userId],
+    [onSend, onSent, deliveryContext],
   )
   const validation = useCompositionValidation({
     draft,
@@ -206,9 +235,13 @@ export function useComposerController(
     [baselineDraftSignature, readDraftSignature],
   )
 
-  const discard = useCallback(() => {
+  const resetDraft = useCallback(() => {
     if (sendingRef.current) return
     pendingDelivery.current = null
+    messageIds.current.clear()
+    messageIds.current = new Set()
+    attachmentIds.current.clear()
+    attachmentIds.current = new Set()
     uploads.current.clear()
     uploads.current = new Map()
     scope.current.current = null
@@ -227,7 +260,91 @@ export function useComposerController(
     pendingRecipientFocusRef.current = null
   }, [draft, validation.reset])
 
-  discardRef.current = discard
+  discardRef.current = resetDraft
+
+  const discard = useCallback(() => {
+    if (sendingRef.current || discardingRef.current) return
+    if (!messageIds.current.size && !attachmentIds.current.size && !uploads.current.size) {
+      resetDraft()
+      return
+    }
+    discardingRef.current = true
+    setDiscarding(true)
+    editorRef.current?.setEditable(false)
+    return discardEmail(deliveryContext())
+      .then((result) => {
+        resetDraft()
+        if (result.retainedMessageIds.length)
+          toast.info(
+            'O rascunho foi descartado. O envio anterior pode ter sido aceito; seus anexos foram preservados. Verifique Enviados.',
+          )
+      })
+      .catch((error) => {
+        toast.error(
+          error instanceof EmailDeliveryError
+            ? error.message
+            : 'Não foi possível concluir o descarte. O rascunho foi mantido. Tente novamente.',
+        )
+      })
+      .finally(() => {
+        discardingRef.current = false
+        setDiscarding(false)
+        editorRef.current?.setEditable(true)
+      })
+  }, [deliveryContext, resetDraft])
+
+  const releaseRemovedUploads = useCallback(
+    (keys: string[]) => {
+      if (!keys.length || sendingRef.current || discardingRef.current) return
+      const reservations = keys.flatMap((key) => {
+        const reservation = uploads.current.get(key)
+        return reservation ? [{ key, reservation }] : []
+      })
+      if (!reservations.length) return
+      discardingRef.current = true
+      setDiscarding(true)
+      editorRef.current?.setEditable(false)
+      return discardEmail(deliveryContext(), {
+        messageIds: [],
+        attachmentIds: reservations.map(({ reservation }) => reservation.id),
+      })
+        .then(() => {
+          for (const { key, reservation } of reservations) {
+            if (reservation.sendAttempted) reservation.removed = true
+            else uploads.current.delete(key)
+          }
+          return true
+        })
+        .catch((error) => {
+          toast.error(
+            error instanceof EmailDeliveryError
+              ? error.message
+              : 'Não foi possível liberar o arquivo. Suas referências foram mantidas para tentar novamente.',
+          )
+          return false
+        })
+        .finally(() => {
+          discardingRef.current = false
+          setDiscarding(false)
+          editorRef.current?.setEditable(true)
+        })
+    },
+    [deliveryContext],
+  )
+
+  releaseRemovedInlineRef.current = (body) => {
+    if (!uploads.current.size) return
+    const document = new DOMParser().parseFromString(body, 'text/html')
+    const sources = new Set(
+      [...document.querySelectorAll('img')].map((image) => image.getAttribute('src')),
+    )
+    const removed = [...uploads.current]
+      .filter(
+        ([, upload]) => upload.inlineSource && !upload.removed && !sources.has(upload.inlineSource),
+      )
+      .map(([key]) => key)
+    void releaseRemovedUploads(removed)
+  }
 
   const saveDraft = useCallback(() => {
     setBaselineDraftSignature(readDraftSignature())
@@ -236,7 +353,7 @@ export function useComposerController(
 
   const addAttachments = useCallback(
     (files: File[]) => {
-      if (files.length === 0) return
+      if (files.length === 0 || sendingRef.current || discardingRef.current) return
       const attachments = [
         ...draft.getValues('attachments'),
         ...files.map((file) => ({ id: createAttachmentId(), file })),
@@ -249,19 +366,32 @@ export function useComposerController(
 
   const removeAttachment = useCallback(
     (id: string) => {
-      const attachments = draft.getValues('attachments').filter((item) => item.id !== id)
-      draft.setValue('attachments', attachments, { shouldDirty: true })
-      validation.validateAttachments(attachments)
+      if (sendingRef.current || discardingRef.current) return
+      const keys = [...uploads.current]
+        .filter(([, upload]) => upload.localKey === `file:${id}`)
+        .map(([key]) => key)
+      const remove = () => {
+        const attachments = draft.getValues('attachments').filter((item) => item.id !== id)
+        draft.setValue('attachments', attachments, { shouldDirty: true })
+        validation.validateAttachments(attachments)
+      }
+      const released = releaseRemovedUploads(keys)
+      if (released)
+        return released.then((complete) => {
+          if (complete) remove()
+        })
+      remove()
     },
-    [draft, validation.validateAttachments],
+    [draft, validation.validateAttachments, releaseRemovedUploads],
   )
 
   return {
     draft,
     context: {
-      sending,
+      sending: sending || discarding,
+      discarding,
       sendFailed,
-      sendProgress,
+      sendProgress: discarding ? 'Descartando arquivos…' : sendProgress,
       sessionRef,
       revision: session,
       editor,
@@ -291,7 +421,7 @@ export function useComposerController(
     state,
     setState,
     onOpenChange: (next: boolean, details: WindowOpenChangeDetails) => {
-      if (!next && sendingRef.current) {
+      if (!next && (sendingRef.current || discardingRef.current)) {
         details.cancel()
         return
       }
