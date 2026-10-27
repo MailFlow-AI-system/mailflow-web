@@ -14,6 +14,8 @@ const config = defineConfig(({ command }) => {
 
   return {
     server: {
+      port: 3000,
+      strictPort: true,
       allowedHosts: process.env.VITE_WORKSPACE_BASE_HOST
         ? [`.${process.env.VITE_WORKSPACE_BASE_HOST}`]
         : [],

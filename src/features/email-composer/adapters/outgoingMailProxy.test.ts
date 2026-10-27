@@ -40,15 +40,18 @@ describe('outgoing mail proxy', () => {
   })
   it('forwards only the sent pagination parameter', async () => {
     const fetcher = vi.fn<typeof fetch>(async () => Response.json({ items: [] }))
-    await createOutgoingMailProxy(
-      'https://api.example.test',
-      fetcher,
-    )(new Request(`${origin}/api/mail/sent?offset=20&userId=other`))
+    const incoming = new Request(`${origin}/api/mail/sent?offset=20&userId=other`, {
+      headers: { 'X-Workspace-Id': 'workspace-a', 'X-Workspace-Identity': 'user-one' },
+    })
+    await createOutgoingMailProxy('https://api.example.test', fetcher)(incoming)
     expect(String(fetcher.mock.calls[0]?.[0])).toBe(
       'https://api.example.test/api/v1/mail/sent?offset=20',
     )
+    const headers = new Headers(fetcher.mock.calls[0]?.[1]?.headers)
+    expect(headers.get('X-Workspace-Id')).toBeNull()
+    expect(headers.get('X-Workspace-Identity')).toBeNull()
   })
-  it('blocks unsupported paths, workspace mode and safely reports upstream failure', async () => {
+  it('blocks unsupported paths and workspace list mode while safely reporting upstream failure', async () => {
     const fetcher = vi.fn<typeof fetch>(async () => {
       throw new Error('private')
     })
@@ -61,12 +64,65 @@ describe('outgoing mail proxy', () => {
       ).status,
     ).toBe(404)
     expect(
-      (await createOutgoingMailProxy('https://api.example.test', fetcher, true)(request())).status,
+      (
+        await createOutgoingMailProxy(
+          'https://api.example.test',
+          fetcher,
+          true,
+        )(new Request(`${origin}/api/mail/sent`))
+      ).status,
     ).toBe(503)
     const response = await createOutgoingMailProxy('https://api.example.test', fetcher)(request())
     expect(response.status).toBe(502)
     expect(await response.text()).not.toContain('private')
   })
+})
+
+it('allows fixed context and scoped mutations while workspace list UI stays disabled', async () => {
+  const fetcher = vi.fn<typeof fetch>(async () => Response.json({ ok: true }))
+  const proxy = createOutgoingMailProxy('https://api.example.test', fetcher, true)
+  for (const path of ['/api/mail/context', '/api/mail/send', '/api/mail/attachments']) {
+    const incoming = path.endsWith('/context')
+      ? new Request(`${origin}${path}?userId=untrusted`)
+      : request(path)
+    incoming.headers.set('X-Workspace-Id', 'workspace-a')
+    incoming.headers.set('X-Workspace-Identity', 'user-one')
+    incoming.headers.set('X-User-Id', 'forged')
+    incoming.headers.set('X-Forwarded-Host', 'untrusted.test')
+    expect((await proxy(incoming)).status).toBe(200)
+    const [url, options] = fetcher.mock.calls.at(-1) ?? []
+    expect(String(url)).toBe(
+      `https://api.example.test${path.replace('/api/mail/', '/api/v1/mail/')}`,
+    )
+    const headers = new Headers(options?.headers)
+    expect(headers.get('X-Workspace-Id')).toBe('workspace-a')
+    expect(headers.get('X-Workspace-Identity')).toBe('user-one')
+    expect(headers.get('X-User-Id')).toBeNull()
+    expect(headers.get('X-Forwarded-Host')).toBeNull()
+  }
+})
+
+it.each([
+  '/api/mail/context',
+  '/api/mail/attachments/00000000-0000-4000-8000-000000000001',
+  '/api/mail/attachments/00000000-0000-4000-8000-000000000001/download',
+])('derives a missing scoped GET Origin only from its actual incoming URL (%s)', async (path) => {
+  const fetcher = vi.fn<typeof fetch>(async () => Response.json({ ok: true }))
+  const proxy = createOutgoingMailProxy('https://api.example.test', fetcher, true)
+  const tenantOrigin = 'https://tenant-a.mail.example.test'
+  const incoming = new Request(`${tenantOrigin}${path}`, {
+    headers: { 'X-Forwarded-Host': 'tenant-b.mail.example.test', 'X-Workspace-Id': 'workspace-a' },
+  })
+  expect((await proxy(incoming)).status).toBe(200)
+  const headers = new Headers(fetcher.mock.calls[0]?.[1]?.headers)
+  expect(headers.get('Origin')).toBe(tenantOrigin)
+  expect(headers.get('X-Forwarded-Host')).toBeNull()
+  expect(headers.get('X-Workspace-Id')).toBe('workspace-a')
+  const mismatch = new Request(`${tenantOrigin}${path}`, {
+    headers: { Origin: 'https://tenant-b.mail.example.test' },
+  })
+  expect((await proxy(mismatch)).status).toBe(403)
+  expect(fetcher).toHaveBeenCalledTimes(1)
 })
 
 it('forwards only authenticated attachment routes with the same mutation origin guard', async () => {

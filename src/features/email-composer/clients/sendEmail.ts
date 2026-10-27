@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { getAttachmentSizeIssues } from '../schemas/compositionSchema'
 import type { ValidatedComposition } from '../types/composer'
 import { type EmailDeliveryContext, EmailDeliveryError } from '../types/EmailDelivery'
+import { mailRequestFailure, resolveDeliveryScope } from './mailContext'
 
 const failureMessage =
   'Não foi possível enviar o e-mail. Sua mensagem foi mantida. Tente novamente.'
@@ -97,17 +98,17 @@ function getPlainText(document: Document) {
   return body.textContent?.trim() ?? ''
 }
 
-async function attachmentRequest(path: string, body?: unknown) {
+async function attachmentRequest(path: string, headers: Record<string, string>, body?: unknown) {
   const response = await fetch(path, {
     method: body === undefined ? 'GET' : 'POST',
     credentials: 'same-origin',
     cache: 'no-store',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...headers },
     signal: AbortSignal.timeout(45_000),
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   })
   if (response.status === 404) {
-    const problem: unknown = await response.json()
+    const problem: unknown = await response.clone().json()
     if (
       problem &&
       typeof problem === 'object' &&
@@ -116,7 +117,7 @@ async function attachmentRequest(path: string, body?: unknown) {
     )
       throw new MissingAttachmentError(verificationFailure)
   }
-  if (!response.ok) throw new EmailDeliveryError(verificationFailure)
+  if (!response.ok) throw await mailRequestFailure(response, verificationFailure)
   return response.json() as Promise<unknown>
 }
 
@@ -125,6 +126,7 @@ async function upload(
   context: EmailDeliveryContext,
   completed: number,
   total: number,
+  headers: Record<string, string>,
 ) {
   const contentType = attachment.file.type || 'application/octet-stream'
   const bytes = await readFile(attachment.file)
@@ -138,7 +140,7 @@ async function upload(
     size: attachment.file.size,
     sha256,
   }
-  const key = JSON.stringify({ key: attachment.key, ...metadata })
+  const key = JSON.stringify({ scope: context.scope.current, key: attachment.key, ...metadata })
   for (let attempt = 0; attempt < 2; attempt++) {
     let reservation = context.uploads.get(key)
     if (reservation && !reservation.uploaded && Date.parse(reservation.expiresAt) <= Date.now()) {
@@ -147,7 +149,9 @@ async function upload(
     }
     if (!reservation) {
       reservation = {
-        ...reservationSchema.parse(await attachmentRequest('/api/mail/attachments', metadata)),
+        ...reservationSchema.parse(
+          await attachmentRequest('/api/mail/attachments', headers, metadata),
+        ),
         uploaded: false,
         clean: false,
       }
@@ -181,6 +185,7 @@ async function upload(
         verified = verifiedSchema.parse(
           await attachmentRequest(
             `/api/mail/attachments/${reservation.id}${reservation.clean ? '' : '/complete'}`,
+            headers,
             reservation.clean ? undefined : {},
           ),
         )
@@ -229,7 +234,7 @@ async function upload(
 export async function sendEmail(
   composition: ValidatedComposition,
   id: string,
-  context: EmailDeliveryContext = { uploads: new Map() },
+  context: EmailDeliveryContext = { uploads: new Map(), scope: { current: null } },
 ) {
   try {
     const document = new DOMParser().parseFromString(composition.body, 'text/html')
@@ -243,10 +248,13 @@ export async function sendEmail(
         'Use até 10 arquivos, com no máximo 10 MB por arquivo e 20 MB no total, incluindo imagens. Sua mensagem foi mantida.',
       )
     }
+    const scope = await resolveDeliveryScope(context)
+    const headers = { 'X-Workspace-Id': scope.workspace.id, 'X-Workspace-Identity': scope.userId }
     const attachments = []
     for (const [index, attachment] of files.entries()) {
-      attachments.push(await upload(attachment, context, index, files.length))
+      attachments.push(await upload(attachment, context, index, files.length, headers))
     }
+    await resolveDeliveryScope(context)
     context.onProgress?.({ phase: 'sending', completed: files.length, total: files.length })
     const attachmentIds = new Set(attachments.map((attachment) => attachment.id))
     // A timeout cannot prove that Core or the provider rejected this immutable delivery.
@@ -258,7 +266,7 @@ export async function sendEmail(
       method: 'POST',
       credentials: 'same-origin',
       cache: 'no-store',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...headers },
       body: JSON.stringify({
         id,
         to: composition.to,
@@ -271,7 +279,7 @@ export async function sendEmail(
         attachments,
       }),
     })
-    if (!response.ok) throw new EmailDeliveryError(failureMessage)
+    if (!response.ok) throw await mailRequestFailure(response, failureMessage)
     const result: unknown = await response.json()
     if (
       !result ||

@@ -301,6 +301,10 @@ it('owns upload progress and retry cache within the Composition and clears them 
     async (_composition, _id, context) => {
       if (!context) throw new Error('Missing delivery context')
       deliveries.push(context)
+      context.scope.current = {
+        userId: 'owner',
+        workspace: { id: 'workspace-a', name: 'Workspace A', slug: 'workspace-a', role: 'owner' },
+      }
       context.uploads.set('file', {
         id: 'uploaded',
         uploadUrl: 'https://upload.example.test',
@@ -313,7 +317,9 @@ it('owns upload progress and retry cache within the Composition and clears them 
       throw new Error('failure')
     },
   )
-  const { result } = renderHook(() => useComposerController('light', undefined, onSend))
+  const { result } = renderHook(() =>
+    useComposerController('light', undefined, onSend, undefined, 'owner'),
+  )
   const compose = async () => {
     await waitFor(() => expect(result.current.context.editor).toBeTruthy())
     act(() => {
@@ -327,12 +333,21 @@ it('owns upload progress and retry cache within the Composition and clears them 
   expect(loading).toHaveBeenCalledWith('Salvando arquivo 1 de 1…', { id: 'delivery-toast' })
   expect(result.current.context.sendFailed).toBe(true)
   await act(async () => result.current.context.validation.validate())
-  const first = deliveries[0] as { uploads: Map<string, unknown> }
+  const first = deliveries[0] as {
+    uploads: Map<string, unknown>
+    scope: { current: unknown }
+    userId: string
+  }
+  expect(first.userId).toBe('owner')
+  expect(first.scope.current).toMatchObject({ userId: 'owner', workspace: { id: 'workspace-a' } })
+  expect((deliveries[1] as typeof first).scope).toBe(first.scope)
   expect((deliveries[1] as { uploads: Map<string, unknown> }).uploads).toBe(first.uploads)
   expect(first.uploads.size).toBe(1)
   act(() => result.current.context.discard())
   expect(first.uploads.size).toBe(0)
+  expect(first.scope.current).toBeNull()
   await compose()
   await act(async () => result.current.context.validation.validate())
   expect((deliveries[2] as { uploads: Map<string, unknown> }).uploads).not.toBe(first.uploads)
+  expect((deliveries[2] as typeof first).scope).not.toBe(first.scope)
 })

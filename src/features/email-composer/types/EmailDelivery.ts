@@ -1,3 +1,7 @@
+import type { Workspace } from '#/features/workspaces/types'
+
+export type MailDeliveryScope = { userId: string; workspace: Workspace }
+
 export type AttachmentUploadState = {
   id: string
   uploadUrl: string
@@ -17,6 +21,8 @@ export type DeliveryProgress = {
 
 export type EmailDeliveryContext = {
   uploads: Map<string, AttachmentUploadState>
+  scope: { current: MailDeliveryScope | null }
+  userId?: string
   onProgress?: (progress: DeliveryProgress) => void
 }
 
