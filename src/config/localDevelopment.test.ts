@@ -43,12 +43,18 @@ describe('local development environment', () => {
         ),
       ).toMatchObject(env)
   })
-  it('requires a loopback Core for the automatic local profile', () => {
-    expect(() =>
+  it('replaces injected published API origins only in the automatic local profile', () => {
+    expect(
       localDevelopmentEnvironment(
-        { VITE_API_BASE_URL: 'https://api.example.com' },
+        { ...env, VITE_API_BASE_URL: 'https://api-dev.mailflow-ai.online' },
         { command: 'serve', isPreview: false },
       ),
-    ).toThrow('loopback Core')
+    ).toMatchObject({ VITE_API_BASE_URL: 'http://localhost:8080' })
+    expect(
+      localDevelopmentEnvironment(
+        { ...env, VITE_API_BASE_URL: 'http://127.0.0.1:8083' },
+        { command: 'serve', isPreview: false },
+      ),
+    ).toMatchObject({ VITE_API_BASE_URL: 'http://127.0.0.1:8083' })
   })
 })
