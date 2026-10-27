@@ -60,12 +60,10 @@ describe('Sent page', () => {
     expect(screen.getByTestId('sent-list')).toHaveAttribute('data-owner', 'owner')
   })
 
-  it('preserves the workspace guard without mounting Sent', () => {
+  it('mounts Sent when workspace UI is enabled', () => {
     environment.VITE_WORKSPACE_BASE_HOST = 'workspace.test'
     render(<Sent />)
-    expect(
-      screen.getByRole('heading', { name: 'Workspace mail is not available yet' }),
-    ).toBeVisible()
-    expect(screen.queryByTestId('sent-list')).toBeNull()
+    expect(screen.getByTestId('sent-list')).toHaveAttribute('data-owner', 'owner')
+    expect(screen.getByRole('heading', { name: 'Enviados' })).toBeVisible()
   })
 })

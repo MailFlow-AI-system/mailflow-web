@@ -6,7 +6,7 @@ Set `VITE_API_BASE_URL=http://localhost:8080`, `VITE_WORKSPACE_BASE_HOST=workspa
 and `VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED=true`. Start with
 `bunx vite dev --port 3000 --host 0.0.0.0` using those environment variables.
 Add `127.0.0.1 workspace.test <printed-slug>.workspace.test` to hosts; use Windows hosts when the browser runs on Windows and the app on WSL.
-Open the printed tenant host and sign in with the sample credentials. The generic host resolves membership and redirects; an inbox requires a tenant host.
+Open the printed tenant host and sign in with the sample credentials. Use HTTPS for real attachment uploads on custom tenant hosts, because browser file hashing requires a secure context; plain `localhost` is also trusted. See [Chromium secure-context guidance](https://www.chromium.org/Home/chromium-security/deprecating-powerful-features-on-insecure-origins/). The generic host resolves membership and redirects; an inbox requires a tenant host.
 Core needs `APP_ENV=development`, `WORKSPACE_READ_ENABLED=true`, `WORKSPACE_LOCAL_SWITCHING_ENABLED=true`,
 `SITE_URL=http://workspace.test:3000` and `WEB_APP_URL=http://<printed-slug>.workspace.test:3000`.
 

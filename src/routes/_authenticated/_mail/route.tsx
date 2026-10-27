@@ -19,8 +19,9 @@ export const Route = createFileRoute('/_authenticated/_mail')({
 function MailLayout() {
   const { user } = authenticatedRoute.useRouteContext()
   const queryClient = useQueryClient()
-  const onSent = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: ['sent-emails', user.id] })
+  const onSent = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['sent-workspace', user.id] })
+    await queryClient.invalidateQueries({ queryKey: ['sent-emails', user.id] })
   }, [queryClient, user.id])
   const pathname = useRouterState({ select: (state) => state.location.pathname })
 
