@@ -9,6 +9,7 @@ export function createOutgoingMailProxy(
     const incoming = new URL(request.url)
     const sending = request.method === 'POST' && incoming.pathname === '/api/mail/send'
     const listing = request.method === 'GET' && incoming.pathname === '/api/mail/sent'
+    const readingContext = request.method === 'GET' && incoming.pathname === '/api/mail/context'
     const attachmentPath =
       /^\/api\/mail\/attachments\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}(?:\/(complete|download))?$/.exec(
         incoming.pathname,
@@ -21,13 +22,16 @@ export function createOutgoingMailProxy(
     const mutating = sending || creatingAttachment || completingAttachment
     const attachmentRoute = creatingAttachment || completingAttachment || readingAttachment
     const privateHeaders = { 'Cache-Control': 'private, no-store' }
-    if (!sending && !listing && !attachmentRoute)
+    if (!sending && !listing && !attachmentRoute && !readingContext)
       return new Response(null, { status: 404, headers: privateHeaders })
-    if (workspaceMode)
+    if (workspaceMode && listing)
       return Response.json(
         { code: 'workspace_mail_unavailable' },
         { status: 503, headers: privateHeaders },
       )
+    const suppliedOrigin = request.headers.get('origin')
+    if (!listing && suppliedOrigin !== null && suppliedOrigin !== incoming.origin)
+      return new Response(null, { status: 403, headers: privateHeaders })
     if (
       mutating &&
       (request.headers.get('origin') !== incoming.origin ||
@@ -42,9 +46,11 @@ export function createOutgoingMailProxy(
     const upstreamUrl = new URL(
       attachmentRoute
         ? incoming.pathname.replace('/api/mail/', '/api/v1/mail/')
-        : sending
-          ? '/api/v1/mail/send'
-          : '/api/v1/mail/sent',
+        : readingContext
+          ? '/api/v1/mail/context'
+          : sending
+            ? '/api/v1/mail/send'
+            : '/api/v1/mail/sent',
       apiBaseUrl,
     )
     if (listing && incoming.searchParams.has('offset'))
@@ -53,6 +59,13 @@ export function createOutgoingMailProxy(
     for (const name of ['accept', 'content-type', 'origin', 'traceparent', 'tracestate']) {
       const value = request.headers.get(name)
       if (value) headers.set(name, value)
+    }
+    if (!listing) {
+      headers.set('origin', incoming.origin)
+      for (const name of ['x-workspace-id', 'x-workspace-identity']) {
+        const value = request.headers.get(name)
+        if (value) headers.set(name, value)
+      }
     }
     const cookies = filterBetterAuthCookies(request.headers.get('cookie'))
     if (cookies) headers.set('cookie', cookies)

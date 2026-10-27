@@ -12,7 +12,11 @@ const composition = {
 }
 const hash = '185f8db32271fe25f561a6fc938b2e264306ec304eda518007d1764826381969'
 const file = () => ({ id: 'file', file: new File(['Hello'], 'hello.txt', { type: 'text/plain' }) })
-const context = () => ({ uploads: new Map(), onProgress: vi.fn() })
+const workspaceContext = {
+  userId: 'user-one',
+  workspace: { id: 'workspace-a', name: 'Workspace A', slug: 'workspace-a', role: 'owner' },
+}
+const context = () => ({ uploads: new Map(), scope: { current: null }, onProgress: vi.fn() })
 beforeEach(() => vi.stubGlobal('crypto', webcrypto))
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -24,6 +28,7 @@ function provider() {
   let created = 0
   const fetcher = vi.fn<typeof fetch>(async (input, init) => {
     const url = String(input)
+    if (url === '/api/mail/context') return Response.json(workspaceContext)
     if (url === '/api/mail/attachments') {
       const id = `00000000-0000-4000-8000-${String(++created).padStart(12, '0')}`
       metadata.set(id, {
@@ -53,6 +58,211 @@ const callsTo = (fetcher: ReturnType<typeof provider>, url: string) =>
   fetcher.mock.calls.filter(([input]) => String(input) === url)
 
 describe('sendEmail private uploads', () => {
+  it('resolves and pins the server context even without a workspace UI and scopes every private request', async () => {
+    const fetcher = provider()
+    const delivery = { ...context(), userId: 'user-one' }
+    await sendEmail({ ...composition, attachments: [file()] }, 'id', delivery)
+    expect(callsTo(fetcher, '/api/mail/context')).toHaveLength(2)
+    expect(delivery.scope.current).toEqual(workspaceContext)
+    for (const [url, options] of fetcher.mock.calls) {
+      if (!String(url).startsWith('/api/mail/')) continue
+      const headers = new Headers(options?.headers)
+      expect(headers.get('x-workspace-identity')).toBe('user-one')
+      expect(headers.get('x-workspace-id')).toBe(
+        String(url) === '/api/mail/context' ? null : 'workspace-a',
+      )
+    }
+  })
+
+  it.each(['workspace', 'identity'] as const)(
+    'keeps the draft upload and blocks retry after a %s context change',
+    async (change) => {
+      const fetcher = provider()
+      const normal = fetcher.getMockImplementation()
+      if (!normal) throw new Error('Missing mock implementation')
+      let changed = false
+      fetcher.mockImplementation(async (url, init) => {
+        if (String(url) === '/api/mail/context' && changed)
+          return Response.json(
+            change === 'workspace'
+              ? {
+                  ...workspaceContext,
+                  workspace: {
+                    ...workspaceContext.workspace,
+                    id: 'workspace-b',
+                    name: 'Workspace B',
+                  },
+                }
+              : { ...workspaceContext, userId: 'user-two' },
+          )
+        if (String(url) === '/api/mail/send') return new Response(null, { status: 502 })
+        return normal(url, init)
+      })
+      const delivery = context()
+      const message = { ...composition, attachments: [file()] }
+      await expect(sendEmail(message, 'same-id', delivery)).rejects.toThrow()
+      changed = true
+      await expect(sendEmail(message, 'same-id', delivery)).rejects.toThrow(
+        change === 'workspace' ? 'workspace' : 'sessão',
+      )
+      expect(callsTo(fetcher, '/api/mail/send')).toHaveLength(1)
+      expect(callsTo(fetcher, '/api/mail/attachments')).toHaveLength(1)
+      expect(delivery.uploads.size).toBe(1)
+      expect(delivery.scope.current).toEqual(workspaceContext)
+      expect(message.attachments).toHaveLength(1)
+    },
+  )
+
+  it('rechecks the default context before provider delivery if it changes during upload', async () => {
+    const fetcher = provider()
+    const normal = fetcher.getMockImplementation()
+    if (!normal) throw new Error('Missing mock implementation')
+    let resolving = 0
+    fetcher.mockImplementation(async (url, init) => {
+      if (String(url) === '/api/mail/context' && resolving++ > 0)
+        return Response.json({
+          ...workspaceContext,
+          workspace: { ...workspaceContext.workspace, id: 'workspace-b' },
+        })
+      return normal(url, init)
+    })
+    const delivery = context()
+    await expect(
+      sendEmail({ ...composition, attachments: [file()] }, 'id', delivery),
+    ).rejects.toThrow('workspace')
+    expect(callsTo(fetcher, '/api/mail/send')).toHaveLength(0)
+    expect(delivery.uploads.size).toBe(1)
+  })
+
+  it('refuses a server context for another authenticated UI identity before uploading', async () => {
+    const fetcher = provider()
+    await expect(
+      sendEmail({ ...composition, attachments: [file()] }, 'id', {
+        ...context(),
+        userId: 'another-user',
+      }),
+    ).rejects.toThrow('sessão')
+    expect(callsTo(fetcher, '/api/mail/attachments')).toHaveLength(0)
+    expect(callsTo(fetcher, '/api/mail/send')).toHaveLength(0)
+  })
+
+  it.each(['workspace a', 'workspace,a', 'workspace\na'])(
+    'refuses malformed workspace selectors from the context response (%j)',
+    async (workspaceId) => {
+      const fetcher = provider()
+      const normal = fetcher.getMockImplementation()
+      if (!normal) throw new Error('Missing mock implementation')
+      fetcher.mockImplementation((url, init) =>
+        String(url) === '/api/mail/context'
+          ? Promise.resolve(
+              Response.json({
+                ...workspaceContext,
+                workspace: { ...workspaceContext.workspace, id: workspaceId },
+              }),
+            )
+          : normal(url, init),
+      )
+      const delivery = context()
+      await expect(
+        sendEmail({ ...composition, attachments: [file()] }, 'id', delivery),
+      ).rejects.toThrow('mantida')
+      expect(callsTo(fetcher, '/api/mail/attachments')).toHaveLength(0)
+      expect(delivery.scope.current).toBeNull()
+    },
+  )
+
+  it('can retry the same immutable message after returning to its original workspace', async () => {
+    const fetcher = provider()
+    const normal = fetcher.getMockImplementation()
+    if (!normal) throw new Error('Missing mock implementation')
+    let current = workspaceContext
+    let fail = true
+    fetcher.mockImplementation(async (url, init) => {
+      if (String(url) === '/api/mail/context') return Response.json(current)
+      if (String(url) === '/api/mail/send' && fail) {
+        fail = false
+        return new Response(null, { status: 502 })
+      }
+      return normal(url, init)
+    })
+    const delivery = context()
+    const message = { ...composition, attachments: [file()] }
+    await expect(sendEmail(message, 'original-id', delivery)).rejects.toThrow()
+    current = {
+      ...workspaceContext,
+      workspace: { ...workspaceContext.workspace, id: 'workspace-b' },
+    }
+    await expect(sendEmail(message, 'original-id', delivery)).rejects.toThrow('workspace')
+    current = workspaceContext
+    await sendEmail(message, 'original-id', delivery)
+    expect(callsTo(fetcher, '/api/mail/attachments')).toHaveLength(1)
+    const sends = callsTo(fetcher, '/api/mail/send')
+    expect(sends).toHaveLength(2)
+    expect(JSON.parse(String(sends[0]?.[1]?.body))).toEqual(JSON.parse(String(sends[1]?.[1]?.body)))
+  })
+
+  it('does not reuse another workspace upload even if a caller shares its cache with a new scope', async () => {
+    const fetcher = provider()
+    const normal = fetcher.getMockImplementation()
+    if (!normal) throw new Error('Missing mock implementation')
+    let current = workspaceContext
+    fetcher.mockImplementation((url, init) =>
+      String(url) === '/api/mail/context'
+        ? Promise.resolve(Response.json(current))
+        : normal(url, init),
+    )
+    const delivery = context()
+    const message = { ...composition, attachments: [file()] }
+    await sendEmail(message, 'first-id', delivery)
+    current = {
+      ...workspaceContext,
+      workspace: { ...workspaceContext.workspace, id: 'workspace-b' },
+    }
+    await sendEmail(message, 'second-id', { ...context(), uploads: delivery.uploads })
+    expect(callsTo(fetcher, '/api/mail/attachments')).toHaveLength(2)
+    const second = JSON.parse(String(callsTo(fetcher, '/api/mail/send')[1]?.[1]?.body))
+    expect(second.attachments).toEqual([{ id: '00000000-0000-4000-8000-000000000002' }])
+  })
+
+  it('keeps the original scope when the UI identity changes within the same workspace', async () => {
+    const fetcher = provider()
+    const normal = fetcher.getMockImplementation()
+    if (!normal) throw new Error('Missing mock implementation')
+    let current = workspaceContext
+    fetcher.mockImplementation((url, init) =>
+      String(url) === '/api/mail/context'
+        ? Promise.resolve(Response.json(current))
+        : normal(url, init),
+    )
+    const delivery = { ...context(), userId: 'user-one' }
+    const message = { ...composition, attachments: [file()] }
+    await sendEmail(message, 'first-id', delivery)
+    current = { ...workspaceContext, userId: 'user-two' }
+    delivery.userId = 'user-two'
+    await expect(sendEmail(message, 'second-id', delivery)).rejects.toThrow('sessão')
+    expect(delivery.scope.current).toEqual(workspaceContext)
+    expect(callsTo(fetcher, '/api/mail/send')).toHaveLength(1)
+  })
+
+  it.each([401, 403, 409, 503])(
+    'preserves files and does not upload when mail context is unavailable (%s)',
+    async (status) => {
+      const fetcher = vi.fn<typeof fetch>(async () =>
+        Response.json(
+          { code: status === 409 ? 'workspace_required' : 'workspace_unavailable' },
+          { status },
+        ),
+      )
+      vi.stubGlobal('fetch', fetcher)
+      const delivery = context()
+      await expect(
+        sendEmail({ ...composition, attachments: [file()] }, 'id', delivery),
+      ).rejects.toThrow('mantida')
+      expect(fetcher).toHaveBeenCalledTimes(1)
+      expect(delivery.uploads.size).toBe(0)
+      expect(delivery.scope.current).toBeNull()
+    },
+  )
   it('uploads, verifies and sends immutable references without file bytes in the send request', async () => {
     const fetcher = provider()
     const delivery = context()
@@ -357,10 +567,14 @@ describe('sendEmail private uploads', () => {
   })
 
   it('does not leak upstream details or accept malformed send confirmation', async () => {
-    const fetcher = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(Response.json({ message: 'private' }, { status: 502 }))
-      .mockResolvedValueOnce(Response.json({ status: 'failed' }))
+    let sending = 0
+    const fetcher = vi.fn<typeof fetch>(async (url) =>
+      String(url) === '/api/mail/context'
+        ? Response.json(workspaceContext)
+        : ++sending === 1
+          ? Response.json({ message: 'private' }, { status: 502 })
+          : Response.json({ status: 'failed' }),
+    )
     vi.stubGlobal('fetch', fetcher)
     await expect(sendEmail(composition, 'id')).rejects.toThrow('Não foi possível enviar')
     await expect(sendEmail(composition, 'id')).rejects.toThrow('Não foi possível enviar')
@@ -419,18 +633,20 @@ describe('sendEmail private uploads', () => {
       headers: { Authorization: 'private-secret' },
     },
   ])('rejects unsafe upload configuration before sending bytes', async (configuration) => {
-    const fetcher = vi.fn<typeof fetch>(async () =>
-      Response.json({
-        id: '00000000-0000-4000-8000-000000000001',
-        expiresAt: new Date(Date.now() + 300_000).toISOString(),
-        ...configuration,
-      }),
+    const fetcher = vi.fn<typeof fetch>(async (url) =>
+      String(url) === '/api/mail/context'
+        ? Response.json(workspaceContext)
+        : Response.json({
+            id: '00000000-0000-4000-8000-000000000001',
+            expiresAt: new Date(Date.now() + 300_000).toISOString(),
+            ...configuration,
+          }),
     )
     vi.stubGlobal('fetch', fetcher)
     await expect(
       sendEmail({ ...composition, attachments: [file()] }, 'id', context()),
     ).rejects.toThrow('Não foi possível enviar')
-    expect(fetcher).toHaveBeenCalledTimes(1)
+    expect(fetcher).toHaveBeenCalledTimes(2)
   })
 
   it.each([

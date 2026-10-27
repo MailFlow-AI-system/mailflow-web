@@ -65,7 +65,8 @@ and message actions are outside this feature. Virtualization remains future work
 ## Private attachment storage
 
 Composer keeps selected files and local images in tab memory until sending.
-During delivery it requests an authenticated upload reservation from Core,
+During delivery it resolves authorized workspace context from Core, requests an
+authenticated upload reservation,
 uploads directly to a short-lived private R2 URL, and waits for Core to verify
 the immutable file. The send request contains attachment ids and
 optional inline content ids, never file bytes or storage credentials. Local
@@ -76,7 +77,9 @@ inline images (MB means 1,000,000 bytes). The existing local image picker retain
 its stricter 5 MiB editing limit. Upload and verification progress appears in the
 Composer status and toast. Files remain available in the draft after a failure;
 rejected files must be removed or replaced. Short-lived upload URLs may require
-the R2 bucket CORS policy to allow the current Web origin.
+the R2 bucket CORS policy to allow the current Web origin. Development permits
+`*`; staging and production retain explicit origins. The standard local port is
+3000 with strict port selection.
 
 The same-origin attachment routes proxy only fixed Core paths. Core owns upload
 permissions, content verification, persistence, and authorized
@@ -104,3 +107,16 @@ replacing an attachment while an earlier send may still be committing.
 
 Antivirus scanning is deferred. The verification step checks stored file content
 and metadata; it does not require a scanner service.
+
+Mail context resolution runs even when the workspace selector UI is disabled.
+Core supplies the authenticated user and an authorized workspace; a missing or
+ambiguous workspace blocks sending with the draft retained. Each private request
+carries that identity and workspace for server validation. The BFF derives the
+Origin for scoped GETs from the incoming URL and rejects conflicting origins.
+
+The first delivery attempt pins its workspace. The client resolves context again
+before submission and on retries; a changed workspace or identity blocks the
+request and preserves the original draft and upload references. Returning to the
+original workspace permits the same retry. Explicit discard or successful send
+releases the pinned scope. Inbox/Sent listing queries, filters and query caches
+are unchanged and remain owned by the separate listing task.
