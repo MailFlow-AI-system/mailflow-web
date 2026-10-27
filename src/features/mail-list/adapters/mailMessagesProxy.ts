@@ -1,59 +1,47 @@
 import { filterBetterAuthCookies } from '#/features/auth/adapters/authCookies'
-
-const allowedRequestHeaders = new Set(['accept', 'traceparent', 'tracestate'])
+import {
+  createWorkspaceTransport,
+  workspaceResponseHeaders,
+} from '#/features/workspaces/adapters/workspaceTransport'
+import { resolveWorkspaceHost } from '#/features/workspaces/utils/workspaceHost'
+import { isWorkspaceRequestOrigin } from '#/features/workspaces/utils/workspaceOrigin'
 
 export function createMailMessagesProxyHandler(
   apiBaseUrl: string,
   fetcher: typeof fetch = fetch,
-  workspaceMode = false,
+  baseHost?: string,
 ) {
+  const forward = createWorkspaceTransport(apiBaseUrl, fetcher)
   return async function proxyMailMessages(request: Request): Promise<Response> {
-    const incomingUrl = new URL(request.url)
-    if (request.method !== 'GET' || incomingUrl.pathname !== '/api/mail/messages') {
-      return new Response(null, {
-        status: 404,
-        headers: { 'Cache-Control': 'private, no-store' },
-      })
-    }
-
-    if (workspaceMode) {
-      return Response.json(
-        { code: 'workspace_mail_unavailable', message: 'Workspace mail is not available yet.' },
-        { status: 503, headers: { 'Cache-Control': 'private, no-store' } },
-      )
-    }
-
-    const upstreamUrl = new URL('/api/v1/mail/messages', apiBaseUrl)
-    upstreamUrl.searchParams.set('q', incomingUrl.searchParams.get('q')?.trim() ?? '')
-    const cursor = incomingUrl.searchParams.get('cursor')
-    if (cursor) upstreamUrl.searchParams.set('cursor', cursor)
-
-    const headers = new Headers()
-    request.headers.forEach((value, name) => {
-      if (allowedRequestHeaders.has(name)) headers.set(name, value)
-    })
-    const authCookies = filterBetterAuthCookies(request.headers.get('cookie'))
-    if (authCookies) headers.set('cookie', authCookies)
-
+    const url = new URL(request.url)
+    const failure = (status: number, code: string) =>
+      Response.json({ code }, { status, headers: { 'Cache-Control': 'private, no-store' } })
+    if (request.method !== 'GET' || url.pathname !== '/api/mail/messages')
+      return failure(404, 'route_not_found')
+    if (!baseHost) return failure(503, 'workspace_not_configured')
+    const host = resolveWorkspaceHost(url.hostname, baseHost)
+    if (!isWorkspaceRequestOrigin(url, baseHost) || host.kind !== 'workspace')
+      return failure(404, 'workspace_unavailable')
+    if (!filterBetterAuthCookies(request.headers.get('cookie')))
+      return failure(401, 'authentication_required')
+    const query = new URLSearchParams({ q: url.searchParams.get('q')?.trim() ?? '' })
+    const cursor = url.searchParams.get('cursor')
+    if (cursor !== null) query.set('cursor', cursor)
     try {
-      const upstream = await fetcher(upstreamUrl, {
-        method: 'GET',
-        headers,
-        redirect: 'manual',
-        cache: 'no-store',
-        signal: request.signal,
-      })
-      const responseHeaders = new Headers()
-      const contentType = upstream.headers.get('content-type')
-      if (contentType) responseHeaders.set('content-type', contentType)
-      const requestId = upstream.headers.get('x-request-id')
-      if (requestId) responseHeaders.set('x-request-id', requestId)
-      responseHeaders.set('Cache-Control', 'private, no-store')
-
+      const upstream = await forward(
+        request,
+        `/api/v1/workspaces/${host.slug}/mail/messages?${query}`,
+        { forwardIdentity: true },
+      )
+      if (upstream.status >= 300 && upstream.status < 400)
+        return failure(502, 'MAIL_MESSAGES_UPSTREAM_UNAVAILABLE')
       return new Response(upstream.body, {
         status: upstream.status,
-        statusText: upstream.statusText,
-        headers: responseHeaders,
+        headers: workspaceResponseHeaders(upstream, [
+          'Content-Type',
+          'X-Request-ID',
+          'X-Workspace-Identity',
+        ]),
       })
     } catch {
       return Response.json(
