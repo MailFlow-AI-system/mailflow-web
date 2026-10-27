@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { mailMessagesPageOptions } from '../queries/mailMessagesQuery'
 import { mailQueryParser } from '../types/mailSearch'
 
-export function useMailboxSearch(userId: string) {
+export function useMailboxSearch(userId: string, workspaceSlug: string) {
   const [query, setQuery] = useQueryState('q', mailQueryParser.withDefault(''))
   const queryClient = useQueryClient()
   const [draft, setDraft] = useState({ query, value: query })
@@ -34,7 +34,10 @@ export function useMailboxSearch(userId: string) {
 
     timer.current = setTimeout(() => {
       timer.current = undefined
-      void queryClient.prefetchQuery(mailMessagesPageOptions(userId, normalized, null))
+      if (workspaceSlug)
+        void queryClient.prefetchQuery(
+          mailMessagesPageOptions(userId, workspaceSlug, normalized, null),
+        )
       void setQuery(normalized || null, { history: 'replace', scroll: false })
     }, 300)
   }
