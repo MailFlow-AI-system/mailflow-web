@@ -1,11 +1,9 @@
 import { createFileRoute, getRouteApi } from '@tanstack/react-router'
 import { useQueryState } from 'nuqs'
-import { clientEnvironment } from '#/config/env'
-
 import { MailboxLayout } from '#/features/mail-list/components/MailboxLayout'
 import { MailList } from '#/features/mail-list/components/MailList'
-import { WorkspaceMailUnavailable } from '#/features/mail-list/components/WorkspaceMailUnavailable'
 import { mailQueryParser } from '#/features/mail-list/types/mailSearch'
+import { useWorkspaceContext } from '#/features/workspaces/hooks/useWorkspaceContext'
 
 const authenticatedRoute = getRouteApi('/_authenticated')
 const mailRoute = getRouteApi('/_authenticated/_mail')
@@ -16,19 +14,21 @@ export const Route = createFileRoute('/_authenticated/_mail/inbox')({
 })
 
 function InboxPage() {
-  if (clientEnvironment.VITE_WORKSPACE_BASE_HOST) return <WorkspaceMailUnavailable />
-  return <LegacyInboxPage />
-}
-
-function LegacyInboxPage() {
   const { user } = authenticatedRoute.useRouteContext()
   const { q: committedQ } = mailRoute.useSearch()
   const [q] = useQueryState('q', mailQueryParser.withDefault(''))
   const isSearching = q !== (committedQ ?? '')
+  const workspace = useWorkspaceContext()
+  if (!workspace?.current) return <p>Open a workspace address</p>
 
   return (
     <MailboxLayout title="Inbox">
-      <MailList isSearching={isSearching} q={q} userId={user.id} />
+      <MailList
+        workspaceSlug={workspace.current.slug}
+        isSearching={isSearching}
+        q={q}
+        userId={user.id}
+      />
     </MailboxLayout>
   )
 }

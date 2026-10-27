@@ -17,6 +17,9 @@ vi.mock('nuqs', async (original) => ({
   ...(await original<object>()),
   useQueryState: () => ['', vi.fn()],
 }))
+vi.mock('#/features/workspaces/hooks/useWorkspaceContext', () => ({
+  useWorkspaceContext: () => ({ current: { slug: 'acme' } }),
+}))
 vi.mock('#/features/mail-list/components/MailList', () => ({
   MailList: () => <div data-testid="inbox-list" />,
 }))
