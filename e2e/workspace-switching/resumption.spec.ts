@@ -11,7 +11,7 @@ test('generic login without a preference uses a deterministic live fallback with
   page,
 }) => {
   const data = await fixture()
-  await login(page, 'http://workspace.test:3003/login')
+  await login(page, 'http://localhost:3003/login')
   await expectEntryUrl(page, `http://${data.fallbackHost}:3003/inbox`)
   await expect(page.getByRole('combobox', { name: /^Workspace: / })).toBeVisible()
   expect((await fixture()).preference).toBeNull()
@@ -30,7 +30,7 @@ test('select B, refresh, sign out and generic login resumes B; direct A still wi
   await page.reload()
   await expect(page.getByRole('combobox', { name: 'Workspace: Northwind' })).toBeVisible()
   await logout(page)
-  await login(page, 'http://workspace.test:3003/login')
+  await login(page, 'http://localhost:3003/login')
   await expectEntryUrl(page, `http://${data.targetHost}:3003/inbox`)
   await expect(page.getByRole('combobox', { name: 'Workspace: Northwind' })).toBeVisible()
   await page.goto(`http://${data.host}:3003/sent`)
@@ -51,7 +51,7 @@ test('a revoked preference falls back on generic entry only, stripping queries a
   await expect(page.getByRole('combobox', { name: 'Workspace: Acme Corp' })).toBeVisible()
   await selectNorthwind(page)
   await control('revoke-northwind')
-  await page.goto('http://workspace.test:3003/sent?q=private&redirect=https://evil.test#private')
+  await page.goto('http://localhost:3003/sent?q=private&redirect=https://evil.test#private')
   await expectEntryUrl(page, `http://${data.host}:3003/sent`)
   await expect(page.getByRole('combobox', { name: 'Workspace: Acme Corp' })).toBeVisible()
   expect((await fixture()).preference).toBe(data.targetId)
@@ -64,9 +64,9 @@ test('an identity with no memberships gets an accessible empty state without a c
   page,
 }, testInfo) => {
   const data = await fixture()
-  await login(page, 'http://workspace.test:3003/login', data.emptyEmail)
+  await login(page, 'http://localhost:3003/login', data.emptyEmail)
   await expect(page.getByRole('heading', { name: 'No workspace available' })).toBeVisible()
-  await expectEntryUrl(page, 'http://workspace.test:3003/inbox')
+  await expectEntryUrl(page, 'http://localhost:3003/inbox')
   await expect(page.getByRole('combobox')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Compose', exact: true })).toHaveCount(0)
   expect((await new AxeBuilder({ page }).include('section').analyze()).violations).toEqual([])
@@ -94,9 +94,9 @@ test('a failed entry stays generic and permits retry without optimistic tenant c
   await expect(page.getByRole('combobox', { name: 'Workspace: Acme Corp' })).toBeVisible()
   await selectNorthwind(page)
   await control('fail-next-entry')
-  await page.goto('http://workspace.test:3003/inbox')
+  await page.goto('http://localhost:3003/inbox')
   await expect(page.getByRole('heading', { name: 'Workspace unavailable' })).toBeVisible()
-  expect(new URL(page.url()).hostname).toBe('workspace.test')
+  expect(new URL(page.url()).hostname).toBe('localhost')
   await expect(page.getByRole('button', { name: 'Compose', exact: true })).toHaveCount(0)
   await page.getByRole('button', { name: 'Try again' }).click()
   await expectEntryUrl(page, `http://${data.targetHost}:3003/inbox`)
@@ -139,7 +139,7 @@ test('a new identity cannot reuse the previous identity preference or cached wor
     ),
   ).toBe(200)
   await logout(page)
-  await login(page, 'http://workspace.test:3003/login', data.otherEmail)
+  await login(page, 'http://localhost:3003/login', data.otherEmail)
   await expectEntryUrl(page, `http://${data.targetHost}:3003/inbox`)
   await expect(
     page.getByRole('button', { name: 'Abrir menu de Other User', exact: true }),
@@ -154,15 +154,15 @@ test('an expired session requires login, preserves only a safe collection and re
   page,
 }) => {
   const data = await fixture()
-  await page.goto('http://workspace.test:3003/login')
+  await page.goto('http://localhost:3003/login')
   expect(await page.evaluate(async () => (await fetch('/api/v1/workspace-entry')).status)).toBe(401)
   await login(page, `http://${data.host}:3003/login`)
   await expect(page.getByRole('combobox', { name: 'Workspace: Acme Corp' })).toBeVisible()
   await selectNorthwind(page)
   await control('expire-session')
-  await page.goto('http://workspace.test:3003/sent?q=private#message-id')
+  await page.goto('http://localhost:3003/sent?q=private#message-id')
   await expect(page.getByRole('heading', { name: 'Sign in to MailFlow' })).toBeVisible()
-  await expectEntryUrl(page, 'http://workspace.test:3003/login?returnTo=%2Fsent')
+  await expectEntryUrl(page, 'http://localhost:3003/login?returnTo=%2Fsent')
   await login(page, page.url())
   await expectEntryUrl(page, `http://${data.targetHost}:3003/sent`)
   await expect(page.getByRole('combobox', { name: 'Workspace: Northwind' })).toBeVisible()
