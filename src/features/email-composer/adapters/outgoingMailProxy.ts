@@ -1,10 +1,6 @@
 import { filterBetterAuthCookies } from '#/features/auth/adapters/authCookies'
 
-export function createOutgoingMailProxy(
-  apiBaseUrl: string,
-  fetcher: typeof fetch = fetch,
-  workspaceMode = false,
-) {
+export function createOutgoingMailProxy(apiBaseUrl: string, fetcher: typeof fetch = fetch) {
   return async (request: Request): Promise<Response> => {
     const incoming = new URL(request.url)
     const sending = request.method === 'POST' && incoming.pathname === '/api/mail/send'
@@ -25,13 +21,8 @@ export function createOutgoingMailProxy(
     const privateHeaders = { 'Cache-Control': 'private, no-store' }
     if (!sending && !discarding && !listing && !attachmentRoute && !readingContext)
       return new Response(null, { status: 404, headers: privateHeaders })
-    if (workspaceMode && listing)
-      return Response.json(
-        { code: 'workspace_mail_unavailable' },
-        { status: 503, headers: privateHeaders },
-      )
     const suppliedOrigin = request.headers.get('origin')
-    if (!listing && suppliedOrigin !== null && suppliedOrigin !== incoming.origin)
+    if (suppliedOrigin !== null && suppliedOrigin !== incoming.origin)
       return new Response(null, { status: 403, headers: privateHeaders })
     if (
       mutating &&
@@ -63,12 +54,10 @@ export function createOutgoingMailProxy(
       const value = request.headers.get(name)
       if (value) headers.set(name, value)
     }
-    if (!listing) {
-      headers.set('origin', incoming.origin)
-      for (const name of ['x-workspace-id', 'x-workspace-identity']) {
-        const value = request.headers.get(name)
-        if (value) headers.set(name, value)
-      }
+    headers.set('origin', incoming.origin)
+    for (const name of ['x-workspace-id', 'x-workspace-identity']) {
+      const value = request.headers.get(name)
+      if (value) headers.set(name, value)
     }
     const cookies = filterBetterAuthCookies(request.headers.get('cookie'))
     if (cookies) headers.set('cookie', cookies)
@@ -92,6 +81,8 @@ export function createOutgoingMailProxy(
         'location',
         'content-disposition',
         'x-content-type-options',
+        'x-workspace-id',
+        'x-workspace-identity',
       ]) {
         const value = response.headers.get(name)
         if (value) responseHeaders.set(name, value)
