@@ -14,6 +14,7 @@ const config = defineConfig(({ command, isPreview }) => {
     isPreview: Boolean(isPreview),
   })
   for (const name of [
+    'VITE_API_BASE_URL',
     'VITE_WORKSPACE_BASE_HOST',
     'VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED',
     'VITE_WORKSPACE_SWITCHING_ENABLED',
