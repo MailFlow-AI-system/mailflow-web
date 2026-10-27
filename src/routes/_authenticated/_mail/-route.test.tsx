@@ -1,8 +1,17 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+const sent = vi.hoisted(() => ({
+  onSent: undefined as (() => void) | undefined,
+  readSentWorkspace: vi.fn(),
+  fetchSentEmails: vi.fn(),
+}))
+vi.mock('#/features/mail-list/clients/sentEmailsClient', () => ({
+  readSentWorkspace: sent.readSentWorkspace,
+  fetchSentEmails: sent.fetchSentEmails,
+}))
 const environment = vi.hoisted(() => ({
   VITE_WORKSPACE_BASE_HOST: undefined as string | undefined,
 }))
@@ -47,7 +56,10 @@ vi.mock('@/features/app-shell', () => {
 
 vi.mock('@/features/email-composer', () => ({
   EmailComposer: {
-    Root: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    Root: ({ children, onSent }: { children: ReactNode; onSent?: () => void }) => {
+      sent.onSent = onSent
+      return <div>{children}</div>
+    },
     Trigger: () => <button type="button">Compose</button>,
     Content: ({ children }: { children: ReactNode }) => <div>{children}</div>,
     Header: () => null,
@@ -63,6 +75,7 @@ vi.mock('@/features/email-composer', () => ({
   },
 }))
 
+import { SentMailList } from '#/features/mail-list/components/SentMailList'
 import { normalizeMailSearch } from '#/features/mail-list/types/mailSearch'
 import { Route } from './route'
 
@@ -110,4 +123,38 @@ describe('MailLayout', () => {
     expect(toolbar).toContainElement(screen.getByRole('button', { name: 'Compose' }))
     expect(screen.getByTestId('route-outlet')).toBeInTheDocument()
   })
+})
+
+it('re-resolves the disabled-UI default after send so a newly selected workspace appears without focus', async () => {
+  let workspace = { id: 'a', name: 'Acme', slug: 'acme', role: 'owner' as const }
+  sent.readSentWorkspace.mockImplementation(async () => workspace)
+  sent.fetchSentEmails.mockImplementation(async (_userId: string, workspaceId: string) => ({
+    items: [
+      {
+        id: `sent-${workspaceId}`,
+        to: ['ada@example.test'],
+        cc: [],
+        bcc: [],
+        subject: `Sent in ${workspaceId}`,
+        recipientName: '',
+        text: '',
+        sentAt: null,
+      },
+    ],
+    nextOffset: null,
+  }))
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const view = render(
+    <QueryClientProvider client={client}>
+      <MailLayout />
+      <SentMailList userId="user-1" />
+    </QueryClientProvider>,
+  )
+  await screen.findByText('Sent in a')
+  workspace = { ...workspace, id: 'b', name: 'Northwind', slug: 'northwind' }
+  await act(async () => sent.onSent?.())
+  expect(await screen.findByText('Sent in b')).toBeVisible()
+  expect(screen.queryByText('Sent in a')).toBeNull()
+  view.unmount()
+  client.clear()
 })

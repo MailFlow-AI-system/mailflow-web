@@ -14,7 +14,7 @@ import type {
 } from '../types/composer'
 import type { DraftValues } from '../types/DraftValues'
 import { type EmailDeliveryContext, EmailDeliveryError } from '../types/EmailDelivery'
-import { createAttachmentId } from '../utils/attachmentId'
+import { createCompositionId } from '../utils/compositionId'
 import { useCompositionValidation } from './useCompositionValidation'
 import { emptyDraft, useDraftForm } from './useDraftForm'
 
@@ -181,7 +181,7 @@ export function useComposerController(
           uploads.current.clear()
         }
         if (pendingDelivery.current?.signature !== signature)
-          pendingDelivery.current = { signature, id: crypto.randomUUID() }
+          pendingDelivery.current = { signature, id: createCompositionId() }
         await onSend(composition, pendingDelivery.current.id, {
           ...deliveryContext(),
           onProgress: ({ phase, completed, total }) => {
@@ -356,7 +356,7 @@ export function useComposerController(
       if (files.length === 0 || sendingRef.current || discardingRef.current) return
       const attachments = [
         ...draft.getValues('attachments'),
-        ...files.map((file) => ({ id: createAttachmentId(), file })),
+        ...files.map((file) => ({ id: createCompositionId(), file })),
       ]
       draft.setValue('attachments', attachments, { shouldDirty: true })
       validation.validateAttachments(attachments)

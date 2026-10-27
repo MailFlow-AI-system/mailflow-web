@@ -10,6 +10,7 @@ export async function readWorkspaceResponse(
   userId: string,
   signal: AbortSignal,
   init?: RequestInit,
+  expectedWorkspaceId?: string,
 ) {
   const headers = new Headers(init?.headers)
   headers.set('X-Workspace-Identity', userId)
@@ -27,6 +28,8 @@ export async function readWorkspaceResponse(
     throw new WorkspaceRateLimitedError(workspaceRetryAfter(response.headers.get('retry-after')))
   if (!response.ok) throw new Error('Workspace request failed')
   if (!identity) throw new Error('Workspace identity could not be verified')
+  if (expectedWorkspaceId && response.headers.get('x-workspace-id') !== expectedWorkspaceId)
+    throw new Error('Workspace response scope could not be verified')
   const data: unknown = await response.json()
   signal.throwIfAborted()
 

@@ -1,10 +1,35 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../hooks/useMailMessages', () => ({ useMailMessages: vi.fn() }))
 
+import { getCurrentSession } from '#/features/auth/adapters/getCurrentSession'
+import { WorkspaceContext } from '#/features/workspaces/hooks/useWorkspaceContext'
+import type { WorkspaceState } from '#/features/workspaces/types'
 import { SentMailList } from './SentMailList'
+
+vi.mock('#/features/auth/adapters/getCurrentSession', () => ({ getCurrentSession: vi.fn() }))
+beforeEach(() =>
+  vi
+    .mocked(getCurrentSession)
+    .mockResolvedValue({ id: 'owner', name: 'Owner', email: 'owner@example.test' }),
+)
+const workspaceState: WorkspaceState = {
+  identityId: 'owner',
+  status: 'ready',
+  current: { id: 'workspace-a', name: 'Acme', slug: 'acme', role: 'owner' },
+  items: [],
+  retry: () => {},
+  loadMore: () => {},
+  hasMore: false,
+  loadingMore: false,
+  pageError: false,
+}
+const pageResponse = (body: unknown) =>
+  Response.json(body, {
+    headers: { 'X-Workspace-Identity': 'owner', 'X-Workspace-Id': 'workspace-a' },
+  })
 
 afterEach(() => {
   cleanup()
@@ -15,7 +40,9 @@ function mount() {
     <QueryClientProvider
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
-      <SentMailList userId="owner" />
+      <WorkspaceContext value={workspaceState}>
+        <SentMailList userId="owner" />
+      </WorkspaceContext>
     </QueryClientProvider>,
   )
 }
@@ -24,7 +51,7 @@ describe('SentMailList', () => {
     const fetcher = vi
       .fn<typeof fetch>()
       .mockResolvedValueOnce(
-        Response.json({
+        pageResponse({
           items: [
             {
               id: 'id',
@@ -39,7 +66,7 @@ describe('SentMailList', () => {
           nextOffset: 20,
         }),
       )
-      .mockResolvedValueOnce(Response.json({ items: [], nextOffset: null }))
+      .mockResolvedValueOnce(pageResponse({ items: [], nextOffset: null }))
     vi.stubGlobal('fetch', fetcher)
     mount()
     expect(screen.getByRole('status')).toHaveTextContent('Loading messages')
@@ -65,7 +92,7 @@ describe('SentMailList', () => {
       vi
         .fn<typeof fetch>()
         .mockResolvedValueOnce(new Response(null, { status: 502 }))
-        .mockResolvedValueOnce(Response.json({ items: [], nextOffset: null })),
+        .mockResolvedValueOnce(pageResponse({ items: [], nextOffset: null })),
     )
     mount()
     expect(await screen.findByRole('alert')).toHaveTextContent('Messages could not be loaded.')
@@ -85,10 +112,10 @@ describe('SentMailList', () => {
     }
     const fetcher = vi
       .fn<typeof fetch>()
-      .mockResolvedValueOnce(Response.json({ items: [message], nextOffset: 20 }))
+      .mockResolvedValueOnce(pageResponse({ items: [message], nextOffset: 20 }))
       .mockResolvedValueOnce(new Response(null, { status: 502 }))
       .mockResolvedValueOnce(
-        Response.json({
+        pageResponse({
           items: [message, { ...message, id: 'second', subject: 'Second message' }],
           nextOffset: null,
         }),
@@ -115,7 +142,7 @@ describe('SentMailList', () => {
       vi.stubGlobal(
         'fetch',
         vi.fn<typeof fetch>(async () =>
-          Response.json({
+          pageResponse({
             items: [
               {
                 id: 'named',
@@ -172,7 +199,7 @@ describe('SentMailList', () => {
     ].map((message) => ({ ...message, cc: [], bcc: [], text: 'Body', sentAt: null }))
     vi.stubGlobal(
       'fetch',
-      vi.fn<typeof fetch>(async () => Response.json({ items, nextOffset: null })),
+      vi.fn<typeof fetch>(async () => pageResponse({ items, nextOffset: null })),
     )
     const view = mount()
     await screen.findByText('First send')
