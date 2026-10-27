@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { control, fixture, login } from './fixture'
+import { control, expectEntryUrl, fixture, login } from './fixture'
 
 test.beforeEach(async ({ page }) => {
   await control('reset')
@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
   })
 })
 
-test('selects B with a real shared HttpOnly cookie, persists preference, refreshes and lists tenant mail', async ({
+test('selects B with a real shared server session and host-only HttpOnly cookies, persists preference, refreshes and lists tenant mail', async ({
   page,
   context,
 }, testInfo) => {
@@ -38,14 +38,16 @@ test('selects B with a real shared HttpOnly cookie, persists preference, refresh
     animations: 'disabled',
   })
   await page.getByRole('option', { name: 'Northwind' }).click()
-  await expect(page).toHaveURL(`http://${data.targetHost}:3003/sent`)
+  await expectEntryUrl(page, `http://${data.targetHost}:3003/sent`)
   await expect(page.getByRole('combobox', { name: 'Workspace: Northwind' })).toBeVisible()
   await page.reload()
   await expect(page.getByRole('combobox', { name: 'Workspace: Northwind' })).toBeVisible()
   const cookies = await context.cookies()
-  const sessionCookie = cookies.find((cookie) => cookie.name.endsWith('session_token'))
+  const sessionCookie = cookies.find(
+    (cookie) => cookie.name === 'mailflow.local_session' && cookie.domain === data.targetHost,
+  )
   expect(sessionCookie).toMatchObject({
-    domain: '.workspace.test',
+    domain: data.targetHost,
     httpOnly: true,
     sameSite: 'Lax',
   })
@@ -60,8 +62,8 @@ test('selects B with a real shared HttpOnly cookie, persists preference, refresh
   const direct = await fetch('http://127.0.0.1:8083/api/v1/mail/messages', {
     headers: { Cookie: `${sessionCookie?.name}=${sessionCookie?.value}` },
   })
-  expect(direct.status).toBe(404)
-  expect(await direct.json()).toMatchObject({ code: 'route_not_found' })
+  // The browser binding is local to Vite and cannot authenticate directly against Core.
+  expect(direct.status).toBe(401)
   const state = await fixture()
   expect(state.preference).toBe(data.targetId)
   expect(state.globalMailCalls).toBe(0)
@@ -75,7 +77,7 @@ test('rechecks membership at the destination without trusting the committed pref
   await control('revoke-after-selection')
   await page.getByRole('combobox', { name: 'Workspace: Acme Corp' }).click()
   await page.getByRole('option', { name: 'Northwind' }).click()
-  await expect(page).toHaveURL(`http://${data.targetHost}:3003/inbox`)
+  await expectEntryUrl(page, `http://${data.targetHost}:3003/inbox`)
   await expect(page.getByRole('heading', { name: 'Workspace unavailable' })).toBeVisible()
   await expect(page.getByRole('combobox', { name: 'Workspace: Northwind' })).toHaveCount(0)
   const state = await fixture()
@@ -92,7 +94,7 @@ test('selects another workspace directly without composer draft confirmation', a
   await page.getByRole('button', { name: 'Minimizar janela' }).click()
   await page.getByRole('combobox', { name: 'Workspace: Acme Corp' }).click()
   await page.getByRole('option', { name: 'Northwind' }).click()
-  await expect(page).toHaveURL(`http://${data.targetHost}:3003/inbox`)
+  await expectEntryUrl(page, `http://${data.targetHost}:3003/inbox`)
   await expect(page.getByRole('combobox', { name: 'Workspace: Northwind' })).toBeVisible()
   await expect(page.getByRole('alertdialog')).toHaveCount(0)
   expect((await fixture()).preference).toBe(data.targetId)
@@ -132,11 +134,11 @@ test('rejects unrelated selectors and cross-origin submissions despite same-site
   expect((await fixture()).preference).toBeNull()
   const response = await fetch(`http://127.0.0.1:8083/api/v1/workspace-selection`, {
     method: 'POST',
-    headers: { Origin: 'http://evil.workspace.test:3003', 'Content-Type': 'application/json' },
+    headers: { Origin: 'http://evil.localhost:3003', 'Content-Type': 'application/json' },
     body: JSON.stringify({ workspaceId: data.targetId }),
   })
   expect(response.status).toBe(401)
-  await page.goto('http://evil.workspace.test:3003/inbox')
+  await page.goto('http://evil.localhost:3003/inbox')
   const denied = await page.evaluate(async (workspaceId) => {
     const result = await fetch('/api/v1/workspace-selection', {
       method: 'POST',
@@ -165,7 +167,7 @@ test('mobile keyboard selection bootstraps the correct workspace', async ({ page
     animations: 'disabled',
   })
   await page.getByRole('option', { name: 'Northwind' }).press('Enter')
-  await expect(page).toHaveURL(`http://${data.targetHost}:3003/inbox`)
+  await expectEntryUrl(page, `http://${data.targetHost}:3003/inbox`)
   // Wait for the new document's interactive shell, not just its SSR markup.
   await expect(page.getByRole('button', { name: 'Compose', exact: true })).toBeEnabled()
   await page.getByRole('button', { name: 'Alternar barra lateral' }).click()

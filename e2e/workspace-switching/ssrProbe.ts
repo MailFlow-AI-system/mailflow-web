@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import type { SwitchingFixture } from './types'
 
 const port = process.argv[2]
-assert.ok(port === '3003' || port === '3004', 'Only dedicated local dev/preview ports are allowed')
+assert.equal(port, '3003', 'The localhost session probe requires the dedicated Vite dev server')
 const api = 'http://127.0.0.1:8083'
 const data: SwitchingFixture = await (await fetch(`${api}/__fixture`)).json()
 const reset = await fetch(`${api}/__fixture/control`, {
@@ -11,22 +11,32 @@ const reset = await fetch(`${api}/__fixture/control`, {
   body: JSON.stringify({ action: 'reset' }),
 })
 assert.equal(reset.status, 200)
-const signIn = await fetch(`${api}/api/auth/sign-in/email`, {
+const rootHost = `localhost:${port}`
+const initial = await fetch(`http://127.0.0.1:${port}/login`, {
+  headers: { Host: rootHost, Accept: 'text/html' },
+})
+const cookie = initial.headers
+  .getSetCookie()
+  .filter((value) => value.startsWith('mailflow.local_session='))
+  .map((value) => value.split(';')[0])
+  .join('; ')
+assert.ok(cookie, 'The dev server must establish a host-only browser binding')
+const signIn = await fetch(`http://127.0.0.1:${port}/api/auth/sign-in/email`, {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json', Origin: `http://${data.host}:3003` },
+  headers: {
+    'Content-Type': 'application/json',
+    Origin: `http://${rootHost}`,
+    Host: rootHost,
+    Cookie: cookie,
+  },
   body: JSON.stringify({ email: data.email, password: data.password }),
 })
 assert.equal(signIn.status, 200)
-const cookie = signIn.headers
-  .getSetCookie()
-  .map((value) => value.split(';')[0])
-  .join('; ')
-assert.ok(cookie.includes('better-auth.session_token='))
 const started = performance.now()
 const statuses = await Promise.all(
   Array.from({ length: 18 }, async (_, index) => {
     const generic = index >= 12
-    const host = generic ? 'workspace.test' : index % 2 ? data.targetHost : data.host
+    const host = generic ? 'localhost' : index % 2 ? data.targetHost : data.host
     const response = await fetch(`http://127.0.0.1:${port}/inbox`, {
       headers: { Host: `${host}:${port}`, Cookie: cookie },
       redirect: 'manual',
