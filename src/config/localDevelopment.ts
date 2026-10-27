@@ -15,12 +15,11 @@ export function localDevelopmentEnvironment(
   )
     return environment
   const api = new URL(String(environment.VITE_API_BASE_URL))
-  if (api.protocol !== 'http:' || !['localhost', '127.0.0.1', '[::1]'].includes(api.hostname))
-    throw new Error(
-      'The local dev server requires a loopback Core; use MAILFLOW_LOCAL_PROFILE=false for an intentional remote profile',
-    )
+  const localApi =
+    api.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(api.hostname)
   return {
     ...environment,
+    VITE_API_BASE_URL: localApi ? environment.VITE_API_BASE_URL : 'http://localhost:8080',
     VITE_WORKSPACE_BASE_HOST: 'localhost',
     VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED: 'true',
     VITE_WORKSPACE_SWITCHING_ENABLED: 'false',

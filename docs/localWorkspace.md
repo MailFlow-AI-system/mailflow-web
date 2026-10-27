@@ -3,7 +3,8 @@
 `bun run dev` selects the local profile from the actual Vite dev-server context.
 Open `http://localhost:3000`; membership and the saved preference select the destination.
 An explicit address such as `http://luis-felipe.localhost:3000` always keeps that workspace.
-No hosts-file entries are needed. `VITE_API_BASE_URL` remains the Core origin.
+No hosts-file entries are needed. The local profile replaces injected published API origins
+with `http://localhost:8080` and preserves explicit HTTP loopback API ports.
 Injected published Web hosts are replaced only in the local dev-server profile.
 Builds, previews and Cloudflare/CI execution keep their explicit deployment configuration.
 Use `MAILFLOW_LOCAL_PROFILE=false` for an intentional remote dev-server profile.
