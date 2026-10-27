@@ -7,7 +7,7 @@ import type { DraftValues } from '../types/DraftValues'
 import { CompositionWarnings } from './CompositionWarnings'
 
 export function Footer() {
-  const { saveDraft, validation, sending, sendFailed, sendProgress } = useComposer()
+  const { saveDraft, validation, sending, discarding, sendFailed, sendProgress } = useComposer()
   const { control } = useFormContext<DraftValues>()
   const { errors, isSubmitting } = useFormState({ control })
   const { dirty, saved } = useDraftStatus()
@@ -35,13 +35,15 @@ export function Footer() {
             onClick={() => void validation.validate()}
           >
             <Send aria-hidden="true" className="size-4" />
-            {sending
-              ? 'Enviando…'
-              : sendFailed
-                ? 'Tentar novamente'
-                : validation.ready
-                  ? 'Mensagem pronta'
-                  : 'Enviar'}
+            {discarding
+              ? 'Aguarde…'
+              : sending
+                ? 'Enviando…'
+                : sendFailed
+                  ? 'Tentar novamente'
+                  : validation.ready
+                    ? 'Mensagem pronta'
+                    : 'Enviar'}
           </Button>
           <Button
             type="button"

@@ -47,7 +47,7 @@ const verifiedSchema = z.object({
     .optional(),
 })
 
-type LocalAttachment = { key: string; file: File; contentId?: string }
+type LocalAttachment = { key: string; file: File; contentId?: string; inlineSource?: string }
 
 function readFile(file: Blob): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {
@@ -78,6 +78,7 @@ function embedInlineImages(document: Document): LocalAttachment[] {
       sources.set(source, contentId)
       attachments.push({
         key: contentId,
+        inlineSource: source,
         file: new File([bytes], `inline-image-${attachments.length + 1}.${extension}`, {
           type: contentType,
         }),
@@ -154,8 +155,12 @@ async function upload(
         ),
         uploaded: false,
         clean: false,
+        localKey: attachment.key,
+        ...(attachment.inlineSource ? { inlineSource: attachment.inlineSource } : {}),
       }
       context.uploads.set(key, reservation)
+      context.attachmentIds ??= new Set()
+      context.attachmentIds.add(reservation.id)
     }
     if (!reservation.uploaded) {
       context.onProgress?.({ phase: 'uploading', completed, total })
@@ -261,6 +266,8 @@ export async function sendEmail(
     for (const reservation of context.uploads.values()) {
       if (attachmentIds.has(reservation.id)) reservation.sendAttempted = true
     }
+    context.messageIds ??= new Set()
+    context.messageIds.add(id)
     const response = await fetch('/api/mail/send', {
       signal: AbortSignal.timeout(45_000),
       method: 'POST',

@@ -4,16 +4,24 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { ComposerRootProps } from '../types/composer'
 import { useComposerController } from './useComposerController'
 
-const { loading, success, error } = vi.hoisted(() => ({
+const { loading, success, error, info, discardRemote } = vi.hoisted(() => ({
   loading: vi.fn(() => 'delivery-toast'),
   success: vi.fn(),
   error: vi.fn(),
+  info: vi.fn(),
+  discardRemote: vi.fn<
+    (context: unknown, selection?: unknown) => Promise<{ retainedMessageIds: string[] }>
+  >(async () => ({ retainedMessageIds: [] })),
 }))
 vi.mock('@mailflow/ui/components', async (original) => ({
   ...(await original<object>()),
-  toast: { loading, success, error },
+  toast: { loading, success, error, info },
 }))
-afterEach(() => vi.clearAllMocks())
+vi.mock('../clients/discardEmail', () => ({ discardEmail: discardRemote }))
+afterEach(() => {
+  vi.clearAllMocks()
+  discardRemote.mockResolvedValue({ retainedMessageIds: [] })
+})
 
 describe('useComposerController composition validation', () => {
   it('invalidates readiness on every editor update and draft field edit', async () => {
@@ -343,11 +351,271 @@ it('owns upload progress and retry cache within the Composition and clears them 
   expect((deliveries[1] as typeof first).scope).toBe(first.scope)
   expect((deliveries[1] as { uploads: Map<string, unknown> }).uploads).toBe(first.uploads)
   expect(first.uploads.size).toBe(1)
-  act(() => result.current.context.discard())
+  await act(async () => result.current.context.discard())
   expect(first.uploads.size).toBe(0)
   expect(first.scope.current).toBeNull()
   await compose()
   await act(async () => result.current.context.validation.validate())
   expect((deliveries[2] as { uploads: Map<string, unknown> }).uploads).not.toBe(first.uploads)
   expect((deliveries[2] as typeof first).scope).not.toBe(first.scope)
+})
+
+describe('Composition remote discard', () => {
+  const membership = {
+    userId: 'owner',
+    workspace: {
+      id: 'workspace-a',
+      name: 'Workspace A',
+      slug: 'workspace-a',
+      role: 'owner' as const,
+    },
+  }
+  async function failedComposition() {
+    const attempts: string[] = []
+    const onSend = vi.fn<NonNullable<ComposerRootProps['onSend']>>(
+      async (_composition, id, context) => {
+        if (!context) throw new Error('Missing context')
+        attempts.push(id)
+        context.scope.current = membership
+        context.messageIds?.add(id)
+        context.uploads.set('file', {
+          id: '00000000-0000-4000-8000-000000000001',
+          uploadUrl: 'https://r2.example.test',
+          headers: {},
+          expiresAt: '',
+          uploaded: true,
+          clean: true,
+          localKey: 'file:local-file',
+        })
+        throw new Error('failed')
+      },
+    )
+    const { result } = renderHook(() =>
+      useComposerController('light', undefined, onSend, undefined, 'owner'),
+    )
+    await waitFor(() => expect(result.current.context.editor).toBeTruthy())
+    act(() => {
+      result.current.draft.setValue('to', 'ada@example.test')
+      result.current.draft.setValue('subject', 'Original subject')
+      result.current.draft.setValue('attachments', [
+        { id: 'local-file', file: new File(['Hello'], 'hello.txt') },
+      ])
+      result.current.context.editor?.commands.setContent('<p>Hello</p>')
+    })
+    await act(async () => result.current.context.validation.validate())
+    return { result, attempts, onSend }
+  }
+
+  it('keeps pre-send removal and discard local without calling cancellation', async () => {
+    const { result } = renderHook(() => useComposerController('light'))
+    act(() => result.current.context.addAttachments([new File(['Hello'], 'hello.txt')]))
+    const [attachment] = result.current.draft.getValues('attachments')
+    act(() => result.current.context.removeAttachment(attachment.id))
+    act(() => result.current.context.discard())
+    expect(discardRemote).not.toHaveBeenCalled()
+  })
+
+  it('notifies Core before clearing references, locks editing and preserves uncertain attachments', async () => {
+    const { result, attempts } = await failedComposition()
+    let resolve!: (value: { retainedMessageIds: string[] }) => void
+    discardRemote.mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          resolve = done
+        }),
+    )
+    let discarding: void | Promise<void>
+    act(() => {
+      discarding = result.current.context.discard()
+    })
+    expect(discardRemote).toHaveBeenCalledTimes(1)
+    const context = discardRemote.mock
+      .calls[0]?.[0] as unknown as import('../types/EmailDelivery').EmailDeliveryContext
+    expect(context.messageIds?.has(attempts[0])).toBe(true)
+    expect(context.uploads.size).toBe(1)
+    expect(result.current.draft.getValues('subject')).toBe('Original subject')
+    expect(result.current.context.editor?.isEditable).toBe(false)
+    await act(async () => {
+      resolve({ retainedMessageIds: [attempts[0]] })
+      await discarding
+    })
+    expect(result.current.draft.getValues('subject')).toBe('')
+    expect(info).toHaveBeenCalledWith(expect.stringContaining('anexos foram preservados'))
+  })
+
+  it('retains the draft and retry references if remote discard fails', async () => {
+    const { result } = await failedComposition()
+    discardRemote.mockRejectedValueOnce(new Error('offline'))
+    await act(async () => result.current.context.discard())
+    expect(result.current.draft.getValues('subject')).toBe('Original subject')
+    expect(result.current.draft.getValues('attachments')).toHaveLength(1)
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('rascunho foi mantido'))
+    expect(result.current.context.editor?.isEditable).toBe(true)
+  })
+
+  it('blocks sending edited content when the earlier attempt may have been accepted', async () => {
+    const { result, onSend, attempts } = await failedComposition()
+    discardRemote.mockResolvedValueOnce({ retainedMessageIds: [attempts[0]] })
+    act(() => result.current.draft.setValue('subject', 'Edited subject'))
+    await act(async () => result.current.context.validation.validate())
+    expect(onSend).toHaveBeenCalledTimes(1)
+    expect(result.current.draft.getValues('subject')).toBe('Edited subject')
+    expect(error).toHaveBeenCalledWith(
+      expect.stringContaining('envio anterior'),
+      expect.any(Object),
+    )
+  })
+
+  it('releases a removed uploaded file without cancelling other message attempts', async () => {
+    const { result } = await failedComposition()
+    await act(async () => result.current.context.removeAttachment('local-file'))
+    expect(discardRemote).toHaveBeenCalledWith(expect.any(Object), {
+      messageIds: [],
+      attachmentIds: ['00000000-0000-4000-8000-000000000001'],
+    })
+    expect(result.current.draft.getValues('attachments')).toEqual([])
+  })
+
+  it('cancels old safe attempts before composing a new identity after an edit', async () => {
+    const { result, onSend, attempts } = await failedComposition()
+    act(() => result.current.draft.setValue('subject', 'Edited subject'))
+    await act(async () => result.current.context.validation.validate())
+    expect(discardRemote).toHaveBeenCalledTimes(1)
+    expect(onSend).toHaveBeenCalledTimes(2)
+    expect(attempts[1]).not.toBe(attempts[0])
+    expect(discardRemote.mock.invocationCallOrder[0]).toBeLessThan(
+      onSend.mock.invocationCallOrder[1],
+    )
+  })
+})
+
+it('does not abandon a successful delivery or its associated uploads', async () => {
+  const onSend = vi.fn<NonNullable<ComposerRootProps['onSend']>>(
+    async (_composition, id, context) => {
+      context?.messageIds?.add(id)
+      context?.uploads.set('file', {
+        id: '00000000-0000-4000-8000-000000000001',
+        uploadUrl: 'https://r2.example.test',
+        headers: {},
+        expiresAt: '',
+        uploaded: true,
+        clean: true,
+        sendAttempted: true,
+      })
+    },
+  )
+  const { result } = renderHook(() => useComposerController('light', undefined, onSend))
+  await waitFor(() => expect(result.current.context.editor).toBeTruthy())
+  act(() => {
+    result.current.draft.setValue('to', 'ada@example.test')
+    result.current.draft.setValue('subject', 'Successful message')
+    result.current.context.editor?.commands.setContent('<p>Hello</p>')
+  })
+  await act(async () => result.current.context.validation.validate())
+  expect(discardRemote).not.toHaveBeenCalled()
+  expect(result.current.draft.getValues('subject')).toBe('')
+})
+
+it('releases an inline upload only after its final image occurrence is removed', async () => {
+  const image = 'data:image/png;base64,aGVsbG8='
+  const onSend = vi.fn<NonNullable<ComposerRootProps['onSend']>>(
+    async (_composition, _id, context) => {
+      if (!context) throw new Error('Missing context')
+      context.scope.current = {
+        userId: 'owner',
+        workspace: { id: 'workspace-a', name: 'Workspace A', slug: 'workspace-a', role: 'owner' },
+      }
+      context.uploads.set('inline', {
+        id: '00000000-0000-4000-8000-000000000001',
+        uploadUrl: 'https://r2.example.test',
+        headers: {},
+        expiresAt: '',
+        uploaded: true,
+        clean: true,
+        inlineSource: image,
+      })
+      throw new Error('upload complete, send not attempted')
+    },
+  )
+  const { result } = renderHook(() => useComposerController('light', undefined, onSend))
+  await waitFor(() => expect(result.current.context.editor).toBeTruthy())
+  act(() => {
+    result.current.draft.setValue('to', 'ada@example.test')
+    result.current.draft.setValue('subject', 'Inline message')
+    result.current.context.editor?.commands.setContent(
+      `<p>Hello</p><img src="${image}"><img src="${image}">`,
+    )
+  })
+  await act(async () => result.current.context.validation.validate())
+  await act(async () =>
+    result.current.context.editor?.commands.setContent(`<p>Hello</p><img src="${image}">`, {
+      emitUpdate: true,
+    }),
+  )
+  expect(discardRemote).not.toHaveBeenCalled()
+  await act(async () =>
+    result.current.context.editor?.commands.setContent('<p>Hello</p>', { emitUpdate: true }),
+  )
+  expect(discardRemote).toHaveBeenCalledWith(expect.any(Object), {
+    messageIds: [],
+    attachmentIds: ['00000000-0000-4000-8000-000000000001'],
+  })
+})
+
+it('preserves associated inline references and delivery identity when image removal is undone', async () => {
+  const image = 'data:image/png;base64,aGVsbG8='
+  const body = `<p>Hello</p><img src="${image}">`
+  const attempts: string[] = []
+  let firstUploads: Map<string, unknown> | undefined
+  const onSend = vi.fn<NonNullable<ComposerRootProps['onSend']>>(
+    async (_composition, id, context) => {
+      if (!context) throw new Error('Missing context')
+      attempts.push(id)
+      if (attempts.length === 2) {
+        expect(context.uploads).toBe(firstUploads)
+        expect(context.uploads.get('inline')).toMatchObject({
+          id: '00000000-0000-4000-8000-000000000001',
+          sendAttempted: true,
+        })
+        return
+      }
+      firstUploads = context.uploads
+      context.messageIds?.add(id)
+      context.scope.current = {
+        userId: 'owner',
+        workspace: { id: 'workspace-a', name: 'Workspace A', slug: 'workspace-a', role: 'owner' },
+      }
+      context.uploads.set('inline', {
+        id: '00000000-0000-4000-8000-000000000001',
+        uploadUrl: 'https://r2.example.test',
+        headers: {},
+        expiresAt: '',
+        uploaded: true,
+        clean: true,
+        inlineSource: image,
+        sendAttempted: true,
+      })
+      throw new Error('uncertain provider response')
+    },
+  )
+  const { result } = renderHook(() => useComposerController('light', undefined, onSend))
+  await waitFor(() => expect(result.current.context.editor).toBeTruthy())
+  act(() => {
+    result.current.draft.setValue('to', 'ada@example.test')
+    result.current.draft.setValue('subject', 'Inline retry')
+    result.current.context.editor?.commands.setContent(body)
+  })
+  await act(async () => result.current.context.validation.validate())
+  await act(async () =>
+    result.current.context.editor?.commands.setContent('<p>Hello</p>', { emitUpdate: true }),
+  )
+  expect(discardRemote).toHaveBeenCalledTimes(1)
+  expect(firstUploads?.size).toBe(1)
+  await act(async () =>
+    result.current.context.editor?.commands.setContent(body, { emitUpdate: true }),
+  )
+  await act(async () => result.current.context.validation.validate())
+  expect(attempts).toHaveLength(2)
+  expect(attempts[1]).toBe(attempts[0])
+  expect(discardRemote).toHaveBeenCalledTimes(1)
 })
