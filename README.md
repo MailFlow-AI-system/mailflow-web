@@ -26,3 +26,5 @@ Use `localhost` for both. Configuration: [.env.example](.env.example).
 
 Environment suffixes: `development`, `staging`, `production`.
 `VITE_*` values are public. Core owns business rules, workspace authorization and storage credentials.
+
+[Local workspace and browser QA](docs/localWorkspace.md)
