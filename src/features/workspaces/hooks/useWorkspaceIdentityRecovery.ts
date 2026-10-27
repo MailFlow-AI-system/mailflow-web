@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 import { safeMailCollectionPath } from '../../auth/utils/authNavigation'
-import { WorkspaceIdentityChangedError } from '../clients/workspaceAuthority'
+import { WorkspaceIdentityChangedError } from '../clients/workspaceIdentityChangedError'
 
 export function useWorkspaceIdentityRecovery(error: Error | null) {
   const queryClient = useQueryClient()
