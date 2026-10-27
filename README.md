@@ -84,3 +84,10 @@ bun run test:e2e
 
 The harness creates isolated sample memberships and seeded inboxes, resolves `workspace.test` in Chromium,
 and retains traces and screenshots for failures in `test-results/`. HTML results are in `playwright-report/`.
+
+CI runs the same browser suite against a pinned compatible revision of the public Core repository,
+with a disposable PostgreSQL service. The workflow checks out `web/` and `core/` side by side,
+installs both dependency trees and supplies the two harness environment variables.
+When adopting a newer Core harness, update its pinned SHA in `.github/workflows/ci.yml` deliberately.
+The harness applies migrations and creates its restricted role; no deployed API, shared database,
+or Infisical credentials are used by this job. Browser reports and traces are uploaded as a CI artifact.
