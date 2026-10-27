@@ -6,7 +6,7 @@ import { createMailMessagesProxyHandler } from '#/features/mail-list/adapters/ma
 const proxyMailMessages = createMailMessagesProxyHandler(
   clientEnvironment.VITE_API_BASE_URL,
   fetch,
-  Boolean(clientEnvironment.VITE_WORKSPACE_BASE_HOST),
+  clientEnvironment.VITE_WORKSPACE_BASE_HOST,
 )
 
 export const Route = createFileRoute('/api/mail/messages')({
