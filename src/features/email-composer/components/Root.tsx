@@ -4,12 +4,20 @@ import { ComposerContext } from '../context'
 import { useComposerController } from '../hooks/useComposerController'
 import type { ComposerRootProps } from '../types/composer'
 
-export function Root({ children, theme = 'dark', onValidated, onSend, onSent }: ComposerRootProps) {
+export function Root({
+  children,
+  theme = 'dark',
+  onValidated,
+  onSend,
+  onSent,
+  userId,
+}: ComposerRootProps) {
   const { draft, context, setState, ...window } = useComposerController(
     theme,
     onValidated,
     onSend,
     onSent,
+    userId,
   )
   return (
     <FormProvider {...draft}>
