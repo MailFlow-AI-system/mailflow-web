@@ -27,7 +27,7 @@ export function createWorkspaceEntryGateway(
     if (
       !enabled ||
       !baseHost ||
-      (baseHost !== 'workspace.test' && !isRemoteWorkspaceBaseHost(baseHost))
+      (!['localhost', 'workspace.test'].includes(baseHost) && !isRemoteWorkspaceBaseHost(baseHost))
     )
       return failure(503, 'workspace_entry_not_configured')
     if (

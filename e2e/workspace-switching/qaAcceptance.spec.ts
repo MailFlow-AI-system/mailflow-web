@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { control, fixture, login } from './fixture'
+import { control, expectEntryUrl, fixture, login } from './fixture'
 import { LOCAL_QA_READINESS_MS, workspaceQaCases } from './qaCases'
 import { expectNoHorizontalOverflow, highlightNorthwind, reachByTab } from './qaKeyboard'
 
@@ -65,7 +65,7 @@ for (const scenario of workspaceQaCases) {
       await page.keyboard.press('Enter')
       await highlightNorthwind(page)
       await page.keyboard.press('Enter')
-      await expect(page).toHaveURL(`http://${data.targetHost}:3003/inbox`)
+      await expectEntryUrl(page, `http://${data.targetHost}:3003/inbox`)
       await expect(page.getByRole('button', { name: 'Compose', exact: true })).toBeEnabled({
         timeout: LOCAL_QA_READINESS_MS,
       })
@@ -92,7 +92,7 @@ for (const scenario of workspaceQaCases) {
         await page.getByRole('button', { name: 'Alternar barra lateral' }).tap()
         await page.getByRole('combobox', { name: 'Workspace: Acme Corp' }).tap()
         await page.getByRole('option', { name: 'Northwind', exact: true }).tap()
-        await expect(page).toHaveURL(`http://${data.targetHost}:3003/inbox`)
+        await expectEntryUrl(page, `http://${data.targetHost}:3003/inbox`)
         await expect(page.getByRole('button', { name: 'Compose', exact: true })).toBeEnabled({
           timeout: LOCAL_QA_READINESS_MS,
         })

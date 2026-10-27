@@ -19,15 +19,45 @@
   "env": {
     "development": {
       "name": "mailflow-web-development",
-      "workers_dev": true
+      "workers_dev": true,
+      "routes": [
+        {
+          "pattern": "app-dev.mailflow-ai.online",
+          "custom_domain": true
+        },
+        {
+          "pattern": "*.app-dev.mailflow-ai.online/*",
+          "zone_name": "mailflow-ai.online"
+        }
+      ]
     },
     "staging": {
       "name": "mailflow-web-staging",
-      "workers_dev": true
+      "workers_dev": true,
+      "routes": [
+        {
+          "pattern": "app-staging.mailflow-ai.online",
+          "custom_domain": true
+        },
+        {
+          "pattern": "*.app-staging.mailflow-ai.online/*",
+          "zone_name": "mailflow-ai.online"
+        }
+      ]
     },
     "production": {
       "name": "mailflow-web",
-      "workers_dev": true
+      "workers_dev": true,
+      "routes": [
+        {
+          "pattern": "app.mailflow-ai.online",
+          "custom_domain": true
+        },
+        {
+          "pattern": "*.app.mailflow-ai.online/*",
+          "zone_name": "mailflow-ai.online"
+        }
+      ]
     }
   }
 }

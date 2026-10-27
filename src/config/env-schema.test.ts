@@ -116,3 +116,15 @@ describe('createClientEnvironment', () => {
     ).toBe('http://localhost:8080')
   })
 })
+
+it('accepts localhost switching with a loopback HTTP Core only', () => {
+  const local = {
+    VITE_API_BASE_URL: 'http://localhost:8080',
+    VITE_WORKSPACE_BASE_HOST: 'localhost',
+    VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED: 'true',
+  }
+  expect(createClientEnvironment(local).workspaceSwitchingEnabled).toBe(true)
+  expect(() =>
+    createClientEnvironment({ ...local, VITE_API_BASE_URL: 'https://api.example.com' }),
+  ).toThrow('loopback')
+})

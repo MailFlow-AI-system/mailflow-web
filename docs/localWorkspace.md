@@ -1,16 +1,29 @@
-# Local workspace setup
+# Local workspaces
 
-First follow the Core's Local workspace setup: start its disposable Postgres, apply migrations,
-run `bun run db:setup:local` and `bun run dev:workspace-sample`, then seed mail with the printed workspace ID.
-Set `VITE_API_BASE_URL=http://localhost:8080`, `VITE_WORKSPACE_BASE_HOST=workspace.test`
-and `VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED=true`. Start with
-`bunx vite dev --port 3000 --host 0.0.0.0` using those environment variables.
-Add `127.0.0.1 workspace.test <printed-slug>.workspace.test` to hosts; use Windows hosts when the browser runs on Windows and the app on WSL.
-Open the printed tenant host and sign in with the sample credentials. Use HTTPS for real attachment uploads on custom tenant hosts, because browser file hashing requires a secure context; plain `localhost` is also trusted. See [Chromium secure-context guidance](https://www.chromium.org/Home/chromium-security/deprecating-powerful-features-on-insecure-origins/). The generic host resolves membership and redirects; an inbox requires a tenant host.
-Core needs `APP_ENV=development`, `WORKSPACE_READ_ENABLED=true`, `WORKSPACE_LOCAL_SWITCHING_ENABLED=true`,
-`SITE_URL=http://workspace.test:3000` and `WEB_APP_URL=http://<printed-slug>.workspace.test:3000`.
+`bun run dev` selects the local profile from the actual Vite dev-server context.
+Open `http://localhost:3000`; membership and the saved preference select the destination.
+An explicit address such as `http://luis-felipe.localhost:3000` always keeps that workspace.
+No hosts-file entries are needed. `VITE_API_BASE_URL` remains the Core origin.
+Injected published Web hosts are replaced only in the local dev-server profile.
+Builds, previews and Cloudflare/CI execution keep their explicit deployment configuration.
+Use `MAILFLOW_LOCAL_PROFILE=false` for an intentional remote dev-server profile.
+The isolated `workspace.test` fixtures remain supported explicitly.
 
-Real-Core browser acceptance uses no auth stub:
+Run Core with its restricted runtime role and current schema first; see its README.
+Its local runner verifies those prerequisites before enabling workspace reads and switching.
+It never migrates the shared database. Owner/BYPASSRLS credentials cannot serve workspace data.
+
+Browsers do not share a `Domain=localhost` cookie with sibling localhost hosts.
+The local Vite middleware therefore keeps the real Better Auth token in server memory.
+Each host receives a host-only HttpOnly browser binding through a 30-second, single-use
+handoff with a destination challenge and source-browser verification. Login/logout update
+the shared server session while workspace authority stays host-specific in Core.
+Tokens never enter handoff URLs or browser JavaScript. Restarting Vite requires signing in again.
+The middleware is absent from build and preview, and localhost workspace builds are rejected.
+
+## Browser acceptance
+
+Use a disposable PostgreSQL database; the harness applies migrations and creates restricted roles:
 
 ```bash
 MAILFLOW_CORE_WORKTREE=../mailflow-core \
@@ -18,12 +31,15 @@ MAILFLOW_WORKSPACE_TEST_DATABASE_URL=postgresql://mailflow:mailflow@localhost:54
 bun run test:e2e
 ```
 
-The harness creates isolated sample memberships and seeded inboxes, resolves `workspace.test` in Chromium,
-and retains traces and screenshots for failures in `test-results/`. HTML results are in `playwright-report/`.
+The suite uses localhost tenants, real Core authentication and database authorization,
+with a controlled email provider. CI pins the compatible Core harness in `.github/workflows/ci.yml`.
+Screenshots and traces are retained on failure. A separate Vite cache avoids interfering
+with a developer's existing server.
 
-CI runs the same browser suite against a pinned compatible revision of the public Core repository,
-with a disposable PostgreSQL service. The workflow checks out `web/` and `core/` side by side,
-installs both dependency trees and supplies the two harness environment variables.
-When adopting a newer Core harness, update its pinned SHA in `.github/workflows/ci.yml` deliberately.
-The harness applies migrations and creates its restricted role; no deployed API, shared database,
-or Infisical credentials are used by this job. Browser reports and traces are uploaded as a CI artifact.
+## Listening
+
+A shared localhost domain cookie was rejected after a real Chromium check showed it was
+host-only. The dev-server session broker preserves shared identity and independent workspace
+contexts across tabs without weakening published cookie or origin policies. Public environments
+continue using their isolated HTTPS Web domains; enable their switching flags only after the
+backend migration/role rollout and tenant upload CORS have been verified.
