@@ -74,7 +74,7 @@ describe('MailList', () => {
 
   it('keeps a busy scroll region with eight card skeletons during initial loading', () => {
     client.fetchMailMessages.mockImplementation(() => new Promise(() => {}))
-    render(<MailList userId="user-1" q="" />, { wrapper: createWrapper() })
+    render(<MailList workspaceSlug="acme" userId="user-1" q="" />, { wrapper: createWrapper() })
 
     expect(screen.getByRole('region', { name: 'Inbox message list' })).toHaveAttribute(
       'aria-busy',
@@ -94,7 +94,7 @@ describe('MailList', () => {
           resolveInitial = resolve
         }),
     )
-    render(<MailList userId="user-1" q="" />, { wrapper: createWrapper() })
+    render(<MailList workspaceSlug="acme" userId="user-1" q="" />, { wrapper: createWrapper() })
 
     const status = screen.getByRole('status')
     const region = screen.getByRole('region', { name: 'Inbox message list' })
@@ -121,7 +121,7 @@ describe('MailList', () => {
           resolveSearch = resolve
         }),
     )
-    render(<MailList userId="user-1" q="ada" />, { wrapper: createWrapper() })
+    render(<MailList workspaceSlug="acme" userId="user-1" q="ada" />, { wrapper: createWrapper() })
 
     const status = screen.getByRole('status')
     expect(status).toHaveTextContent('Searching messages')
@@ -147,7 +147,7 @@ describe('MailList', () => {
           })
         : Promise.resolve({ items: [message('first')], nextCursor: 'cursor-2' }),
     )
-    render(<MailList userId="user-1" q="" />, { wrapper: createWrapper() })
+    render(<MailList workspaceSlug="acme" userId="user-1" q="" />, { wrapper: createWrapper() })
     await screen.findByText('Message first')
 
     const status = screen.getByRole('status')
@@ -169,7 +169,7 @@ describe('MailList', () => {
       .mockRejectedValueOnce(new Error('Unavailable'))
     const Wrapper = createWrapper()
     activeQueryClient.setQueryDefaults(['mail-messages-page'], { retryDelay: 0 })
-    render(<MailList userId="user-1" q="filtered" />, { wrapper: Wrapper })
+    render(<MailList workspaceSlug="acme" userId="user-1" q="filtered" />, { wrapper: Wrapper })
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Messages could not be loaded.')
     expect(screen.getByRole('status')).toBeEmptyDOMElement()
@@ -190,7 +190,7 @@ describe('MailList', () => {
       )
     const Wrapper = createWrapper()
     activeQueryClient.setQueryDefaults(['mail-messages-page'], { retryDelay: 0 })
-    render(<MailList userId="user-1" q="filtered" />, { wrapper: Wrapper })
+    render(<MailList workspaceSlug="acme" userId="user-1" q="filtered" />, { wrapper: Wrapper })
     await screen.findByRole('alert')
     const region = screen.getByRole('region', { name: 'Inbox message list' })
 
@@ -209,12 +209,14 @@ describe('MailList', () => {
     client.fetchMailMessages.mockImplementation(({ q }: { q: string }) =>
       q ? new Promise(() => {}) : Promise.resolve({ items: [message('first')], nextCursor: null }),
     )
-    const view = render(<MailList userId="user-1" q="" />, { wrapper: createWrapper() })
+    const view = render(<MailList workspaceSlug="acme" userId="user-1" q="" />, {
+      wrapper: createWrapper(),
+    })
     await screen.findByText('Message first')
     const region = screen.getByRole('region', { name: 'Inbox message list' })
     region.scrollTop = 120
 
-    view.rerender(<MailList userId="user-1" q="filtered" />)
+    view.rerender(<MailList workspaceSlug="acme" userId="user-1" q="filtered" />)
 
     expect(screen.getByRole('region', { name: 'Inbox message list' })).toBe(region)
     expect(region.scrollTop).toBe(0)
@@ -230,12 +232,14 @@ describe('MailList', () => {
         nextCursor: cursor ? null : 'cursor-2',
       }),
     )
-    const view = render(<MailList userId="user-1" q="" />, { wrapper: createWrapper() })
+    const view = render(<MailList workspaceSlug="acme" userId="user-1" q="" />, {
+      wrapper: createWrapper(),
+    })
     await screen.findByText('Message first')
     await waitFor(() => expect(client.fetchMailMessages).toHaveBeenCalledTimes(2))
     const region = screen.getByRole('region', { name: 'Inbox message list' })
 
-    view.rerender(<MailList userId="user-1" q="" isSearching />)
+    view.rerender(<MailList workspaceSlug="acme" userId="user-1" q="" isSearching />)
 
     expect(screen.getByRole('region', { name: 'Inbox message list' })).toBe(region)
     expect(region).toHaveAttribute('aria-busy', 'true')
@@ -246,7 +250,8 @@ describe('MailList', () => {
       for (const observer of VisibleIntersectionObserver.instances) observer.notify()
     })
     expect(
-      activeQueryClient.getQueryData<{ pages: unknown[] }>(['mail-messages', 'user-1', ''])?.pages,
+      activeQueryClient.getQueryData<{ pages: unknown[] }>(['mail-messages', 'user-1', 'acme', ''])
+        ?.pages,
     ).toHaveLength(1)
     expect(client.fetchMailMessages).toHaveBeenCalledTimes(2)
   })
@@ -257,7 +262,7 @@ describe('MailList', () => {
         ? new Promise(() => {})
         : Promise.resolve({ items: [message('first')], nextCursor: 'cursor-2' }),
     )
-    render(<MailList userId="user-1" q="" />, { wrapper: createWrapper() })
+    render(<MailList workspaceSlug="acme" userId="user-1" q="" />, { wrapper: createWrapper() })
     await screen.findByText('Message first')
 
     await waitFor(() => expect(screen.getAllByTestId('mail-message-skeleton')).toHaveLength(8))
@@ -278,7 +283,7 @@ describe('MailList', () => {
         ? new Promise(() => {})
         : Promise.resolve({ items: [message('first')], nextCursor: 'cursor-2' }),
     )
-    render(<MailList userId="user-1" q="" />, { wrapper: createWrapper() })
+    render(<MailList workspaceSlug="acme" userId="user-1" q="" />, { wrapper: createWrapper() })
     await screen.findByText('Message first')
     await waitFor(() => expect(client.fetchMailMessages).toHaveBeenCalledTimes(2))
 
@@ -303,18 +308,18 @@ describe('MailList', () => {
             resolveRefetch = resolve
           }),
       )
-    render(<MailList userId="user-1" q="" />, { wrapper: createWrapper() })
+    render(<MailList workspaceSlug="acme" userId="user-1" q="" />, { wrapper: createWrapper() })
     await screen.findByText('Message first')
     const status = screen.getByRole('status')
     expect(status).toHaveTextContent('1 message loaded')
 
     act(() => {
       void activeQueryClient.invalidateQueries({
-        queryKey: ['mail-messages-page', 'user-1', ''],
+        queryKey: ['mail-messages-page', 'user-1', 'acme', ''],
         refetchType: 'none',
       })
       void activeQueryClient.invalidateQueries({
-        queryKey: ['mail-messages', 'user-1', ''],
+        queryKey: ['mail-messages', 'user-1', 'acme', ''],
         exact: true,
       })
     })
@@ -345,7 +350,7 @@ describe('MailList', () => {
       return Promise.resolve({ items: [message('first')], nextCursor: 'cursor-2' })
     })
 
-    render(<MailList userId="user-1" q="" />, { wrapper: createWrapper() })
+    render(<MailList workspaceSlug="acme" userId="user-1" q="" />, { wrapper: createWrapper() })
     await screen.findByText('Message first')
     await waitFor(() =>
       expect(client.fetchMailMessages).toHaveBeenCalledWith(

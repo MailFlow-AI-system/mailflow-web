@@ -17,6 +17,10 @@ const mailClient = vi.hoisted(() => ({ fetchMailMessages: vi.fn() }))
 
 vi.mock('../clients/mailMessagesClient', () => mailClient)
 
+vi.mock('#/features/workspaces/hooks/useWorkspaceContext', () => ({
+  useWorkspaceContext: () => ({ current: { slug: 'acme' } }),
+}))
+
 import { parseQueryParams, stringifyQueryParams } from '#/config/queryParams'
 import { useMailMessages } from '../hooks/useMailMessages'
 import { normalizeMailSearch } from '../types/mailSearch'
@@ -43,7 +47,7 @@ function SearchProbe() {
 }
 
 function SearchResults({ q }: { q: string }) {
-  const mail = useMailMessages('user-1', q)
+  const mail = useMailMessages('user-1', 'acme', q)
   return <p data-testid="search-results">{mail.messages.map(({ id }) => id).join(',')}</p>
 }
 

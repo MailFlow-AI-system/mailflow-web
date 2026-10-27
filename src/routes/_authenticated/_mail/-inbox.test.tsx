@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const routerState = vi.hoisted(() => ({
   baseHost: undefined as string | undefined,
+  workspaceSlug: 'acme' as string | undefined,
   committedQ: 'invoice' as string | undefined,
   queryQ: 'invoice' as string | undefined,
 }))
@@ -37,6 +38,12 @@ vi.mock('#/features/mail-list/components/MailList', () => ({
   ),
 }))
 
+vi.mock('#/features/workspaces/hooks/useWorkspaceContext', () => ({
+  useWorkspaceContext: () => ({
+    current: routerState.workspaceSlug ? { slug: routerState.workspaceSlug } : null,
+  }),
+}))
+
 import { inboxHead, Route } from './inbox'
 
 const InboxPage = Route.options.component
@@ -46,15 +53,14 @@ describe('Inbox route', () => {
   afterEach(() => {
     cleanup()
     routerState.baseHost = undefined
+    routerState.workspaceSlug = 'acme'
   })
 
-  it('does not mount the global list in workspace mode', () => {
-    routerState.baseHost = 'workspace.test'
+  it('does not mount mail without an authorized workspace', () => {
+    routerState.workspaceSlug = undefined
     render(<InboxPage />)
-    expect(
-      screen.getByRole('heading', { name: 'Workspace mail is not available yet' }),
-    ).toBeVisible()
     expect(screen.queryByTestId('mail-list')).toBeNull()
+    expect(screen.getByText('Open a workspace address')).toBeVisible()
   })
 
   it('shows the Inbox heading and sets the document title', () => {
