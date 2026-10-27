@@ -1,5 +1,5 @@
-// Attachment IDs only identify in-memory UI items, never credentials or tenant authority.
-export function createAttachmentId() {
+// Composition IDs identify drafts and upload items, never credentials or tenant authority.
+export function createCompositionId() {
   if (typeof crypto.randomUUID === 'function') return crypto.randomUUID()
   // getRandomValues is also available on the isolated HTTP workspace test hosts.
   const bytes = crypto.getRandomValues(new Uint8Array(16))

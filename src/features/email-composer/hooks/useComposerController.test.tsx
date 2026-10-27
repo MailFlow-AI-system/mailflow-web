@@ -619,3 +619,32 @@ it('preserves associated inline references and delivery identity when image remo
   expect(attempts[1]).toBe(attempts[0])
   expect(discardRemote).toHaveBeenCalledTimes(1)
 })
+
+it('uses secure random bytes for HTTP workspace delivery IDs and preserves the ID across retry', async () => {
+  const getRandomValues = vi.fn((bytes: Uint8Array) => bytes.fill(17))
+  vi.stubGlobal('crypto', { getRandomValues })
+  try {
+    const onSend = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('retry'))
+      .mockResolvedValueOnce(undefined)
+    const { result } = renderHook(() => useComposerController('light', undefined, onSend))
+    await waitFor(() => expect(result.current.context.editor).toBeTruthy())
+    act(() => {
+      result.current.draft.setValue('to', 'ada@example.test')
+      result.current.draft.setValue('subject', 'HTTP workspace send')
+      result.current.context.editor?.commands.setContent('<p>Hello</p>')
+    })
+    await act(async () => result.current.context.validation.validate())
+    expect(onSend).toHaveBeenCalledTimes(1)
+    const id = onSend.mock.calls[0]?.[1]
+    expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+    expect(getRandomValues).toHaveBeenCalled()
+    await act(async () => result.current.context.validation.validate())
+    expect(onSend).toHaveBeenCalledTimes(2)
+    expect(onSend.mock.calls[1]?.[1]).toBe(id)
+    expect(result.current.draft.getValues('subject')).toBe('')
+  } finally {
+    vi.unstubAllGlobals()
+  }
+})

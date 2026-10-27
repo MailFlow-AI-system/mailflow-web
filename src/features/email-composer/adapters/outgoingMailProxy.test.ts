@@ -48,10 +48,10 @@ describe('outgoing mail proxy', () => {
       'https://api.example.test/api/v1/mail/sent?offset=20',
     )
     const headers = new Headers(fetcher.mock.calls[0]?.[1]?.headers)
-    expect(headers.get('X-Workspace-Id')).toBeNull()
-    expect(headers.get('X-Workspace-Identity')).toBeNull()
+    expect(headers.get('X-Workspace-Id')).toBe('workspace-a')
+    expect(headers.get('X-Workspace-Identity')).toBe('user-one')
   })
-  it('blocks unsupported paths and workspace list mode while safely reporting upstream failure', async () => {
+  it('blocks unsupported paths while safely reporting upstream failure', async () => {
     const fetcher = vi.fn<typeof fetch>(async () => {
       throw new Error('private')
     })
@@ -68,10 +68,9 @@ describe('outgoing mail proxy', () => {
         await createOutgoingMailProxy(
           'https://api.example.test',
           fetcher,
-          true,
         )(new Request(`${origin}/api/mail/sent`))
       ).status,
-    ).toBe(503)
+    ).toBe(502)
     const response = await createOutgoingMailProxy('https://api.example.test', fetcher)(request())
     expect(response.status).toBe(502)
     expect(await response.text()).not.toContain('private')
@@ -80,7 +79,7 @@ describe('outgoing mail proxy', () => {
 
 it('allows fixed context and scoped mutations while workspace list UI stays disabled', async () => {
   const fetcher = vi.fn<typeof fetch>(async () => Response.json({ ok: true }))
-  const proxy = createOutgoingMailProxy('https://api.example.test', fetcher, true)
+  const proxy = createOutgoingMailProxy('https://api.example.test', fetcher)
   for (const path of ['/api/mail/context', '/api/mail/send', '/api/mail/attachments']) {
     const incoming = path.endsWith('/context')
       ? new Request(`${origin}${path}?userId=untrusted`)
@@ -108,7 +107,7 @@ it.each([
   '/api/mail/attachments/00000000-0000-4000-8000-000000000001/download',
 ])('derives a missing scoped GET Origin only from its actual incoming URL (%s)', async (path) => {
   const fetcher = vi.fn<typeof fetch>(async () => Response.json({ ok: true }))
-  const proxy = createOutgoingMailProxy('https://api.example.test', fetcher, true)
+  const proxy = createOutgoingMailProxy('https://api.example.test', fetcher)
   const tenantOrigin = 'https://tenant-a.mail.example.test'
   const incoming = new Request(`${tenantOrigin}${path}`, {
     headers: { 'X-Forwarded-Host': 'tenant-b.mail.example.test', 'X-Workspace-Id': 'workspace-a' },
@@ -149,7 +148,7 @@ it('forwards discard only to its fixed Core path with mutation and workspace gua
   const fetcher = vi.fn<typeof fetch>(async () =>
     Response.json({ status: 'discarded', retainedMessageIds: [] }),
   )
-  const proxy = createOutgoingMailProxy('https://api.example.test', fetcher, true)
+  const proxy = createOutgoingMailProxy('https://api.example.test', fetcher)
   const incoming = request('/api/mail/discard?url=https://evil.test')
   incoming.headers.set('X-Workspace-Id', 'workspace-a')
   incoming.headers.set('X-Workspace-Identity', 'user-one')
@@ -160,5 +159,43 @@ it('forwards discard only to its fixed Core path with mutation and workspace gua
   expect(headers.get('X-Workspace-Identity')).toBe('user-one')
   expect((await proxy(request('/api/mail/discard', 'https://evil.test'))).status).toBe(403)
   expect((await proxy(new Request(`${origin}/api/mail/discard`))).status).toBe(404)
+  expect(fetcher).toHaveBeenCalledTimes(1)
+})
+
+it('allows workspace Sent while deriving Origin from the request host and exposing verified response scope', async () => {
+  const fetcher = vi.fn<typeof fetch>(async () =>
+    Response.json(
+      { items: [], nextOffset: null },
+      {
+        headers: { 'X-Workspace-Id': 'workspace-a', 'X-Workspace-Identity': 'owner' },
+      },
+    ),
+  )
+  const proxy = createOutgoingMailProxy('https://api.example.test', fetcher)
+  const response = await proxy(
+    new Request(`${origin}/api/mail/sent?offset=20&workspaceId=forged`, {
+      headers: {
+        'X-Workspace-Id': 'workspace-a',
+        'X-Workspace-Identity': 'owner',
+        'X-Forwarded-Host': 'other.example.test',
+      },
+    }),
+  )
+  expect(response.status).toBe(200)
+  expect(response.headers.get('X-Workspace-Id')).toBe('workspace-a')
+  expect(response.headers.get('X-Workspace-Identity')).toBe('owner')
+  expect(String(fetcher.mock.calls[0]?.[0])).toBe(
+    'https://api.example.test/api/v1/mail/sent?offset=20',
+  )
+  const headers = new Headers(fetcher.mock.calls[0]?.[1]?.headers)
+  expect(headers.get('Origin')).toBe(origin)
+  expect(headers.get('X-Forwarded-Host')).toBeNull()
+  expect(
+    (
+      await proxy(
+        new Request(`${origin}/api/mail/sent`, { headers: { Origin: 'https://evil.test' } }),
+      )
+    ).status,
+  ).toBe(403)
   expect(fetcher).toHaveBeenCalledTimes(1)
 })

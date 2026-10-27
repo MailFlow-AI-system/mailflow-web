@@ -61,7 +61,7 @@ jobs:
         with:
           repository: MailFlow-AI-system/mailflow-core
           # Update deliberately when adopting a newer Core browser harness.
-          ref: c94088cf4344675b4b0fa5ced2ddccdd4e914270
+          ref: 1b3b1d4edb5bcc589b67b82fbf8f908275a07bf1
           path: core
           persist-credentials: false
 
