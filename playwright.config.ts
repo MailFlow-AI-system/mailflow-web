@@ -1,37 +1,22 @@
-import { defineConfig, devices } from '@playwright/test'
+import switching from './playwright.workspace-switching.config'
 
-const origin = `http://127.0.0.1:${process.env.E2E_PORT ?? '3000'}`
+const servers = switching.webServer
+if (!Array.isArray(servers) || servers.length !== 2)
+  throw new Error('Expected the Core and Web harness servers')
 
-export default defineConfig({
+export default {
+  ...switching,
   testDir: './e2e',
-  // This suite uses an auth double. Workspace acceptance has a separate real-Core harness.
-  testIgnore: ['**/workspaces/**', '**/workspace-switching/**', '**/workspace-telemetry/**'],
-  fullyParallel: true,
-  forbidOnly: Boolean(process.env.CI),
-  retries: process.env.CI ? 2 : 0,
-  reporter: 'html',
-  use: {
-    baseURL: origin,
-    trace: 'on-first-retry',
-  },
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-  ],
+  testIgnore: ['**/workspaces/**', '**/workspace-telemetry/**'],
+  outputDir: './test-results',
+  reporter: [['list'], ['html', { open: 'never' }]],
+  use: { ...switching.use, baseURL: 'http://workspace.test:3003' },
   webServer: [
+    servers[0],
     {
-      command: 'bun e2e/auth-session-stub.mjs',
-      url: 'http://127.0.0.1:8099/health',
-      reuseExistingServer: !process.env.CI,
-    },
-    {
-      command: `bun run vite dev --port ${process.env.E2E_PORT ?? '3000'} --host 127.0.0.1`,
-      url: origin,
-      reuseExistingServer: !process.env.CI,
+      ...servers[1],
       env: {
-        VITE_API_BASE_URL: 'http://127.0.0.1:8099',
+        ...servers[1].env,
         VITE_FARO_COLLECTOR_URL: 'http://127.0.0.1:4318/collect',
         VITE_FARO_APP_NAME: 'mailflow-web',
         VITE_FARO_APP_ENVIRONMENT: 'test',
@@ -39,4 +24,4 @@ export default defineConfig({
       },
     },
   ],
-})
+} satisfies import('@playwright/test').PlaywrightTestConfig

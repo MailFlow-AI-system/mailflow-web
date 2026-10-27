@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { expectEntryUrl } from './workspace-switching/fixture'
 
 test('redirects an unauthenticated visitor to login', async ({ page }) => {
   const consoleWarnings: string[] = []
@@ -6,10 +7,10 @@ test('redirects an unauthenticated visitor to login', async ({ page }) => {
     if (message.type() === 'warning') consoleWarnings.push(message.text())
   })
   await page.goto('/')
-  await expect(page).toHaveURL('/login')
+  await expectEntryUrl(page, 'http://workspace.test:3003/login')
   await expect(page.getByRole('heading', { name: 'Sign in to MailFlow' })).toBeVisible()
   await page.goto('/inbox')
-  await expect(page).toHaveURL('/login')
+  await expectEntryUrl(page, 'http://workspace.test:3003/login')
   expect(consoleWarnings.join('\n')).not.toContain('nativeButton')
 })
 
