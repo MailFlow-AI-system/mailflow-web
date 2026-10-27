@@ -1,11 +1,11 @@
 # MailFlow Web
 
-MailFlow frontend built with React, TypeScript, TanStack Start, TanStack Query,
-Nuqs, and Tailwind. Deployed to Cloudflare Workers with Static Assets.
+React/TypeScript frontend with TanStack Start, TanStack Query and Tailwind.
+Deployed to Cloudflare Workers with Static Assets.
 
-## Local development
+## Development
 
-Requires Bun 1.4.1, Infisical CLI, and access to the `MailFlow-AI` project.
+Requires Bun 1.4.1, Infisical CLI and the Core API.
 
 ```bash
 bun install --frozen-lockfile
@@ -14,109 +14,15 @@ infisical init
 bun run dev
 ```
 
-Development commands load Infisical `dev` secrets from `/mailflow-web`.
-Web runs at `http://localhost:3000` and requires Core at `http://localhost:8080`.
-Keep both on `localhost` for authentication. Configuration is documented in
-[.env.example](.env.example); the app does not load `.env` files.
+Infisical project: `MailFlow-AI`, environment `dev`, path `/mailflow-web`.
+Web: `http://localhost:3000` (strict port); Core: `http://localhost:8080`.
+Use `localhost` for both. Configuration: [.env.example](.env.example).
 
 ## Commands
 
-| Command | Purpose |
-| --- | --- |
-| `bun run check` | Lint, formatting, types, tests, and build |
-| `bun run test` | Run Vitest |
-| `bun run test:e2e` | Run browser smoke tests |
-| `bun run build:development` | Build with Infisical `dev` values |
-| `bun run build:staging` / `bun run build:production` | Build for other environments |
-| `bun run preview` | Preview the Worker build |
-| `bun run deploy:<environment>` | Manually deploy through Wrangler |
+- `bun run check`: lint, formatting, types, tests and build.
+- `bun run test:e2e`: browser tests; install Chromium first.
+- `bun run build:<environment>` / `bun run deploy:<environment>`: build or deploy.
 
-Browser smoke tests use test-only values and install Chromium with
-`bunx playwright install --with-deps chromium`. Deployment environments are
-`development`, `staging`, and `production`; Infisical uses `dev`, `staging`, and `prod`.
-
-## Structure and conventions
-
-- `src/features/`: feature-owned components, hooks, clients, adapters, and tests.
-- `src/routes/`: file-based public and authenticated routes.
-- `src/config/`, `src/i18n/`, `src/observability/`: shared application configuration.
-
-TanStack Query owns server state; Nuqs owns query parameters, using shared
-parsers and the root TanStack Router adapter. React state handles local UI.
-Use Tailwind and shared `@mailflow/ui` components and tokens, currently `v0.7.0`.
-The Nuqs adapter is experimental: verify SSR, hydration, and navigation on upgrades.
-
-Server adapters forward requests to Core and must not access the database or
-implement business rules. `VITE_*` values are public build-time configuration;
-never put secrets in them.
-
-## Application
-
-`/` redirects to `/inbox` or `/login` based on the session. Authentication uses
-the same-origin `/api/auth/*` proxy; registration remains on Site. Protected
-mail routes share the application shell. Inbox and Sent are enabled in the sidebar; other
-folders remain disabled placeholders.
-
-Inbox reads persisted messages through `/api/mail/messages`. Apply Core's Mail
-migration and run its explicit seed for local sample data. Search runs on Core;
-Web displays eight-item pages, prefetch, loading, empty, and retry states. Reader
-and message actions are outside this feature. Virtualization remains future work.
-
-## Private attachment storage
-
-Composer keeps selected files and local images in tab memory until sending.
-During delivery it resolves authorized workspace context from Core, requests an
-authenticated upload reservation,
-uploads directly to a short-lived private R2 URL, and waits for Core to verify
-the immutable file. The send request contains attachment ids and
-optional inline content ids, never file bytes or storage credentials. Local
-images become deduplicated CID attachments; remote image URLs remain unchanged.
-
-Limits are 10 MB per file, 20 MB in total, and ten files per message, including
-inline images (MB means 1,000,000 bytes). The existing local image picker retains
-its stricter 5 MiB editing limit. Upload and verification progress appears in the
-Composer status and toast. Files remain available in the draft after a failure;
-rejected files must be removed or replaced. Short-lived upload URLs may require
-the R2 bucket CORS policy to allow the current Web origin. Development permits
-`*`; staging and production retain explicit origins. The standard local port is
-3000 with strict port selection.
-
-The same-origin attachment routes proxy only fixed Core paths. Core owns upload
-permissions, content verification, persistence, and authorized
-retrieval. The Web Worker never reads R2 credentials or talks to the database.
-No R2 secret belongs in a `VITE_*` variable. Message opening remains unavailable;
-the download proxy prepares the authenticated route for a future reader.
-
-## Listening
-
-Attachment reservations belong to one Composer session and authenticated user.
-Unchanged retries reuse clean upload ids, and a transient verification failure
-retries completion without creating another object. The cache is cleared after
-success or discard; account changes remount the Composer. Changed file bytes
-produce a new reservation. This preserves Core's immutable delivery snapshot
-and avoids a second upload identity after an uncertain send result. There is no
-global upload cache or browser persistence of file bytes and signed URLs.
-
-Upload URL expiry and the 24-hour unattached-file lifetime are separate. Before
-any send attempt, Core-confirmed expired or missing uploads can be replaced
-from the files still held in memory. After a send attempt, retries preserve the
-original attachment and message ids even if the outcome is uncertain. Associated
-clean files remain usable after that lifetime; missing or expired references
-require checking Sent before attempting a different delivery. This avoids
-replacing an attachment while an earlier send may still be committing.
-
-Antivirus scanning is deferred. The verification step checks stored file content
-and metadata; it does not require a scanner service.
-
-Mail context resolution runs even when the workspace selector UI is disabled.
-Core supplies the authenticated user and an authorized workspace; a missing or
-ambiguous workspace blocks sending with the draft retained. Each private request
-carries that identity and workspace for server validation. The BFF derives the
-Origin for scoped GETs from the incoming URL and rejects conflicting origins.
-
-The first delivery attempt pins its workspace. The client resolves context again
-before submission and on retries; a changed workspace or identity blocks the
-request and preserves the original draft and upload references. Returning to the
-original workspace permits the same retry. Explicit discard or successful send
-releases the pinned scope. Inbox/Sent listing queries, filters and query caches
-are unchanged and remain owned by the separate listing task.
+Environment suffixes: `development`, `staging`, `production`.
+`VITE_*` values are public. Core owns business rules, workspace authorization and storage credentials.
