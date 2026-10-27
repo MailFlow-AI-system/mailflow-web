@@ -7,13 +7,14 @@ import { MailMessageCard } from './MailMessageCard'
 import { MailMessageSkeletonRows } from './MailMessageSkeleton'
 
 type MailListProps = {
+  workspaceSlug: string
   userId: string
   q: string
   isSearching?: boolean
 }
 
-export function MailList({ userId, q, isSearching = false }: MailListProps) {
-  const mail = useMailMessages(userId, q)
+export function MailList({ userId, workspaceSlug, q, isSearching = false }: MailListProps) {
+  const mail = useMailMessages(userId, workspaceSlug, q)
   const scrollRootRef = useRef<HTMLElement>(null)
   const previousQuery = useRef(q)
   const sentinelRef = useRef<HTMLDivElement>(null)
