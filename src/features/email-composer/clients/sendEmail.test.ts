@@ -670,3 +670,47 @@ describe('sendEmail private uploads', () => {
     expect(callsTo(fetcher, '/api/mail/send')).toHaveLength(0)
   })
 })
+
+it('records the attempted delivery before HTTP failure and keeps reservation ownership for discard', async () => {
+  const fetcher = provider()
+  const normal = fetcher.getMockImplementation()
+  if (!normal) throw new Error('Missing mock implementation')
+  const messageIds = new Set<string>()
+  fetcher.mockImplementation(async (url, init) => {
+    if (String(url) === '/api/mail/send') {
+      expect(messageIds.has('attempted-id')).toBe(true)
+      throw new TypeError('connection reset')
+    }
+    return normal(url, init)
+  })
+  const delivery = { ...context(), messageIds }
+  await expect(
+    sendEmail({ ...composition, attachments: [file()] }, 'attempted-id', delivery),
+  ).rejects.toThrow()
+  expect([...messageIds]).toEqual(['attempted-id'])
+  expect([...delivery.uploads.values()][0]).toMatchObject({
+    localKey: 'file:file',
+    sendAttempted: true,
+  })
+})
+
+it('keeps partial uploads available for discard without marking an email attempt', async () => {
+  const fetcher = provider()
+  const normal = fetcher.getMockImplementation()
+  if (!normal) throw new Error('Missing mock implementation')
+  fetcher.mockImplementation(async (url, init) =>
+    String(url).startsWith('https://objects.example.test/')
+      ? new Response(null, { status: 500 })
+      : normal(url, init),
+  )
+  const messageIds = new Set<string>()
+  const delivery = { ...context(), messageIds }
+  await expect(
+    sendEmail({ ...composition, attachments: [file()] }, 'not-attempted', delivery),
+  ).rejects.toThrow()
+  expect(messageIds.size).toBe(0)
+  expect([...delivery.uploads.values()][0]).toMatchObject({
+    localKey: 'file:file',
+    uploaded: false,
+  })
+})

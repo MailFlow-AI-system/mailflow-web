@@ -11,6 +11,9 @@ export type AttachmentUploadState = {
   clean: boolean
   attachmentExpiresAt?: string
   sendAttempted?: boolean
+  localKey?: string
+  inlineSource?: string
+  removed?: boolean
 }
 
 export type DeliveryProgress = {
@@ -23,6 +26,8 @@ export type EmailDeliveryContext = {
   uploads: Map<string, AttachmentUploadState>
   scope: { current: MailDeliveryScope | null }
   userId?: string
+  messageIds?: Set<string>
+  attachmentIds?: Set<string>
   onProgress?: (progress: DeliveryProgress) => void
 }
 

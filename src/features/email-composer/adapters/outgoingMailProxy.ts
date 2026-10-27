@@ -8,6 +8,7 @@ export function createOutgoingMailProxy(
   return async (request: Request): Promise<Response> => {
     const incoming = new URL(request.url)
     const sending = request.method === 'POST' && incoming.pathname === '/api/mail/send'
+    const discarding = request.method === 'POST' && incoming.pathname === '/api/mail/discard'
     const listing = request.method === 'GET' && incoming.pathname === '/api/mail/sent'
     const readingContext = request.method === 'GET' && incoming.pathname === '/api/mail/context'
     const attachmentPath =
@@ -19,10 +20,10 @@ export function createOutgoingMailProxy(
     const completingAttachment = request.method === 'POST' && attachmentPath?.[1] === 'complete'
     const readingAttachment =
       request.method === 'GET' && Boolean(attachmentPath) && attachmentPath?.[1] !== 'complete'
-    const mutating = sending || creatingAttachment || completingAttachment
+    const mutating = sending || discarding || creatingAttachment || completingAttachment
     const attachmentRoute = creatingAttachment || completingAttachment || readingAttachment
     const privateHeaders = { 'Cache-Control': 'private, no-store' }
-    if (!sending && !listing && !attachmentRoute && !readingContext)
+    if (!sending && !discarding && !listing && !attachmentRoute && !readingContext)
       return new Response(null, { status: 404, headers: privateHeaders })
     if (workspaceMode && listing)
       return Response.json(
@@ -48,9 +49,11 @@ export function createOutgoingMailProxy(
         ? incoming.pathname.replace('/api/mail/', '/api/v1/mail/')
         : readingContext
           ? '/api/v1/mail/context'
-          : sending
-            ? '/api/v1/mail/send'
-            : '/api/v1/mail/sent',
+          : discarding
+            ? '/api/v1/mail/discard'
+            : sending
+              ? '/api/v1/mail/send'
+              : '/api/v1/mail/sent',
       apiBaseUrl,
     )
     if (listing && incoming.searchParams.has('offset'))
