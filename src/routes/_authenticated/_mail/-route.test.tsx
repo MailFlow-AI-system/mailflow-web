@@ -74,10 +74,10 @@ describe('MailLayout', () => {
     environment.VITE_WORKSPACE_BASE_HOST = undefined
   })
 
-  it('does not mount the global search in workspace mode', () => {
+  it('mounts workspace search in workspace mode', () => {
     environment.VITE_WORKSPACE_BASE_HOST = 'workspace.test'
     render(<MailLayout />)
-    expect(screen.queryByTestId('global-mailbox-search')).toBeNull()
+    expect(screen.getByTestId('global-mailbox-search')).toBeVisible()
     expect(screen.getByRole('button', { name: 'Compose' })).toBeVisible()
   })
 

@@ -3,6 +3,10 @@ import { useQueryState } from 'nuqs'
 import { NuqsTestingAdapter } from 'nuqs/adapters/testing'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+vi.mock('#/features/auth/adapters/getCurrentSession', () => ({
+  getCurrentSession: async () => ({ id: 'user-1' }),
+}))
+
 const queryState = vi.hoisted(() => ({ queryClient: { prefetchQuery: vi.fn() } }))
 let updateSearch: ((value: string | null) => Promise<unknown>) | undefined
 
@@ -21,6 +25,10 @@ vi.mock('#/features/app-shell/components/Header', () => ({
       />
     ),
   },
+}))
+
+vi.mock('#/features/workspaces/hooks/useWorkspaceContext', () => ({
+  useWorkspaceContext: () => ({ current: { slug: 'acme' } }),
 }))
 
 import { mailQueryParser } from '../types/mailSearch'
@@ -74,6 +82,7 @@ describe('MailboxSearch', () => {
     expect(queryState.queryClient.prefetchQuery.mock.calls[0]?.[0].queryKey).toEqual([
       'mail-messages-page',
       'user-1',
+      'acme',
       'invoice',
       null,
     ])

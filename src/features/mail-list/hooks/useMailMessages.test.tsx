@@ -56,7 +56,7 @@ describe('useMailMessages', () => {
       },
     )
     const { Wrapper } = createWrapper()
-    const { result } = renderHook(() => useMailMessages('user-1', ''), { wrapper: Wrapper })
+    const { result } = renderHook(() => useMailMessages('user-1', 'acme', ''), { wrapper: Wrapper })
 
     await waitFor(() => expect(result.current.messages.map(({ id }) => id)).toEqual(['first']))
     await waitFor(() =>
@@ -80,17 +80,37 @@ describe('useMailMessages', () => {
     expect(signals.every((signal) => !signal.aborted)).toBe(true)
   })
 
+  it('loads a separate cache entry when the workspace changes for the same user and search', async () => {
+    client.fetchMailMessages
+      .mockResolvedValueOnce(makePage(['acme-message'], null))
+      .mockResolvedValueOnce(makePage(['northwind-message'], null))
+    const { Wrapper } = createWrapper()
+    const { result, rerender } = renderHook(({ slug }) => useMailMessages('user-1', slug, ''), {
+      wrapper: Wrapper,
+      initialProps: { slug: 'acme' },
+    })
+    await waitFor(() =>
+      expect(result.current.messages.map(({ id }) => id)).toEqual(['acme-message']),
+    )
+    rerender({ slug: 'northwind' })
+    expect(result.current.messages).toEqual([])
+    await waitFor(() =>
+      expect(result.current.messages.map(({ id }) => id)).toEqual(['northwind-message']),
+    )
+    expect(client.fetchMailMessages).toHaveBeenCalledTimes(2)
+  })
+
   it('uses a warmed first page as immediate infinite-query data without another request', () => {
     client.fetchMailMessages.mockImplementation(() => {
       throw new Error('A warmed first page should not trigger another request.')
     })
     const { Wrapper, queryClient } = createWrapper()
     queryClient.setQueryData(
-      mailMessagesPageKey('user-1', 'invoice', null),
+      mailMessagesPageKey('user-1', 'acme', 'invoice', null),
       makePage(['cached'], null),
     )
 
-    const { result } = renderHook(() => useMailMessages('user-1', 'invoice'), {
+    const { result } = renderHook(() => useMailMessages('user-1', 'acme', 'invoice'), {
       wrapper: Wrapper,
     })
 
@@ -115,7 +135,7 @@ describe('useMailMessages', () => {
       },
     )
     const { Wrapper } = createWrapper()
-    const { result, rerender } = renderHook(({ q }) => useMailMessages('user-1', q), {
+    const { result, rerender } = renderHook(({ q }) => useMailMessages('user-1', 'acme', q), {
       initialProps: { q: 'old' },
       wrapper: Wrapper,
     })
@@ -139,8 +159,12 @@ describe('useMailMessages', () => {
       })
     })
     const { Wrapper } = createWrapper()
-    const first = renderHook(() => useMailMessages('user-1', 'shared'), { wrapper: Wrapper })
-    const second = renderHook(() => useMailMessages('user-1', 'shared'), { wrapper: Wrapper })
+    const first = renderHook(() => useMailMessages('user-1', 'acme', 'shared'), {
+      wrapper: Wrapper,
+    })
+    const second = renderHook(() => useMailMessages('user-1', 'acme', 'shared'), {
+      wrapper: Wrapper,
+    })
     await waitFor(() => expect(signal).toBeDefined())
 
     first.unmount()
@@ -168,7 +192,7 @@ describe('useMailMessages', () => {
     )
     const { Wrapper, queryClient } = createWrapper()
     queryClient.setQueryDefaults(['mail-messages-page'], { retryDelay: 0 })
-    const { result, rerender } = renderHook(({ q }) => useMailMessages('user-1', q), {
+    const { result, rerender } = renderHook(({ q }) => useMailMessages('user-1', 'acme', q), {
       initialProps: { q: 'old' },
       wrapper: Wrapper,
     })
@@ -190,7 +214,7 @@ describe('useMailMessages', () => {
       return makePage(['second'], null)
     })
     const { Wrapper } = createWrapper()
-    const { result } = renderHook(() => useMailMessages('user-1', ''), { wrapper: Wrapper })
+    const { result } = renderHook(() => useMailMessages('user-1', 'acme', ''), { wrapper: Wrapper })
 
     await waitFor(() => expect(result.current.messages.map(({ id }) => id)).toEqual(['first']))
     await waitFor(() => expect(nextPageAttempts).toBe(2))
