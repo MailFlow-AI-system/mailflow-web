@@ -1,6 +1,10 @@
 import { Button } from '@mailflow/ui/components'
-import { useCallback, useRef } from 'react'
+import { useCallback, useId, useRef } from 'react'
 
+import { MailSelectionBar } from '#/features/mail-selection/components/MailSelectionBar'
+import { useCoarseLayout } from '#/features/mail-selection/hooks/useCoarseLayout'
+import { useMailSelection } from '#/features/mail-selection/hooks/useMailSelection'
+import type { MailSelection } from '#/features/mail-selection/types/selection'
 import { useMailListAutoFill } from '../hooks/useMailListAutoFill'
 import { useMailMessages } from '../hooks/useMailMessages'
 import type { MailMessage } from '../types/mailMessage'
@@ -12,11 +16,28 @@ type MailListProps = {
   userId: string
   q: string
   isSearching?: boolean
+  heading?: string
 }
 
-export function MailList({ userId, workspaceSlug, q, isSearching = false }: MailListProps) {
+export function MailList({
+  userId,
+  workspaceSlug,
+  q,
+  isSearching = false,
+  heading,
+}: MailListProps) {
   const mail = useMailMessages(userId, workspaceSlug, q)
-  return <MailListView mail={mail} q={q} isSearching={isSearching} label="Inbox message list" />
+  const selection = useMailSelection()
+  return (
+    <MailListView
+      mail={mail}
+      q={q}
+      isSearching={isSearching}
+      label="Inbox message list"
+      selection={selection ?? undefined}
+      {...(heading ? { heading } : {})}
+    />
+  )
 }
 
 type MailListViewProps = {
@@ -34,9 +55,20 @@ type MailListViewProps = {
   label: string
   q?: string
   isSearching?: boolean
+  selection?: MailSelection | undefined
+  heading?: string
 }
 
-export function MailListView({ mail, label, q = '', isSearching = false }: MailListViewProps) {
+export function MailListView({
+  mail,
+  label,
+  q = '',
+  isSearching = false,
+  selection,
+  heading,
+}: MailListViewProps) {
+  const listId = useId()
+  const touch = useCoarseLayout()
   const scrollRootRef = useRef<HTMLElement>(null)
   const previousQuery = useRef(q)
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -84,10 +116,24 @@ export function MailListView({ mail, label, q = '', isSearching = false }: MailL
       <p aria-atomic="true" aria-live="polite" className="sr-only" role="status">
         {statusMessage}
       </p>
+      {selection ? (
+        <MailSelectionBar
+          controls={listId}
+          disabled={showSearchSkeletons}
+          heading={heading ?? label}
+          hiddenReason={hasSearchQuery ? 'hidden by search' : 'not loaded'}
+          selection={selection}
+          touch={touch}
+          visibleIds={mail.messages.map((message) => message.id)}
+        />
+      ) : heading ? (
+        <h1 className="px-3 py-3 text-sm font-semibold">{heading}</h1>
+      ) : null}
       <section
         aria-busy={isBusy}
         aria-label={label}
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+        id={listId}
         ref={setScrollRoot}
       >
         {showLoadError ? (
@@ -106,11 +152,29 @@ export function MailListView({ mail, label, q = '', isSearching = false }: MailL
             </Button>
           </div>
         ) : showSearchSkeletons || mail.messages.length > 0 ? (
-          <ul className="m-0 list-none p-0">
+          <ul
+            className="group/list m-0 list-none p-0"
+            data-selecting={selection ? selection.selecting : undefined}
+          >
             {showSearchSkeletons ? (
               <MailMessageSkeletonRows />
             ) : (
-              mail.messages.map((message) => <MailMessageCard key={message.id} message={message} />)
+              mail.messages.map((message) => (
+                <MailMessageCard
+                  key={message.id}
+                  message={message}
+                  selected={selection?.isSelected(message.id) ?? false}
+                  {...(selection
+                    ? {
+                        onSelectedChange: (selected: boolean) =>
+                          selection.setSelected(message.id, selected),
+                        onLongPress: () => selection.enterWith(message.id),
+                        selecting: selection.selecting,
+                        variant: touch ? ('touch' as const) : ('pointer' as const),
+                      }
+                    : {})}
+                />
+              ))
             )}
             {showPageSkeletons ? <MailMessageSkeletonRows /> : null}
           </ul>
