@@ -1,6 +1,8 @@
+import { toast } from '@mailflow/ui/components'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { FormProvider, useForm } from 'react-hook-form'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ComposerContext } from '../context'
 import { useComposerController } from '../hooks/useComposerController'
 import { emptyDraft } from '../hooks/useDraftForm'
@@ -96,6 +98,28 @@ describe('composer footer', () => {
     expect(screen.getByRole('button', { name: 'Mensagem pronta' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Agendar envio' })).toBeVisible()
     expect(screen.getByRole('button', { name: 'Rascunho' })).toBeVisible()
+  })
+
+  it('shows the unavailable warning for scheduling without submitting the form', async () => {
+    const warning = vi.spyOn(toast, 'warning').mockReturnValue('feature-unavailable')
+    const submit = vi.fn((event: React.FormEvent) => event.preventDefault())
+    const user = userEvent.setup()
+    render(
+      <form onSubmit={submit}>
+        <ReadyComposer />
+      </form>,
+    )
+    const schedule = screen.getByRole('button', { name: 'Agendar envio' })
+    expect(schedule).not.toHaveAttribute('aria-disabled', 'true')
+    schedule.focus()
+    await user.keyboard(' ')
+    expect(warning).toHaveBeenCalledWith(
+      'Esta funcionalidade está em desenvolvimento e ainda não está disponível.',
+      { id: 'feature-unavailable' },
+    )
+    expect(submit).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Mensagem pronta' })).toBeDisabled()
+    warning.mockRestore()
   })
 
   it('refreshes the saved baseline on repeated saves and retains attachment ids', async () => {

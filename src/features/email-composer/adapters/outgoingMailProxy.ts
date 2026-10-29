@@ -6,9 +6,12 @@ export function createOutgoingMailProxy(apiBaseUrl: string, fetcher: typeof fetc
     const sending = request.method === 'POST' && incoming.pathname === '/api/mail/send'
     const discarding = request.method === 'POST' && incoming.pathname === '/api/mail/discard'
     const listing = request.method === 'GET' && incoming.pathname === '/api/mail/sent'
+    const readingSent =
+      request.method === 'GET' &&
+      /^\/api\/mail\/sent\/[a-zA-Z0-9_-]{1,128}$/.test(incoming.pathname)
     const readingContext = request.method === 'GET' && incoming.pathname === '/api/mail/context'
     const attachmentPath =
-      /^\/api\/mail\/attachments\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}(?:\/(complete|download))?$/.exec(
+      /^\/api\/mail\/attachments\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}(?:\/(complete|download|inline))?$/.exec(
         incoming.pathname,
       )
     const creatingAttachment =
@@ -19,7 +22,7 @@ export function createOutgoingMailProxy(apiBaseUrl: string, fetcher: typeof fetc
     const mutating = sending || discarding || creatingAttachment || completingAttachment
     const attachmentRoute = creatingAttachment || completingAttachment || readingAttachment
     const privateHeaders = { 'Cache-Control': 'private, no-store' }
-    if (!sending && !discarding && !listing && !attachmentRoute && !readingContext)
+    if (!sending && !discarding && !listing && !readingSent && !attachmentRoute && !readingContext)
       return new Response(null, { status: 404, headers: privateHeaders })
     const suppliedOrigin = request.headers.get('origin')
     if (suppliedOrigin !== null && suppliedOrigin !== incoming.origin)
@@ -36,7 +39,7 @@ export function createOutgoingMailProxy(apiBaseUrl: string, fetcher: typeof fetc
     )
       return new Response(null, { status: 415, headers: privateHeaders })
     const upstreamUrl = new URL(
-      attachmentRoute
+      attachmentRoute || readingSent
         ? incoming.pathname.replace('/api/mail/', '/api/v1/mail/')
         : readingContext
           ? '/api/v1/mail/context'

@@ -3,6 +3,7 @@ import { act, cleanup, render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+const selection = vi.hoisted(() => ({ message: undefined as string | undefined }))
 const sent = vi.hoisted(() => ({
   onSent: undefined as (() => void) | undefined,
   readSentWorkspace: vi.fn(),
@@ -21,6 +22,7 @@ vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: unknown) => ({ options }),
   Outlet: () => <div data-testid="route-outlet" />,
   getRouteApi: () => ({
+    useSearch: () => ({ message: selection.message }),
     useRouteContext: () => ({
       user: { id: 'user-1', name: 'Ada Lovelace', email: 'ada@example.test' },
     }),
@@ -37,6 +39,9 @@ vi.mock('@/features/app-shell', () => {
   const Header = ({ children }: { children: ReactNode }) => <header>{children}</header>
   Header.Mailbox = ({ children }: { children: ReactNode }) => (
     <div data-testid="mailbox-toolbar">{children}</div>
+  )
+  Header.Actions = ({ children }: { children: ReactNode }) => (
+    <div data-testid="reader-header-actions">{children}</div>
   )
   Header.Search = () => <input aria-label="Buscar em inbox" />
   Header.Filters = () => <button type="button">Filtros</button>
@@ -86,6 +91,7 @@ describe('MailLayout', () => {
   afterEach(() => {
     cleanup()
     environment.VITE_WORKSPACE_BASE_HOST = undefined
+    selection.message = undefined
   })
 
   it('mounts workspace search in workspace mode', () => {
@@ -99,6 +105,28 @@ describe('MailLayout', () => {
     expect(screen.getByRole('button', { name: 'Compose' })).toBeVisible()
   })
 
+  it('places one persistent message action toolbar in the shell header only for a selected message', () => {
+    const client = new QueryClient()
+    const view = render(
+      <QueryClientProvider client={client}>
+        <MailLayout />
+      </QueryClientProvider>,
+    )
+    expect(screen.queryByRole('toolbar', { name: 'Message actions' })).toBeNull()
+    selection.message = 'message-1'
+    view.rerender(
+      <QueryClientProvider client={client}>
+        <MailLayout />
+      </QueryClientProvider>,
+    )
+    expect(screen.getAllByRole('toolbar', { name: 'Message actions' })).toHaveLength(1)
+    expect(screen.getByTestId('reader-header-actions')).toContainElement(
+      screen.getByRole('toolbar', { name: 'Message actions' }),
+    )
+    expect(screen.getByRole('button', { name: 'Reply' })).toBeEnabled()
+    expect(screen.queryByRole('button', { name: 'Back to messages' })).toBeNull()
+    client.clear()
+  })
   it('normalizes the inbox query parameter', () => {
     expect(normalizeMailSearch({ q: '  AuroraLedger  ' })).toEqual({ q: 'AuroraLedger' })
     expect(normalizeMailSearch({ q: '   ' })).toEqual({})

@@ -1,16 +1,24 @@
 import type { ReactNode } from 'react'
 
-export function MailboxLayout({ title, children }: { title: string; children: ReactNode }) {
+export function MailboxLayout({
+  title,
+  children,
+  reader,
+}: {
+  title: string
+  children: ReactNode
+  reader?: ReactNode
+}) {
   return (
     <div className="flex h-full min-h-0 min-w-0">
       <section
         aria-label={title}
-        className="flex min-h-0 w-full min-w-0 flex-col md:w-[29vw] md:max-w-[419px] md:border-r md:border-border"
+        className={`min-h-0 w-full min-w-0 shrink-0 flex-col lg:flex lg:w-[380px] xl:w-[420px] lg:border-r lg:border-border ${reader ? 'hidden' : 'flex'}`}
       >
         <h1 className="px-3 py-3 text-sm font-semibold">{title}</h1>
         {children}
       </section>
-      <div aria-hidden="true" className="hidden min-w-0 flex-1 bg-muted/10 md:block" />
+      {reader ?? <div aria-hidden="true" className="hidden min-w-0 flex-1 bg-muted/10 lg:block" />}
     </div>
   )
 }

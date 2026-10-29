@@ -3,6 +3,8 @@ import { Filter, Search, X } from '@mailflow/ui/icons'
 import { useRouterState } from '@tanstack/react-router'
 import { useRef } from 'react'
 
+import { showFeatureUnavailable } from '#/lib/showFeatureUnavailable'
+
 import { mailboxSearchScope } from '../navigation'
 import type {
   AppShellHeaderActionsProps,
@@ -13,20 +15,20 @@ import type {
 
 function HeaderRoot({ children }: AppShellHeaderProps) {
   return (
-    <header className="flex w-full shrink-0 items-center gap-2 border-b border-border bg-background/80 px-3 py-2.5 backdrop-blur-[12px] md:w-[29vw] md:max-w-[419px] md:pr-0">
+    <header className="flex w-full shrink-0 items-center gap-2 border-b border-border bg-background/80 px-3 py-2.5 backdrop-blur-[12px] lg:items-start lg:gap-0 lg:border-b-0 lg:p-0">
       <SidebarTrigger className="md:hidden" />
       {children}
     </header>
   )
 }
 
-function Actions({ children }: AppShellHeaderActionsProps) {
-  return <div className="ml-auto flex items-center">{children}</div>
+function Actions({ children, className = 'flex' }: AppShellHeaderActionsProps) {
+  return <div className={`ml-auto items-center ${className}`}>{children}</div>
 }
 
 function Mailbox({ children }: AppShellHeaderMailboxProps) {
   return (
-    <div className="flex w-full min-w-0 items-center gap-2 border-border md:-my-2.5 md:w-[29vw] md:max-w-[419px] md:border-r md:py-2.5 md:pr-3">
+    <div className="flex w-full min-w-0 items-center gap-2 border-border lg:w-[380px] xl:w-[420px] lg:shrink-0 lg:border-r lg:border-b lg:px-3 lg:py-2.5">
       {children}
     </div>
   )
@@ -79,6 +81,7 @@ function MailboxFilters() {
     <Button
       aria-label="Filtros"
       className="h-8 w-8 shrink-0"
+      onClick={showFeatureUnavailable}
       size="icon"
       type="button"
       variant="ghost"

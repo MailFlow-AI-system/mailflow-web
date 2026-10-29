@@ -1,5 +1,5 @@
 import { Button } from '@mailflow/ui/components'
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 import { useMailListAutoFill } from '../hooks/useMailListAutoFill'
 import { useMailMessages } from '../hooks/useMailMessages'
@@ -12,11 +12,32 @@ type MailListProps = {
   userId: string
   q: string
   isSearching?: boolean
+  selectedId?: string
+  onSelect?: (id: string) => void
+  onAutoSelect?: (id: string) => void
 }
 
-export function MailList({ userId, workspaceSlug, q, isSearching = false }: MailListProps) {
+export function MailList({
+  userId,
+  workspaceSlug,
+  q,
+  isSearching = false,
+  selectedId,
+  onSelect,
+  onAutoSelect,
+}: MailListProps) {
   const mail = useMailMessages(userId, workspaceSlug, q)
-  return <MailListView mail={mail} q={q} isSearching={isSearching} label="Inbox message list" />
+  return (
+    <MailListView
+      mail={mail}
+      q={q}
+      isSearching={isSearching}
+      label="Inbox message list"
+      selectedId={selectedId}
+      onSelect={onSelect}
+      onAutoSelect={onAutoSelect}
+    />
+  )
 }
 
 type MailListViewProps = {
@@ -34,9 +55,48 @@ type MailListViewProps = {
   label: string
   q?: string
   isSearching?: boolean
+  selectedId?: string
+  onSelect?: (id: string) => void
+  onAutoSelect?: (id: string) => void
 }
 
-export function MailListView({ mail, label, q = '', isSearching = false }: MailListViewProps) {
+export function MailListView({
+  mail,
+  label,
+  q = '',
+  isSearching = false,
+  selectedId,
+  onSelect,
+  onAutoSelect,
+}: MailListViewProps) {
+  const initialSelectionHandled = useRef(false)
+  useEffect(() => {
+    if (initialSelectionHandled.current) return
+    if (selectedId) {
+      initialSelectionHandled.current = true
+      return
+    }
+    const firstId = mail.messages[0]?.id
+    if (
+      onAutoSelect &&
+      firstId &&
+      !isSearching &&
+      !mail.isPending &&
+      !mail.isFetching &&
+      !mail.isError
+    ) {
+      initialSelectionHandled.current = true
+      onAutoSelect(firstId)
+    }
+  }, [
+    selectedId,
+    onAutoSelect,
+    isSearching,
+    mail.messages,
+    mail.isPending,
+    mail.isFetching,
+    mail.isError,
+  ])
   const scrollRootRef = useRef<HTMLElement>(null)
   const previousQuery = useRef(q)
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -110,7 +170,14 @@ export function MailListView({ mail, label, q = '', isSearching = false }: MailL
             {showSearchSkeletons ? (
               <MailMessageSkeletonRows />
             ) : (
-              mail.messages.map((message) => <MailMessageCard key={message.id} message={message} />)
+              mail.messages.map((message) => (
+                <MailMessageCard
+                  key={message.id}
+                  message={message}
+                  selected={message.id === selectedId}
+                  onSelect={onSelect}
+                />
+              ))
             )}
             {showPageSkeletons ? <MailMessageSkeletonRows /> : null}
           </ul>

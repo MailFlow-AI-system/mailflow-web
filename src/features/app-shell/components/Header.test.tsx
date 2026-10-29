@@ -1,3 +1,4 @@
+import { toast } from '@mailflow/ui/components'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -24,11 +25,11 @@ describe('Header mailbox toolbar', () => {
     const search = screen.getByRole('searchbox', { name: 'Buscar em spam…' })
     const toolbar = search.parentElement?.parentElement
     expect(toolbar).toHaveClass(
-      'md:w-[29vw]',
-      'md:max-w-[419px]',
-      'md:border-r',
-      'md:py-2.5',
-      'md:pr-3',
+      'lg:w-[380px]',
+      'xl:w-[420px]',
+      'lg:border-r',
+      'lg:py-2.5',
+      'lg:px-3',
     )
     expect(toolbar).not.toHaveClass('border-r')
     expect(toolbar).not.toHaveClass('pr-3')
@@ -43,6 +44,19 @@ describe('Header mailbox toolbar', () => {
     expect(search).not.toHaveClass('focus-visible:border-ring')
     expect(toolbar).toContainElement(screen.getByRole('button', { name: 'Filtros' }))
     expect(toolbar).toContainElement(screen.getByRole('button', { name: 'Compose' }))
+  })
+
+  it('shows the unavailable warning when filters are activated by keyboard', async () => {
+    const warning = vi.spyOn(toast, 'warning').mockReturnValue('feature-unavailable')
+    const user = userEvent.setup()
+    render(<Header.Filters />)
+    await user.tab()
+    await user.keyboard('{Enter}')
+    expect(warning).toHaveBeenCalledWith(
+      'Esta funcionalidade está em desenvolvimento e ainda não está disponível.',
+      { id: 'feature-unavailable' },
+    )
+    warning.mockRestore()
   })
 
   it('shows Clear search only for a nonempty controlled value with a change callback', () => {

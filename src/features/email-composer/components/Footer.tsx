@@ -1,6 +1,7 @@
 import { Button } from '@mailflow/ui/components'
 import { Clock, Save, Send } from '@mailflow/ui/icons'
 import { useFormContext, useFormState } from 'react-hook-form'
+import { showFeatureUnavailable } from '#/lib/showFeatureUnavailable'
 import { useComposer } from '../context'
 import { useDraftStatus } from '../hooks/useDraftStatus'
 import type { DraftValues } from '../types/DraftValues'
@@ -50,7 +51,7 @@ export function Footer() {
             variant="outline"
             size="icon"
             aria-label="Agendar envio"
-            aria-disabled="true"
+            onClick={showFeatureUnavailable}
             title="Agendamento ainda não disponível"
           >
             <Clock aria-hidden="true" className="size-4" />
