@@ -42,12 +42,11 @@ afterEach(() => {
 })
 
 describe('Sent page', () => {
-  it('uses the Inbox panel, heading, and empty reader layout at every breakpoint', () => {
+  it('uses the Inbox panel and empty reader layout at every breakpoint', () => {
     const inbox = render(<Inbox />)
     const inboxPanel = screen.getByRole('region', { name: 'Inbox' })
     const layoutClass = inboxPanel.parentElement?.className
     const panelClass = inboxPanel.className
-    const headingClass = screen.getByRole('heading', { level: 1 }).className
     const readerClass = inboxPanel.nextElementSibling?.className
     inbox.unmount()
 
@@ -55,7 +54,11 @@ describe('Sent page', () => {
     const sentPanel = screen.getByRole('region', { name: 'Enviados' })
     expect(sentPanel.parentElement).toHaveClass(layoutClass ?? '')
     expect(sentPanel.className).toBe(panelClass)
-    expect(screen.getByRole('heading', { name: 'Enviados', level: 1 }).className).toBe(headingClass)
+    // The Inbox title row belongs to its list now; Sent keeps the same title text style.
+    expect(screen.getByRole('heading', { name: 'Enviados', level: 1 })).toHaveClass(
+      'text-sm',
+      'font-semibold',
+    )
     expect(sentPanel.nextElementSibling?.className).toBe(readerClass)
     expect(screen.getByTestId('sent-list')).toHaveAttribute('data-owner', 'owner')
   })
