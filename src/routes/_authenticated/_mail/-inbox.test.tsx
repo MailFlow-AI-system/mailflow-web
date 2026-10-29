@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -32,11 +32,38 @@ vi.mock('nuqs', async (importOriginal) => ({
   useQueryState: () => [routerState.queryQ ?? '', vi.fn()],
 }))
 
-vi.mock('#/features/mail-list/components/MailList', () => ({
-  MailList: ({ userId, q, isSearching }: { userId: string; q: string; isSearching?: boolean }) => (
-    <div data-testid="mail-list" data-q={q} data-searching={isSearching} data-user-id={userId} />
-  ),
-}))
+vi.mock('#/features/mail-list/components/MailList', async () => {
+  const { useMailSelection } = await import('#/features/mail-selection/hooks/useMailSelection')
+  return {
+    MailList: ({
+      userId,
+      q,
+      isSearching,
+      heading,
+    }: {
+      userId: string
+      q: string
+      isSearching?: boolean
+      heading?: string
+    }) => {
+      const selection = useMailSelection()
+      return (
+        <div
+          data-testid="mail-list"
+          data-heading={heading}
+          data-q={q}
+          data-searching={isSearching}
+          data-selection-count={selection?.count}
+          data-user-id={userId}
+        >
+          <button onClick={() => selection?.setSelected('message-1', true)} type="button">
+            select message
+          </button>
+        </div>
+      )
+    },
+  }
+})
 
 vi.mock('#/features/workspaces/hooks/useWorkspaceContext', () => ({
   useWorkspaceContext: () => ({
@@ -63,12 +90,15 @@ describe('Inbox route', () => {
     expect(screen.getByText('Open a workspace address')).toBeVisible()
   })
 
-  it('shows the Inbox heading and sets the document title', () => {
+  it('hands the Inbox title row to the list and sets the document title', () => {
     routerState.committedQ = 'invoice'
     routerState.queryQ = 'invoice'
     render(<InboxPage />)
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Inbox' })).toBeInTheDocument()
+    // The list owns the title row so it can turn into the selection bar.
+    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Inbox' })).toBeInTheDocument()
+    expect(screen.getByTestId('mail-list')).toHaveAttribute('data-heading', 'Inbox')
     expect(screen.getByTestId('mail-list')).toHaveAttribute('data-q', 'invoice')
     expect(screen.getByTestId('mail-list')).toHaveAttribute('data-user-id', 'user-1')
     expect(Route.options.head).toBe(inboxHead)
@@ -91,5 +121,23 @@ describe('Inbox route', () => {
     expect(screen.getByTestId('mail-list')).toBe(list)
     expect(list).toHaveAttribute('data-searching', 'false')
     expect(list).toHaveAttribute('data-q', 'filtered')
+  })
+  it('provides message selection to the list and starts with nothing selected', () => {
+    render(<InboxPage />)
+
+    expect(screen.getByTestId('mail-list')).toHaveAttribute('data-selection-count', '0')
+    fireEvent.click(screen.getByRole('button', { name: 'select message' }))
+    expect(screen.getByTestId('mail-list')).toHaveAttribute('data-selection-count', '1')
+  })
+
+  it('resets the selection when the workspace changes', () => {
+    const view = render(<InboxPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'select message' }))
+    expect(screen.getByTestId('mail-list')).toHaveAttribute('data-selection-count', '1')
+
+    routerState.workspaceSlug = 'globex'
+    view.rerender(<InboxPage />)
+
+    expect(screen.getByTestId('mail-list')).toHaveAttribute('data-selection-count', '0')
   })
 })
