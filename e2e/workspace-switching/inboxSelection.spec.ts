@@ -43,9 +43,23 @@ test('selects, searches, selects all and clears messages in the real workspace i
   // The selection survives a search and returns with the list.
   await search.fill('Acme private')
   await expect(page).toHaveURL(/q=Acme/)
+  await expect(page.getByRole('region', { name: 'Inbox message list' })).toHaveAttribute(
+    'aria-busy',
+    'false',
+    { timeout: 15000 },
+  )
   await expect(page.getByText('1 selected', { exact: true })).toBeVisible()
   await search.fill('')
-  await expect(rowCheckboxes.nth(0)).toHaveAttribute('aria-checked', 'true', { timeout: 15000 })
+  // Wait for the cleared search to settle: the first row also exists in the search results, so
+  // checking it alone would pass against the stale list and race the debounced search update.
+  await expect(page).not.toHaveURL(/q=/)
+  await expect(page.getByRole('region', { name: 'Inbox message list' })).toHaveAttribute(
+    'aria-busy',
+    'false',
+    { timeout: 15000 },
+  )
+  await expect(rowCheckboxes).toHaveCount(loaded, { timeout: 15000 })
+  await expect(rowCheckboxes.nth(0)).toHaveAttribute('aria-checked', 'true')
   await expect(page.getByText('1 selected', { exact: true })).toBeVisible()
 
   // Select all loaded messages, then check accessibility with a selection in place.
