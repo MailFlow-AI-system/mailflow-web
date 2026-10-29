@@ -17,7 +17,11 @@ test('isolates sent messages and pagination across workspace tabs and refresh', 
     timeout: 15000,
   })
   await page.goto(`http://${data.host}:3003/sent`)
-  await expect(page.getByText('Acme sent message 21', { exact: true })).toBeVisible()
+  await expect(
+    page
+      .getByRole('region', { name: 'Sent message list', exact: true })
+      .getByText('Acme sent message 21', { exact: true }),
+  ).toBeVisible()
   await expect(page.getByText('Northwind sent message 01', { exact: true })).toHaveCount(0)
   const pages = await page.evaluate(async () => {
     const firstResponse = await fetch('/api/mail/sent?offset=0')
@@ -37,13 +41,21 @@ test('isolates sent messages and pagination across workspace tabs and refresh', 
   expect(JSON.stringify(pages)).not.toContain('Northwind sent message')
   const second = await context.newPage()
   await second.goto(`http://${data.targetHost}:3003/sent`)
-  await expect(second.getByText('Northwind sent message 01', { exact: true })).toBeVisible()
+  await expect(
+    second
+      .getByRole('region', { name: 'Sent message list', exact: true })
+      .getByText('Northwind sent message 01', { exact: true }),
+  ).toBeVisible()
   await expect(second.getByText('Foreign Northwind sent message 01', { exact: true })).toHaveCount(
     0,
   )
   await expect(second.getByText('Acme sent message 21', { exact: true })).toHaveCount(0)
   await page.reload()
-  await expect(page.getByText('Acme sent message 21', { exact: true })).toBeVisible()
+  await expect(
+    page
+      .getByRole('region', { name: 'Sent message list', exact: true })
+      .getByText('Acme sent message 21', { exact: true }),
+  ).toBeVisible()
   await expect(page.getByText('Northwind sent message 01', { exact: true })).toHaveCount(0)
 })
 
@@ -56,7 +68,11 @@ test('denies forged scope and identity and hides sent messages after membership 
     timeout: 15000,
   })
   await page.goto(`http://${data.targetHost}:3003/sent`)
-  await expect(page.getByText('Northwind sent message 01', { exact: true })).toBeVisible()
+  await expect(
+    page
+      .getByRole('region', { name: 'Sent message list', exact: true })
+      .getByText('Northwind sent message 01', { exact: true }),
+  ).toBeVisible()
   const statuses = await page.evaluate(
     async ({ unrelatedId }) => ({
       foreign: (await fetch('/api/mail/sent', { headers: { 'X-Workspace-Id': unrelatedId } }))
@@ -85,7 +101,11 @@ test('refreshes the current workspace Sent list after a controlled real Core sen
     timeout: 15000,
   })
   await page.goto(`http://${data.host}:3003/sent`)
-  await expect(page.getByText('Acme sent message 21', { exact: true })).toBeVisible()
+  await expect(
+    page
+      .getByRole('region', { name: 'Sent message list', exact: true })
+      .getByText('Acme sent message 21', { exact: true }),
+  ).toBeVisible()
   await page.getByRole('button', { name: 'Compose', exact: true }).click()
   await page.getByRole('textbox', { name: 'Para', exact: true }).fill('recipient@example.test')
   await page.getByRole('textbox', { name: 'Assunto', exact: true }).fill('Acme newly sent message')
@@ -94,9 +114,17 @@ test('refreshes the current workspace Sent list after a controlled real Core sen
     .fill('Scoped sent body')
   await page.getByRole('button', { name: 'Enviar', exact: true }).click()
   await expect(page.getByText('E-mail enviado com sucesso.', { exact: true })).toBeVisible()
-  await expect(page.getByText('Acme newly sent message', { exact: true })).toBeVisible()
+  await expect(
+    page
+      .getByRole('region', { name: 'Sent message list', exact: true })
+      .getByText('Acme newly sent message', { exact: true }),
+  ).toBeVisible()
   await page.goto(`http://${data.targetHost}:3003/sent`)
-  await expect(page.getByText('Northwind sent message 01', { exact: true })).toBeVisible()
+  await expect(
+    page
+      .getByRole('region', { name: 'Sent message list', exact: true })
+      .getByText('Northwind sent message 01', { exact: true }),
+  ).toBeVisible()
   await expect(page.getByText('Acme newly sent message', { exact: true })).toHaveCount(0)
 })
 
@@ -137,7 +165,11 @@ test('uploads verified attachments and an inline image on localhost and sends on
   await send.click()
   await expect(page.getByText('E-mail enviado com sucesso.', { exact: true })).toBeVisible()
   await page.goto(`http://${data.host}:3003/sent`)
-  await expect(page.getByText('Localhost verified upload test', { exact: true })).toBeVisible()
+  await expect(
+    page
+      .getByRole('region', { name: 'Sent message list', exact: true })
+      .getByText('Localhost verified upload test', { exact: true }),
+  ).toBeVisible()
   const sent = await page.evaluate(async () => (await fetch('/api/mail/sent')).json())
   const message = sent.items.find(
     (item: { subject: string }) => item.subject === 'Localhost verified upload test',

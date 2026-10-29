@@ -2,10 +2,12 @@ import type { ReactNode } from 'react'
 
 export function MailboxLayout({
   title,
+  showTitle = true,
   children,
   reader,
 }: {
   title: string
+  showTitle?: boolean
   children: ReactNode
   reader?: ReactNode
 }) {
@@ -15,7 +17,7 @@ export function MailboxLayout({
         aria-label={title}
         className={`min-h-0 w-full min-w-0 shrink-0 flex-col lg:flex lg:w-[380px] xl:w-[420px] lg:border-r lg:border-border ${reader ? 'hidden' : 'flex'}`}
       >
-        <h1 className="px-3 py-3 text-sm font-semibold">{title}</h1>
+        {showTitle ? <h1 className="px-3 py-3 text-sm font-semibold">{title}</h1> : null}
         {children}
       </section>
       {reader ?? <div aria-hidden="true" className="hidden min-w-0 flex-1 bg-muted/10 lg:block" />}

@@ -38,6 +38,10 @@ images, and authenticated attachment downloads. Unavailable message, AI, filter,
 actions display the same warning notification through the Design System. Navigation entries
 without implemented pages remain disabled; Inbox and Sent remain active.
 
+Inbox checkboxes select messages independently of the message open in the reader. On touch
+layouts, return to the list to use Select or hold a row to enter selection mode. Tapping a
+row while selecting toggles its checkbox; an ordinary tap outside selection mode opens it.
+
 ## Listening
 
 Email HTML retains its styles and table layout inside a scriptless sandboxed iframe with
@@ -56,3 +60,9 @@ Unavailable actions use a shared Sonner warning with a stable identifier, so rep
 reuse one notification. Only action placeholders are enabled; loading, validation, and
 in-flight restrictions on implemented actions remain enforced. The warning does not promise
 a release date or execute the unavailable operation.
+
+Reader activity and bulk selection have separate state. Checkbox and long-press gestures
+never navigate to a message, while opening a message preserves the selected set. The
+selection provider remains mounted during search and reader navigation and resets when
+the workspace or identity changes. This preserves both features without nested interactive
+controls or treating the currently open message as selected for bulk actions.

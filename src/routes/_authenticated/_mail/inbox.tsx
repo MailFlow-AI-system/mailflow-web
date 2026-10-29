@@ -4,6 +4,7 @@ import { MailboxLayout } from '#/features/mail-list/components/MailboxLayout'
 import { MailList } from '#/features/mail-list/components/MailList'
 import { mailQueryParser } from '#/features/mail-list/types/mailSearch'
 import { MailReader } from '#/features/mail-reader/MailReader'
+import { MailSelectionProvider } from '#/features/mail-selection/components/MailSelectionProvider'
 import { useWorkspaceContext } from '#/features/workspaces/hooks/useWorkspaceContext'
 
 const authenticatedRoute = getRouteApi('/_authenticated')
@@ -27,32 +28,36 @@ function InboxPage() {
   if (!workspace?.current) return <p>Open a workspace address</p>
 
   return (
-    <MailboxLayout
-      title="Inbox"
-      reader={
-        selectedId ? (
-          <MailReader
-            toolbarClassName="lg:hidden"
-            key={`${user.id}:${workspace.current.id}:${selectedId}`}
-            userId={user.id}
-            folder="messages"
-            id={selectedId}
-            onBack={() => void setMessage(null)}
-          />
-        ) : undefined
-      }
-    >
-      <MailList
-        key={`${user.id}:${workspace.current.id}`}
-        workspaceSlug={workspace.current.slug}
-        selectedId={selectedId}
-        onSelect={(id) => void setMessage(id)}
-        onAutoSelect={(id) => void setMessage(id, { history: 'replace' })}
-        isSearching={isSearching}
-        q={q}
-        userId={user.id}
-      />
-    </MailboxLayout>
+    <MailSelectionProvider key={`${user.id}:${workspace.current.id}:${workspace.current.slug}`}>
+      <MailboxLayout
+        showTitle={false}
+        title="Inbox"
+        reader={
+          selectedId ? (
+            <MailReader
+              toolbarClassName="lg:hidden"
+              key={`${user.id}:${workspace.current.id}:${selectedId}`}
+              userId={user.id}
+              folder="messages"
+              id={selectedId}
+              onBack={() => void setMessage(null)}
+            />
+          ) : undefined
+        }
+      >
+        <MailList
+          key={`${user.id}:${workspace.current.id}:${workspace.current.slug}`}
+          heading="Inbox"
+          workspaceSlug={workspace.current.slug}
+          selectedId={selectedId}
+          onSelect={(id) => void setMessage(id)}
+          onAutoSelect={(id) => void setMessage(id, { history: 'replace' })}
+          isSearching={isSearching}
+          q={q}
+          userId={user.id}
+        />
+      </MailboxLayout>
+    </MailSelectionProvider>
   )
 }
 

@@ -159,6 +159,14 @@ test('an expired session requires login, preserves only a safe collection and re
   await login(page, `http://${data.host}:3003/login`)
   await expect(page.getByRole('combobox', { name: 'Workspace: Acme Corp' })).toBeVisible()
   await selectNorthwind(page)
+  await expect(
+    page
+      .getByRole('region', { name: 'Message reader', exact: true })
+      .getByRole('heading', { name: 'Northwind private message', exact: true }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('region', { name: 'Inbox message list', exact: true }),
+  ).toHaveAttribute('aria-busy', 'false')
   await control('expire-session')
   await page.goto('http://localhost:3003/sent?q=private#message-id')
   await expect(page.getByRole('heading', { name: 'Sign in to MailFlow' })).toBeVisible()
