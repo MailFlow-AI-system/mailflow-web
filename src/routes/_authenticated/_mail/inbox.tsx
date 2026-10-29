@@ -3,6 +3,7 @@ import { useQueryState } from 'nuqs'
 import { MailboxLayout } from '#/features/mail-list/components/MailboxLayout'
 import { MailList } from '#/features/mail-list/components/MailList'
 import { mailQueryParser } from '#/features/mail-list/types/mailSearch'
+import { MailSelectionProvider } from '#/features/mail-selection/components/MailSelectionProvider'
 import { useWorkspaceContext } from '#/features/workspaces/hooks/useWorkspaceContext'
 
 const authenticatedRoute = getRouteApi('/_authenticated')
@@ -22,14 +23,17 @@ function InboxPage() {
   if (!workspace?.current) return <p>Open a workspace address</p>
 
   return (
-    <MailboxLayout title="Inbox">
-      <MailList
-        workspaceSlug={workspace.current.slug}
-        isSearching={isSearching}
-        q={q}
-        userId={user.id}
-      />
-    </MailboxLayout>
+    <MailSelectionProvider key={`${user.id}:${workspace.current.slug}`}>
+      <MailboxLayout showTitle={false} title="Inbox">
+        <MailList
+          heading="Inbox"
+          workspaceSlug={workspace.current.slug}
+          isSearching={isSearching}
+          q={q}
+          userId={user.id}
+        />
+      </MailboxLayout>
+    </MailSelectionProvider>
   )
 }
 
