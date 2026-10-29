@@ -6,6 +6,9 @@ import { useForm } from 'react-hook-form'
 import { clientEnvironment } from '#/config/env'
 
 import { recordAuthTransportFailure } from '../../../observability/faro'
+import { workspaceEntrySchema } from '../../workspaces/schemas'
+import { resolveWorkspaceHost } from '../../workspaces/utils/workspaceHost'
+import { workspaceDestination } from '../../workspaces/utils/workspaceNavigation'
 import { AUTH_UPSTREAM_UNAVAILABLE } from '../authErrorCodes'
 import { authClient } from '../clients/authClient'
 import { loginSchema } from '../schemas/loginSchema'
@@ -49,8 +52,30 @@ export function LoginForm({ returnTo }: LoginFormProps = {}) {
       await queryClient.cancelQueries()
       queryClient.clear()
       if (clientEnvironment.workspaceSwitchingEnabled) {
+        const path = safeMailCollectionPath(returnTo)
+        let href = `${path}#`
+        const baseHost = clientEnvironment.VITE_WORKSPACE_BASE_HOST
+        if (
+          baseHost &&
+          resolveWorkspaceHost(window.location.hostname, baseHost).kind === 'generic'
+        ) {
+          try {
+            const response = await fetch('/api/v1/workspace-entry', {
+              credentials: 'same-origin',
+              cache: 'no-store',
+            })
+            if (response.ok) {
+              const entry = workspaceEntrySchema.parse(await response.json())
+              if (entry.workspace) {
+                href = `${workspaceDestination(new URL(path, window.location.origin).href, baseHost, entry.workspace)}#`
+              }
+            }
+          } catch {
+            // The authenticated route displays the workspace error or empty state.
+          }
+        }
         await navigate({
-          href: `${safeMailCollectionPath(returnTo)}#`,
+          href,
           replace: true,
           reloadDocument: true,
         })

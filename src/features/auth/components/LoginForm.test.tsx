@@ -11,7 +11,10 @@ const { signIn, invalidate, navigate, recordAuthTransportFailure, clear, cancelQ
     cancelQueries: vi.fn(async () => {}),
   }))
 vi.mock('@tanstack/react-query', () => ({ useQueryClient: () => ({ clear, cancelQueries }) }))
-const environment = vi.hoisted(() => ({ workspaceSwitchingEnabled: false }))
+const environment = vi.hoisted(() => ({
+  workspaceSwitchingEnabled: false,
+  VITE_WORKSPACE_BASE_HOST: undefined as string | undefined,
+}))
 vi.mock('#/config/env', () => ({ clientEnvironment: environment }))
 
 vi.mock('../clients/authClient', () => ({ authClient: { signIn: { email: signIn } } }))
@@ -28,6 +31,8 @@ describe('LoginForm', () => {
   afterEach(cleanup)
   beforeEach(() => {
     environment.workspaceSwitchingEnabled = false
+    environment.VITE_WORKSPACE_BASE_HOST = undefined
+    vi.unstubAllGlobals()
     signIn.mockReset()
     invalidate.mockReset()
     invalidate.mockImplementation(async () => {})
@@ -133,6 +138,61 @@ describe('LoginForm', () => {
     )
     expect(invalidate).not.toHaveBeenCalled()
     expect(clear.mock.invocationCallOrder[0]).toBeLessThan(navigate.mock.invocationCallOrder[0])
+  })
+
+  it('opens the server-selected workspace after signing in on the generic host', async () => {
+    environment.workspaceSwitchingEnabled = true
+    environment.VITE_WORKSPACE_BASE_HOST = 'localhost'
+    signIn.mockResolvedValue({ data: { user: { id: 'next-identity' } } })
+    const entry = vi.fn(async () =>
+      Response.json({
+        source: 'preference',
+        workspace: { id: 'id', name: 'Acme', slug: 'acme', role: 'owner' },
+      }),
+    )
+    vi.stubGlobal('fetch', entry)
+    render(<LoginForm returnTo="/sent" />)
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'other@example.test' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    await waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith({
+        href: 'http://acme.localhost:3000/sent#',
+        replace: true,
+        reloadDocument: true,
+      }),
+    )
+    expect(entry).toHaveBeenCalledWith(
+      '/api/v1/workspace-entry',
+      expect.objectContaining({ credentials: 'same-origin' }),
+    )
+  })
+
+  it.each([
+    { source: 'none', workspace: null },
+    {
+      source: 'preference',
+      workspace: { id: 'id', name: 'Bad', slug: 'evil.test/path', role: 'owner' },
+    },
+  ])('falls back to the authenticated route for empty or invalid workspace entry', async (body) => {
+    environment.workspaceSwitchingEnabled = true
+    environment.VITE_WORKSPACE_BASE_HOST = 'localhost'
+    signIn.mockResolvedValue({ data: { user: { id: 'next-identity' } } })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Response.json(body)),
+    )
+    render(<LoginForm returnTo="/sent" />)
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'other@example.test' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    await waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith({
+        href: '/sent#',
+        replace: true,
+        reloadDocument: true,
+      }),
+    )
   })
 
   it('reports an auth transport failure without recording credentials or errors', async () => {
