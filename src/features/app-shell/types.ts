@@ -57,6 +57,7 @@ export type AppShellHeaderProps = {
 }
 
 export type AppShellHeaderActionsProps = {
+  className?: string
   children: ReactNode
 }
 

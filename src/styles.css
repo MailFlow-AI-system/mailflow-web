@@ -11,6 +11,11 @@ body {
 }
 
 @layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
   button,
   a {
     -webkit-tap-highlight-color: transparent;

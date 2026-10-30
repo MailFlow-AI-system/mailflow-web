@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test'
+import { matchesEntryUrl } from './entryUrl'
 import type { SwitchingFixture } from './types'
 
 export async function fixture(): Promise<SwitchingFixture> {
@@ -41,5 +42,5 @@ export async function selectNorthwind(page: Page) {
 }
 
 export async function expectEntryUrl(page: Page, expected: string) {
-  await expect(page).toHaveURL((url) => url.href.replace(/#$/, '') === expected)
+  await expect(page).toHaveURL((url) => matchesEntryUrl(url, expected))
 }

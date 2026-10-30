@@ -1,11 +1,24 @@
 import { useSentEmails } from '../hooks/useSentEmails'
 import { MailListView } from './MailList'
 
-export function SentMailList({ userId }: { userId: string }) {
+export function SentMailList({
+  userId,
+  selectedId,
+  onSelect,
+  onAutoSelect,
+}: {
+  userId: string
+  selectedId?: string
+  onSelect?: (id: string) => void
+  onAutoSelect?: (id: string) => void
+}) {
   const mail = useSentEmails(userId)
   return (
     <MailListView
       label="Sent message list"
+      selectedId={selectedId}
+      onSelect={onSelect}
+      onAutoSelect={onAutoSelect}
       mail={{
         ...mail,
         messages: mail.messages.map((message) => ({

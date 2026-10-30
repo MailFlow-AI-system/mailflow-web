@@ -36,6 +36,12 @@ test('select B, refresh, sign out and generic login resumes B; direct A still wi
   await page.goto(`http://${data.host}:3003/sent`)
   await expect(page.getByRole('combobox', { name: 'Workspace: Acme Corp' })).toBeVisible()
   await page.reload()
+  await expect(
+    page
+      .getByRole('region', { name: 'Message reader', exact: true })
+      .getByRole('heading', { level: 2 }),
+  ).toBeVisible()
+  await expect(page).toHaveURL((url) => url.searchParams.has('message'))
   await expectEntryUrl(page, `http://${data.host}:3003/sent`)
   await expect(page.getByRole('combobox', { name: 'Workspace: Acme Corp' })).toBeVisible()
   expect((await fixture()).preference).toBe(data.targetId)
@@ -159,6 +165,14 @@ test('an expired session requires login, preserves only a safe collection and re
   await login(page, `http://${data.host}:3003/login`)
   await expect(page.getByRole('combobox', { name: 'Workspace: Acme Corp' })).toBeVisible()
   await selectNorthwind(page)
+  await expect(
+    page
+      .getByRole('region', { name: 'Message reader', exact: true })
+      .getByRole('heading', { name: 'Northwind private message', exact: true }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('region', { name: 'Inbox message list', exact: true }),
+  ).toHaveAttribute('aria-busy', 'false')
   await control('expire-session')
   await page.goto('http://localhost:3003/sent?q=private#message-id')
   await expect(page.getByRole('heading', { name: 'Sign in to MailFlow' })).toBeVisible()

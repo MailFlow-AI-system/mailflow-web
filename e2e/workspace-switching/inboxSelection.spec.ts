@@ -98,15 +98,41 @@ test('does not carry a selection into another workspace', async ({ page }) => {
   await expect(page.getByText('1 selected', { exact: true })).toHaveCount(0)
 })
 
+test('keeps checkbox selection independent from the opened message', async ({ page }) => {
+  const data = await fixture()
+  await login(page, `http://${data.host}:3003/login`)
+  const reader = page.getByRole('region', { name: 'Message reader' })
+  await expect(reader.getByRole('heading', { name: 'Acme private message' })).toBeVisible()
+  const initialUrl = page.url()
+  const list = page.getByRole('region', { name: 'Inbox message list' })
+  const checkboxes = list.getByRole('checkbox', { name: /^Select message from / })
+
+  await checkboxes.first().click()
+  await expect(page.getByText('1 selected', { exact: true })).toBeVisible()
+  await expect(page).toHaveURL(initialUrl)
+  await expect(reader.getByRole('heading', { name: 'Acme private message' })).toBeVisible()
+
+  const anotherMessage = list.getByRole('listitem').nth(1).getByRole('button')
+  await anotherMessage.focus()
+  await page.keyboard.press('Enter')
+  await expect(page).not.toHaveURL(initialUrl)
+  await expect(reader.getByRole('heading', { level: 2 })).not.toHaveText('Acme private message')
+  await expect(checkboxes.first()).toHaveAttribute('aria-checked', 'true')
+  await expect(page.getByText('1 selected', { exact: true })).toBeVisible()
+})
+
 test.describe('touch layout', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
 
   test('enters an explicit selection mode and selects by tapping whole rows', async ({ page }) => {
     const data = await fixture()
     await login(page, `http://${data.host}:3003/login`)
-    await expect(page.getByText('Acme private message', { exact: true }).first()).toBeVisible({
-      timeout: 15000,
-    })
+    await expect(
+      page.getByRole('region', { name: 'Message reader' }).getByRole('heading', {
+        name: 'Acme private message',
+      }),
+    ).toBeVisible({ timeout: 15000 })
+    await page.getByRole('button', { name: 'Back to messages' }).tap()
 
     // Nothing is hidden behind a hover: no checkboxes until selection mode starts.
     await expect(page.getByRole('checkbox')).toHaveCount(0)
@@ -136,7 +162,15 @@ test.describe('touch layout', () => {
   test('holding a row starts selecting with that row', async ({ page }) => {
     const data = await fixture()
     await login(page, `http://${data.host}:3003/login`)
-    const first = page.getByText('Acme private message', { exact: true }).first()
+    await expect(
+      page.getByRole('region', { name: 'Message reader' }).getByRole('heading', {
+        name: 'Acme private message',
+      }),
+    ).toBeVisible({ timeout: 15000 })
+    await page.getByRole('button', { name: 'Back to messages' }).tap()
+    const first = page
+      .getByRole('region', { name: 'Inbox message list' })
+      .getByText('Acme private message', { exact: true })
     await expect(first).toBeVisible({ timeout: 15000 })
 
     const box = await first.boundingBox()
@@ -150,5 +184,18 @@ test.describe('touch layout', () => {
     await expect(
       page.getByRole('checkbox', { name: /^Select message from / }).first(),
     ).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Message reader' })).toHaveCount(0)
+    await expect(page).not.toHaveURL(/message=/)
+
+    await page.getByRole('button', { name: 'Clear selection and exit selection mode' }).tap()
+    await first.tap()
+    await expect(
+      page.getByRole('region', { name: 'Message reader' }).getByRole('heading', {
+        name: 'Acme private message',
+      }),
+    ).toBeVisible()
+    await expect(page).toHaveURL(/message=/)
+    await page.getByRole('button', { name: 'Back to messages' }).tap()
+    await expect(page.getByRole('button', { name: 'Select', exact: true })).toBeVisible()
   })
 })

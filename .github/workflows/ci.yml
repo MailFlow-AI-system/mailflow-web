@@ -60,8 +60,8 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: MailFlow-AI-system/mailflow-core
-          # Update deliberately when adopting a newer Core browser harness.
-          ref: 7520e73556285dd717830233209753c966678cdc
+          # Includes the email reader endpoints and Inbox attachment schema.
+          ref: 5fa183df12a0bd6d44a95bb5088f2d8efc098dd4
           path: core
           persist-credentials: false
 
