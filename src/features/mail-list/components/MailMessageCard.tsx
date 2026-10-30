@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, Checkbox } from '@mailflow/ui/components'
-import { useId } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import { useLongPress } from '#/features/mail-selection/hooks/useLongPress'
 import { getSenderAvatarColorClass } from '../senderAvatarColor'
 import type { MailMessage } from '../types/mailMessage'
@@ -7,6 +7,8 @@ import type { MailMessage } from '../types/mailMessage'
 type MailMessageCardProps = {
   message: MailMessage
   selected?: boolean
+  active?: boolean
+  onSelect?: (id: string) => void
   onSelectedChange?: (selected: boolean) => void
   variant?: 'pointer' | 'touch'
   selecting?: boolean
@@ -36,6 +38,8 @@ function MessageText({ message }: { message: MailMessage }) {
 export function MailMessageCard({
   message,
   selected = false,
+  active = false,
+  onSelect,
   onSelectedChange,
   variant = 'pointer',
   selecting = false,
@@ -43,7 +47,26 @@ export function MailMessageCard({
 }: MailMessageCardProps) {
   const checkboxId = useId()
   const nameId = useId()
-  const longPress = useLongPress(() => onLongPress?.())
+  const suppressClick = useRef(false)
+  useEffect(() => {
+    if (!selecting) suppressClick.current = false
+  }, [selecting])
+  const longPress = useLongPress(() => {
+    suppressClick.current = true
+    onLongPress?.()
+  })
+  const touchEvents = {
+    onPointerDownCapture: () => {
+      suppressClick.current = false
+    },
+    onClickCapture: (event: React.MouseEvent) => {
+      if (suppressClick.current) {
+        suppressClick.current = false
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    },
+  }
   const selectable = onSelectedChange !== undefined
   const initials = senderInitials(message.senderName) || '?'
   const avatarColor = getSenderAvatarColorClass(message.senderName, message.recipientEmail)
@@ -67,11 +90,12 @@ export function MailMessageCard({
   if (selectable && variant === 'touch' && selecting) {
     return (
       <li
-        className={`border-b border-border ${selected ? 'bg-primary/10' : ''}`}
+        className={`border-b border-border ${selected ? 'bg-primary/10' : active ? 'bg-primary/5' : ''} ${active ? 'border-l-2 border-l-primary' : ''}`}
         data-selected={selected}
+        {...touchEvents}
       >
         <label
-          className="flex min-h-[88px] w-full min-w-0 cursor-pointer select-none items-start gap-2 py-4 pr-3 pl-1 active:bg-muted/40"
+          className={`flex min-h-[88px] w-full min-w-0 cursor-pointer select-none items-start gap-2 py-4 pr-3 active:bg-muted/40 ${active ? 'pl-0.5' : 'pl-1'}`}
           htmlFor={checkboxId}
         >
           <span className="-my-1 grid size-11 shrink-0 place-items-center">
@@ -97,21 +121,28 @@ export function MailMessageCard({
   // Touch, idle: nothing hidden to discover; holding a row starts selecting.
   if (selectable && variant === 'touch') {
     return (
-      <li className="border-b border-border" data-selected={false}>
-        <div
-          className="flex min-h-[88px] min-w-0 select-none items-start gap-3 px-4 py-4 [-webkit-touch-callout:none]"
+      <li
+        className={`border-b border-border ${active ? 'border-l-2 border-l-primary bg-primary/5' : ''}`}
+        data-selected={false}
+        {...touchEvents}
+      >
+        <button
+          type="button"
+          aria-current={active ? 'true' : undefined}
+          onClick={() => onSelect?.(message.id)}
+          className={`flex min-h-[88px] w-full min-w-0 cursor-pointer select-none items-start gap-3 py-4 pr-4 text-left [-webkit-touch-callout:none] ${active ? 'pl-[14px]' : 'pl-4'}`}
           {...longPress}
         >
           {avatar(false)}
           <MessageText message={message} />
-        </div>
+        </button>
       </li>
     )
   }
 
   return (
     <li
-      className={`group/row border-b border-border px-3 py-3 transition-colors ${selected ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-muted/40'}`}
+      className={`group/row border-b border-border py-3 pr-3 transition-colors ${active ? 'pl-[10px]' : 'pl-3'} ${selected ? 'bg-primary/10 hover:bg-primary/15' : active ? 'bg-primary/5' : 'hover:bg-muted/40'} ${active ? 'border-l-2 border-l-primary' : ''}`}
       data-selected={selectable ? selected : undefined}
     >
       <div className="flex min-w-0 items-start gap-3">
@@ -129,10 +160,22 @@ export function MailMessageCard({
             />
             {avatar(true)}
           </label>
-        ) : (
+        ) : !onSelect ? (
           avatar(false)
+        ) : null}
+        {onSelect ? (
+          <button
+            type="button"
+            aria-current={active ? 'true' : undefined}
+            className="flex min-w-0 flex-1 cursor-pointer items-start gap-3 text-left focus-visible:outline-2 focus-visible:outline-ring"
+            onClick={() => onSelect(message.id)}
+          >
+            {!selectable ? avatar(false) : null}
+            <MessageText message={message} />
+          </button>
+        ) : (
+          <MessageText message={message} />
         )}
-        <MessageText message={message} />
       </div>
     </li>
   )

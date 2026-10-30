@@ -28,6 +28,7 @@ function NavigationItemButton({ item }: NavigationItemButtonProps) {
     return (
       <SidebarMenuButton
         aria-disabled="true"
+        type="button"
         title={`${item.label} — em breve`}
         tooltip={item.label}
       >

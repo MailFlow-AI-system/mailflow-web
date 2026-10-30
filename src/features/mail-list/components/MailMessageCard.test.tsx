@@ -51,6 +51,26 @@ describe('MailMessageCard', () => {
     expect(screen.getByText('?').closest('[aria-hidden="true"]')).toBeInTheDocument()
     expect(screen.queryByRole('img')).not.toBeInTheDocument()
   })
+  it('opens a non-selectable message when its avatar is clicked', async () => {
+    const onSelect = vi.fn()
+    render(
+      <ul>
+        <MailMessageCard
+          message={{
+            id: 'sent-1',
+            senderName: 'Ada Lovelace',
+            subject: 'Sent message',
+            body: 'Body',
+            receivedAt: '',
+          }}
+          onSelect={onSelect}
+        />
+      </ul>,
+    )
+    await userEvent.setup().click(screen.getByText('AL'))
+    expect(onSelect).toHaveBeenCalledExactlyOnceWith('sent-1')
+  })
+
   describe('selection', () => {
     const message = {
       id: 'message-3',
@@ -59,6 +79,29 @@ describe('MailMessageCard', () => {
       body: 'A body',
       receivedAt: '2026-10-01T12:00:00.000Z',
     }
+
+    it('opens the message independently of bulk selection', async () => {
+      const user = userEvent.setup()
+      const onSelect = vi.fn()
+      const onSelectedChange = vi.fn()
+      render(
+        <ul>
+          <MailMessageCard
+            message={message}
+            active
+            onSelect={onSelect}
+            onSelectedChange={onSelectedChange}
+          />
+        </ul>,
+      )
+      await user.click(screen.getByRole('checkbox'))
+      expect(onSelectedChange).toHaveBeenCalledWith(true)
+      expect(onSelect).not.toHaveBeenCalled()
+      const open = screen.getByRole('button', { name: /Compiler plan/ })
+      expect(open).toHaveAttribute('aria-current', 'true')
+      await user.click(open)
+      expect(onSelect).toHaveBeenCalledWith(message.id)
+    })
 
     it('shows no checkbox when selection is not provided', () => {
       render(
@@ -89,6 +132,23 @@ describe('MailMessageCard', () => {
 
       await user.click(checkbox)
       expect(onSelectedChange).toHaveBeenCalledWith(true)
+    })
+
+    it('prioritizes the bulk selection background for an open selected message', () => {
+      render(
+        <ul>
+          <MailMessageCard
+            message={message}
+            active
+            selected
+            onSelect={vi.fn()}
+            onSelectedChange={vi.fn()}
+          />
+        </ul>,
+      )
+      const row = screen.getByRole('listitem')
+      expect(row).toHaveClass('bg-primary/10', 'border-l-primary')
+      expect(row).not.toHaveClass('bg-primary/5')
     })
 
     it('swaps the avatar for the checkbox on hover, keyboard focus, or selection mode', () => {
@@ -198,6 +258,89 @@ describe('MailMessageCard', () => {
       fireEvent.pointerDown(row)
       act(() => vi.advanceTimersByTime(500))
       expect(onLongPress).toHaveBeenCalledTimes(1)
+    })
+
+    it('suppresses the click after a long press but opens on a later tap', () => {
+      const onSelect = vi.fn()
+      const onLongPress = vi.fn()
+      const onSelectedChange = vi.fn()
+      const view = render(
+        <ul>
+          <MailMessageCard
+            message={message}
+            onSelect={onSelect}
+            onLongPress={onLongPress}
+            onSelectedChange={onSelectedChange}
+            variant="touch"
+          />
+        </ul>,
+      )
+      const row = screen.getByText('Machine draft')
+      fireEvent.pointerDown(row)
+      act(() => vi.advanceTimersByTime(500))
+      view.rerender(
+        <ul>
+          <MailMessageCard
+            message={message}
+            onSelect={onSelect}
+            onLongPress={onLongPress}
+            onSelectedChange={onSelectedChange}
+            selecting
+            variant="touch"
+          />
+        </ul>,
+      )
+      fireEvent.pointerUp(screen.getByText('Machine draft'))
+      fireEvent.click(screen.getByText('Machine draft'))
+      expect(onSelect).not.toHaveBeenCalled()
+      expect(onSelectedChange).not.toHaveBeenCalled()
+      view.rerender(
+        <ul>
+          <MailMessageCard
+            message={message}
+            onSelect={onSelect}
+            onLongPress={onLongPress}
+            onSelectedChange={onSelectedChange}
+            variant="touch"
+          />
+        </ul>,
+      )
+      fireEvent.pointerDown(screen.getByText('Machine draft'))
+      fireEvent.pointerUp(screen.getByText('Machine draft'))
+      fireEvent.click(screen.getByText('Machine draft'))
+      expect(onSelect).toHaveBeenCalledExactlyOnceWith(message.id)
+    })
+
+    it('opens with keyboard after a long press exits selection without a release click', () => {
+      const onSelect = vi.fn()
+      const props = {
+        message,
+        onSelect,
+        onSelectedChange: vi.fn(),
+        onLongPress: vi.fn(),
+        variant: 'touch' as const,
+      }
+      const view = render(
+        <ul>
+          <MailMessageCard {...props} />
+        </ul>,
+      )
+      fireEvent.pointerDown(screen.getByText('Machine draft'))
+      act(() => vi.advanceTimersByTime(500))
+      view.rerender(
+        <ul>
+          <MailMessageCard {...props} selecting />
+        </ul>,
+      )
+      view.rerender(
+        <ul>
+          <MailMessageCard {...props} />
+        </ul>,
+      )
+      const button = screen.getByRole('button', { name: /Machine draft/ })
+      button.focus()
+      fireEvent.click(button, { detail: 0 })
+      expect(onSelect).toHaveBeenCalledExactlyOnceWith(message.id)
     })
 
     it('makes the whole row the tap target in selection mode', () => {

@@ -1,5 +1,5 @@
 import { Button } from '@mailflow/ui/components'
-import { useCallback, useId, useRef } from 'react'
+import { useCallback, useEffect, useId, useRef } from 'react'
 
 import { MailSelectionBar } from '#/features/mail-selection/components/MailSelectionBar'
 import { useCoarseLayout } from '#/features/mail-selection/hooks/useCoarseLayout'
@@ -16,6 +16,9 @@ type MailListProps = {
   userId: string
   q: string
   isSearching?: boolean
+  selectedId?: string
+  onSelect?: (id: string) => void
+  onAutoSelect?: (id: string) => void
   heading?: string
 }
 
@@ -24,6 +27,9 @@ export function MailList({
   workspaceSlug,
   q,
   isSearching = false,
+  selectedId,
+  onSelect,
+  onAutoSelect,
   heading,
 }: MailListProps) {
   const mail = useMailMessages(userId, workspaceSlug, q)
@@ -34,6 +40,9 @@ export function MailList({
       q={q}
       isSearching={isSearching}
       label="Inbox message list"
+      selectedId={selectedId}
+      onSelect={onSelect}
+      onAutoSelect={onAutoSelect}
       selection={selection ?? undefined}
       {...(heading ? { heading } : {})}
     />
@@ -55,6 +64,9 @@ type MailListViewProps = {
   label: string
   q?: string
   isSearching?: boolean
+  selectedId?: string
+  onSelect?: (id: string) => void
+  onAutoSelect?: (id: string) => void
   selection?: MailSelection | undefined
   heading?: string
 }
@@ -64,11 +76,43 @@ export function MailListView({
   label,
   q = '',
   isSearching = false,
+  selectedId,
+  onSelect,
+  onAutoSelect,
   selection,
   heading,
 }: MailListViewProps) {
   const listId = useId()
   const touch = useCoarseLayout()
+  const initialSelectionHandled = useRef(false)
+  useEffect(() => {
+    if (initialSelectionHandled.current) return
+    if (selectedId || selection?.selecting) {
+      initialSelectionHandled.current = true
+      return
+    }
+    const firstId = mail.messages[0]?.id
+    if (
+      onAutoSelect &&
+      firstId &&
+      !isSearching &&
+      !mail.isPending &&
+      !mail.isFetching &&
+      !mail.isError
+    ) {
+      initialSelectionHandled.current = true
+      onAutoSelect(firstId)
+    }
+  }, [
+    selectedId,
+    selection?.selecting,
+    onAutoSelect,
+    isSearching,
+    mail.messages,
+    mail.isPending,
+    mail.isFetching,
+    mail.isError,
+  ])
   const scrollRootRef = useRef<HTMLElement>(null)
   const previousQuery = useRef(q)
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -163,6 +207,8 @@ export function MailListView({
                 <MailMessageCard
                   key={message.id}
                   message={message}
+                  active={message.id === selectedId}
+                  onSelect={onSelect}
                   selected={selection?.isSelected(message.id) ?? false}
                   {...(selection
                     ? {

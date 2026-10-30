@@ -5,10 +5,12 @@ import { LogoutMenuItem } from '#/features/auth/LogoutMenuItem'
 import { sendEmail } from '#/features/email-composer/clients/sendEmail'
 import { MailboxSearch } from '#/features/mail-list/components/MailboxSearch'
 import { normalizeMailSearch } from '#/features/mail-list/types/mailSearch'
+import { ReaderToolbar } from '#/features/mail-reader/MailReader'
 import { WorkspaceBoundary } from '#/features/workspaces/components/WorkspaceBoundary'
 import { AppShell } from '@/features/app-shell'
 import { EmailComposer } from '@/features/email-composer'
 
+const mailRoute = getRouteApi('/_authenticated/_mail')
 const authenticatedRoute = getRouteApi('/_authenticated')
 
 export const Route = createFileRoute('/_authenticated/_mail')({
@@ -18,6 +20,7 @@ export const Route = createFileRoute('/_authenticated/_mail')({
 
 function MailLayout() {
   const { user } = authenticatedRoute.useRouteContext()
+  const { message } = mailRoute.useSearch()
   const queryClient = useQueryClient()
   const onSent = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ['sent-workspace', user.id] })
@@ -40,6 +43,11 @@ function MailLayout() {
               <AppShell.Header.Filters />
               <EmailComposer.Trigger />
             </AppShell.Header.Mailbox>
+            {message && (pathname === '/inbox' || pathname === '/sent') ? (
+              <AppShell.Header.Actions className="hidden min-w-0 flex-1 self-start lg:flex">
+                <ReaderToolbar />
+              </AppShell.Header.Actions>
+            ) : null}
           </AppShell.Header>
           <AppShell.Content>
             <WorkspaceBoundary>

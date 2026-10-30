@@ -199,3 +199,42 @@ it('allows workspace Sent while deriving Origin from the request host and exposi
   ).toBe(403)
   expect(fetcher).toHaveBeenCalledTimes(1)
 })
+
+it('forwards sent detail and inline attachment bytes only through fixed authenticated paths', async () => {
+  const fetcher = vi.fn<typeof fetch>(
+    async () =>
+      new Response('bytes', {
+        headers: {
+          'Content-Type': 'image/png',
+          'Content-Disposition': 'inline',
+          'X-Workspace-Id': 'workspace-a',
+          'X-Workspace-Identity': 'user-one',
+        },
+      }),
+  )
+  const proxy = createOutgoingMailProxy('https://api.example.test', fetcher)
+  for (const path of [
+    '/api/mail/sent/message-1',
+    '/api/mail/attachments/00000000-0000-4000-8000-000000000001/inline',
+  ]) {
+    const response = await proxy(
+      new Request(`${origin}${path}?url=https://evil.test`, {
+        headers: {
+          cookie: 'analytics=discard; better-auth.session_token=opaque',
+          'X-Workspace-Id': 'workspace-a',
+          'X-Workspace-Identity': 'user-one',
+        },
+      }),
+    )
+    expect(response.status).toBe(200)
+    expect(String(fetcher.mock.calls.at(-1)?.[0])).toBe(
+      `https://api.example.test${path.replace('/api/mail/', '/api/v1/mail/')}`,
+    )
+    expect(new Headers(fetcher.mock.calls.at(-1)?.[1]?.headers).get('cookie')).toBe(
+      'better-auth.session_token=opaque',
+    )
+    expect(response.headers.get('Content-Type')).toBe('image/png')
+    expect(response.headers.get('X-Workspace-Identity')).toBe('user-one')
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store')
+  }
+})

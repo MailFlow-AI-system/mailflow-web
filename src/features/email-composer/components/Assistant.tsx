@@ -1,5 +1,6 @@
 import { Button } from '@mailflow/ui/components'
 import { Languages, ScanText, Sparkles, SpellCheck, WandSparkles } from '@mailflow/ui/icons'
+import { showFeatureUnavailable } from '#/lib/showFeatureUnavailable'
 
 const actions = [
   { icon: WandSparkles, label: 'Escrever email' },
@@ -27,7 +28,8 @@ export function Assistant() {
           key={label}
           variant="ghost"
           size="sm"
-          aria-disabled="true"
+          onClick={showFeatureUnavailable}
+          type="button"
           title="Disponível em uma próxima etapa"
           className="justify-start gap-2 text-xs font-normal text-muted-foreground"
         >

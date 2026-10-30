@@ -70,6 +70,35 @@ describe('MailList selection', () => {
     return view
   }
 
+  it('keeps the open message independent of checkbox selection', async () => {
+    const user = userEvent.setup()
+    const onSelect = vi.fn()
+    render(
+      <MailList
+        heading="Inbox"
+        workspaceSlug="acme"
+        userId="user-1"
+        q=""
+        selectedId="a"
+        onSelect={onSelect}
+      />,
+      { wrapper: Wrapper },
+    )
+    await screen.findByText('Subject a')
+    await user.click(rowCheckbox('b'))
+    expect(onSelect).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: /Subject a/ })).toHaveAttribute(
+      'aria-current',
+      'true',
+    )
+    expect(rowCheckbox('b')).toHaveAttribute('aria-checked', 'true')
+    const open = screen.getByRole('button', { name: /Subject b/ })
+    open.focus()
+    await user.keyboard('{Enter}')
+    expect(onSelect).toHaveBeenCalledExactlyOnceWith('b')
+    expect(rowCheckbox('b')).toHaveAttribute('aria-checked', 'true')
+  })
+
   it('selects one message, then several, and deselects them individually', async () => {
     const user = userEvent.setup()
     await renderList()
