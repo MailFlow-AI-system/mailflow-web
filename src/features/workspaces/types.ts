@@ -4,7 +4,16 @@ export type Workspace = {
   id: string
   name: string
   slug: string
-  role: 'owner' | 'admin' | 'member'
+  role:
+    | 'owner'
+    | 'admin'
+    | 'member'
+    | 'manager'
+    | 'marketing_specialist'
+    | 'analyst'
+    | 'viewer'
+    | 'custom'
+  capabilities?: string[]
 }
 export type WorkspacePage = { items: Workspace[]; nextCursor: string | null }
 export type WorkspaceContextResponse = { workspace: Workspace | null }
