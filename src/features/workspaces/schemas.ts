@@ -7,7 +7,18 @@ export const workspaceSchema = z.object({
     .string()
     .max(63)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-  role: z.enum(['owner', 'admin', 'member']),
+  role: z.enum([
+    'owner',
+    'admin',
+    'member',
+    'manager',
+    'marketing_specialist',
+    'analyst',
+    'viewer',
+    'custom',
+  ]),
+  // Only the context responses carry capabilities; absent means none (default deny).
+  capabilities: z.array(z.string()).optional(),
 })
 export const workspacePageSchema = z.object({
   items: z.array(workspaceSchema).max(50),
