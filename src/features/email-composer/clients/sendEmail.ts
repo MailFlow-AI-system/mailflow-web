@@ -1,7 +1,9 @@
+import { toast } from '@mailflow/ui/components'
 import { z } from 'zod'
 import { getAttachmentSizeIssues } from '../schemas/compositionSchema'
 import type { ValidatedComposition } from '../types/composer'
 import { type EmailDeliveryContext, EmailDeliveryError } from '../types/EmailDelivery'
+import { assignSentLabels } from './labels'
 import { mailRequestFailure, resolveDeliveryScope } from './mailContext'
 
 const failureMessage =
@@ -297,6 +299,21 @@ export async function sendEmail(
       typeof result.id !== 'string'
     )
       throw new EmailDeliveryError(failureMessage)
+    const labelIds = context.labels?.map((label) => label.id)
+    if (labelIds?.length) {
+      const messageId = result.id
+      const applyLabels = async () => {
+        try {
+          await assignSentLabels(scope, messageId, labelIds)
+        } catch {
+          toast.error('E-mail enviado, mas não foi possível aplicar as etiquetas.', {
+            duration: Infinity,
+            action: { label: 'Tentar novamente', onClick: () => void applyLabels() },
+          })
+        }
+      }
+      await applyLabels()
+    }
   } catch (error) {
     if (error instanceof EmailDeliveryError) throw error
     throw new EmailDeliveryError(failureMessage)

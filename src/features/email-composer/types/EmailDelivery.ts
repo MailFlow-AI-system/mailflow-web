@@ -1,4 +1,5 @@
 import type { Workspace } from '#/features/workspaces/types'
+import type { MailLabel } from '../clients/labels'
 
 export type MailDeliveryScope = { userId: string; workspace: Workspace }
 
@@ -23,6 +24,7 @@ export type DeliveryProgress = {
 }
 
 export type EmailDeliveryContext = {
+  labels?: MailLabel[]
   uploads: Map<string, AttachmentUploadState>
   scope: { current: MailDeliveryScope | null }
   userId?: string

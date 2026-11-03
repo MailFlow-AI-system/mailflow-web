@@ -3,6 +3,8 @@ import { useEditor } from '@tiptap/react'
 import { cn } from 'cn'
 import { useCallback, useId, useRef, useState } from 'react'
 import { discardEmail } from '../clients/discardEmail'
+import type { MailLabel } from '../clients/labels'
+import { resolveDeliveryScope } from '../clients/mailContext'
 import { draftSignature, emptyBody, emptyFields } from '../draft'
 import { getEditorBodySnapshot } from '../editor/bodyContent'
 import { composerExtensions } from '../editor/extensions'
@@ -36,6 +38,7 @@ export function useComposerController(
   userId?: string,
 ): ComposerController {
   const draft = useDraftForm()
+  const [labels, setLabels] = useState<MailLabel[]>([])
   const [sending, setSending] = useState(false)
   const [discarding, setDiscarding] = useState(false)
   const discardingRef = useRef(false)
@@ -51,13 +54,14 @@ export function useComposerController(
   const releaseRemovedInlineRef = useRef<(body: string) => void>(() => {})
   const deliveryContext = useCallback(
     (): EmailDeliveryContext => ({
+      labels,
       uploads: uploads.current,
       scope: scope.current,
       messageIds: messageIds.current,
       attachmentIds: attachmentIds.current,
       userId,
     }),
-    [userId],
+    [userId, labels],
   )
   const [open, setOpen] = useState(false)
   const [state, setState] = useState<WindowState>('normal')
@@ -254,6 +258,7 @@ export function useComposerController(
     draft.reset(emptyDraft)
     setBaselineDraftSignature(draftSignature(emptyFields, emptyBody, []))
     setSaved(false)
+    setLabels([])
     setConfirm(false)
     setOpen(false)
     setShowCc(false)
@@ -388,6 +393,16 @@ export function useComposerController(
   return {
     draft,
     context: {
+      labels:
+        onSend && open && state !== 'minimized'
+          ? {
+              items: labels,
+              setItems: (items) => {
+                if (sessionRef.current === session && !sendingRef.current) setLabels(items)
+              },
+              resolveScope: () => resolveDeliveryScope(deliveryContext()),
+            }
+          : undefined,
       sending: sending || discarding,
       discarding,
       sendFailed,

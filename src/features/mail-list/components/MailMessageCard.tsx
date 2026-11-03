@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback, Checkbox } from '@mailflow/ui/components'
 import { useEffect, useId, useRef } from 'react'
+import { MailLabelBadges } from '#/features/mail-labels/MailLabelBadges'
 import { useLongPress } from '#/features/mail-selection/hooks/useLongPress'
 import { getSenderAvatarColorClass } from '../senderAvatarColor'
 import type { MailMessage } from '../types/mailMessage'
@@ -31,6 +32,7 @@ function MessageText({ message }: { message: MailMessage }) {
       <span className="block truncate whitespace-nowrap text-[11px] text-muted-foreground">
         {message.body}
       </span>
+      <MailLabelBadges labels={message.labels} compact />
     </span>
   )
 }

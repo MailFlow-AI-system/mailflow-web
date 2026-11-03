@@ -19,10 +19,36 @@ export function createOutgoingMailProxy(apiBaseUrl: string, fetcher: typeof fetc
     const completingAttachment = request.method === 'POST' && attachmentPath?.[1] === 'complete'
     const readingAttachment =
       request.method === 'GET' && Boolean(attachmentPath) && attachmentPath?.[1] !== 'complete'
-    const mutating = sending || discarding || creatingAttachment || completingAttachment
+    const labelPath =
+      /^\/api\/mail\/labels\/([a-z0-9-]{1,63})(?:\/sent\/([a-fA-F0-9-]{36})\/([a-fA-F0-9-]{36}))?$/.exec(
+        incoming.pathname,
+      )
+    const palettePath =
+      request.method === 'GET'
+        ? /^\/api\/mail\/labels\/([a-z0-9-]{1,63})\/palette$/.exec(incoming.pathname)
+        : null
+    const listingLabels = request.method === 'GET' && labelPath && !labelPath[2]
+    const creatingLabel = request.method === 'POST' && labelPath && !labelPath[2]
+    const assigningLabel = request.method === 'PUT' && Boolean(labelPath?.[2])
+    const labelRoute = palettePath || listingLabels || creatingLabel || assigningLabel
+    const mutating =
+      Boolean(creatingLabel) ||
+      assigningLabel ||
+      sending ||
+      discarding ||
+      creatingAttachment ||
+      completingAttachment
     const attachmentRoute = creatingAttachment || completingAttachment || readingAttachment
     const privateHeaders = { 'Cache-Control': 'private, no-store' }
-    if (!sending && !discarding && !listing && !readingSent && !attachmentRoute && !readingContext)
+    if (
+      !sending &&
+      !discarding &&
+      !listing &&
+      !readingSent &&
+      !attachmentRoute &&
+      !readingContext &&
+      !labelRoute
+    )
       return new Response(null, { status: 404, headers: privateHeaders })
     const suppliedOrigin = request.headers.get('origin')
     if (suppliedOrigin !== null && suppliedOrigin !== incoming.origin)
@@ -35,21 +61,32 @@ export function createOutgoingMailProxy(apiBaseUrl: string, fetcher: typeof fetc
       return new Response(null, { status: 403, headers: privateHeaders })
     if (
       mutating &&
+      !assigningLabel &&
       request.headers.get('content-type')?.split(';')[0]?.trim() !== 'application/json'
     )
       return new Response(null, { status: 415, headers: privateHeaders })
     const upstreamUrl = new URL(
-      attachmentRoute || readingSent
-        ? incoming.pathname.replace('/api/mail/', '/api/v1/mail/')
-        : readingContext
-          ? '/api/v1/mail/context'
-          : discarding
-            ? '/api/v1/mail/discard'
-            : sending
-              ? '/api/v1/mail/send'
-              : '/api/v1/mail/sent',
+      palettePath
+        ? `/api/v1/workspaces/${palettePath[1]}/mail/labels/palette`
+        : labelRoute && labelPath
+          ? `/api/v1/workspaces/${labelPath[1]}/mail/${labelPath[2] ? `sent/${labelPath[2]}/labels/${labelPath[3]}` : 'labels'}`
+          : attachmentRoute || readingSent
+            ? incoming.pathname.replace('/api/mail/', '/api/v1/mail/')
+            : readingContext
+              ? '/api/v1/mail/context'
+              : discarding
+                ? '/api/v1/mail/discard'
+                : sending
+                  ? '/api/v1/mail/send'
+                  : '/api/v1/mail/sent',
       apiBaseUrl,
     )
+    if (listingLabels) {
+      for (const key of ['q', 'cursor']) {
+        const value = incoming.searchParams.get(key)
+        if (value !== null) upstreamUrl.searchParams.set(key, value)
+      }
+    }
     if (listing && incoming.searchParams.has('offset'))
       upstreamUrl.searchParams.set('offset', incoming.searchParams.get('offset') ?? '')
     const headers = new Headers()
@@ -72,7 +109,7 @@ export function createOutgoingMailProxy(apiBaseUrl: string, fetcher: typeof fetc
         cache: 'no-store',
         signal: request.signal,
       }
-      if (mutating) {
+      if (mutating && !assigningLabel) {
         init.body = request.body
         init.duplex = 'half'
       }
