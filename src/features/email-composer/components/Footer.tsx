@@ -5,10 +5,12 @@ import { showFeatureUnavailable } from '#/lib/showFeatureUnavailable'
 import { useComposer } from '../context'
 import { useDraftStatus } from '../hooks/useDraftStatus'
 import type { DraftValues } from '../types/DraftValues'
+import { ComposerLabels } from './ComposerLabels'
 import { CompositionWarnings } from './CompositionWarnings'
 
 export function Footer() {
-  const { saveDraft, validation, sending, discarding, sendFailed, sendProgress } = useComposer()
+  const { labels, saveDraft, validation, sending, discarding, sendFailed, sendProgress } =
+    useComposer()
   const { control } = useFormContext<DraftValues>()
   const { errors, isSubmitting } = useFormState({ control })
   const { dirty, saved } = useDraftStatus()
@@ -67,6 +69,7 @@ export function Footer() {
             <Save aria-hidden="true" className="size-4" />
             Rascunho
           </Button>
+          {labels ? <ComposerLabels /> : null}
         </div>
         <span role="status" className="text-xs text-muted-foreground">
           {status}

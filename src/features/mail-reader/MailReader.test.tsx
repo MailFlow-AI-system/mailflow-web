@@ -10,6 +10,7 @@ vi.mock('./useMailDetail', () => ({ useMailDetail: vi.fn() }))
 const message: MailDetail = {
   id: 'one',
   subject: 'Quarterly report',
+  labels: [{ id: 'label', name: 'Financeiro', color: '#2563eb' }],
   senderName: 'Ada Lovelace',
   senderEmail: 'ada@example.test',
   to: ['to@example.test'],
@@ -37,6 +38,7 @@ describe('MailReader', () => {
     const warning = vi.spyOn(toast, 'warning').mockReturnValue('feature-unavailable')
     render(<MailReaderView message={message} onBack={vi.fn()} />)
     expect(screen.getByRole('heading', { name: message.subject })).toBeVisible()
+    expect(screen.getByText('Financeiro').closest('[data-slot=badge]')).toBeVisible()
     expect(screen.getByText('<ada@example.test>')).toBeVisible()
     expect(screen.getByText('to@example.test')).toBeVisible()
     expect(screen.getByText('cc@example.test')).toBeVisible()

@@ -714,3 +714,23 @@ it('keeps partial uploads available for discard without marking an email attempt
     uploaded: false,
   })
 })
+
+it('applies selected labels only after confirming the send, using the returned message ID', async () => {
+  const fetcher = vi.fn<typeof fetch>(async (input) => {
+    const url = String(input)
+    if (url === '/api/mail/context') return Response.json(workspaceContext)
+    if (url === '/api/mail/send') return Response.json({ id: 'confirmed', status: 'sent' })
+    return Response.json({ items: [] })
+  })
+  vi.stubGlobal('fetch', fetcher)
+  await sendEmail(composition, 'draft', {
+    ...context(),
+    labels: [{ id: 'label-id', name: 'Invoice', color: '#000000' }],
+  })
+  expect(fetcher.mock.calls.map(([input]) => input)).toEqual([
+    '/api/mail/context',
+    '/api/mail/context',
+    '/api/mail/send',
+    '/api/mail/labels/workspace-a/sent/confirmed/label-id',
+  ])
+})

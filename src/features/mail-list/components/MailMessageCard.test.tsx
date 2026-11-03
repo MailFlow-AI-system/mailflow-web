@@ -15,6 +15,7 @@ describe('MailMessageCard', () => {
             id: 'message-1',
             senderName: 'Ada Lovelace',
             subject: 'Analytical Engine',
+            labels: [{ id: 'label', name: 'Financeiro', color: '#2563eb' }],
             body: '<img src=x onerror=alert(1)> A long plain-text body',
             receivedAt: '2026-10-01T12:00:00.000Z',
           }}
@@ -25,6 +26,7 @@ describe('MailMessageCard', () => {
     expect(screen.getByText('AL').closest('[aria-hidden="true"]')).toBeInTheDocument()
     expect(screen.getByText('Ada Lovelace')).toBeInTheDocument()
     expect(screen.getByText('Analytical Engine')).toBeInTheDocument()
+    expect(screen.getByText('Financeiro').closest('[data-slot=badge]')).toBeVisible()
     expect(screen.getByText('<img src=x onerror=alert(1)> A long plain-text body')).toHaveClass(
       'truncate',
     )

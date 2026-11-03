@@ -34,6 +34,7 @@ import { Route as ApiV1WorkspaceEntryRouteImport } from './routes/api/v1/workspa
 import { Route as ApiV1WorkspaceSelectionRouteImport } from './routes/api/v1/workspace-selection'
 import { Route as ApiV1WorkspacesRouteImport } from './routes/api/v1/workspaces'
 import { Route as ApiMailAttachmentsIdRouteImport } from './routes/api/mail/attachments.$id'
+import { Route as ApiMailLabelsSplatRouteImport } from './routes/api/mail/labels.$'
 import { Route as ApiMailMessagesIdRouteImport } from './routes/api/mail/messages.$id'
 import { Route as ApiMailSentIdRouteImport } from './routes/api/mail/sent.$id'
 import { Route as ApiMailAttachmentsIdCompleteRouteImport } from './routes/api/mail/attachments.$id.complete'
@@ -163,6 +164,11 @@ const ApiMailAttachmentsIdRoute = ApiMailAttachmentsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiMailAttachmentsRoute,
 } as any)
+const ApiMailLabelsSplatRoute = ApiMailLabelsSplatRouteImport.update({
+  id: '/api/mail/labels/$',
+  path: '/api/mail/labels/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMailMessagesIdRoute = ApiMailMessagesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -215,6 +221,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
   '/api/mail/attachments/$id': typeof ApiMailAttachmentsIdRouteWithChildren
+  '/api/mail/labels/$': typeof ApiMailLabelsSplatRoute
   '/api/mail/messages/$id': typeof ApiMailMessagesIdRoute
   '/api/mail/sent/$id': typeof ApiMailSentIdRoute
   '/api/mail/attachments/$id/complete': typeof ApiMailAttachmentsIdCompleteRoute
@@ -244,6 +251,7 @@ export interface FileRoutesByTo {
   '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
   '/api/mail/attachments/$id': typeof ApiMailAttachmentsIdRouteWithChildren
+  '/api/mail/labels/$': typeof ApiMailLabelsSplatRoute
   '/api/mail/messages/$id': typeof ApiMailMessagesIdRoute
   '/api/mail/sent/$id': typeof ApiMailSentIdRoute
   '/api/mail/attachments/$id/complete': typeof ApiMailAttachmentsIdCompleteRoute
@@ -277,6 +285,7 @@ export interface FileRoutesById {
   '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
   '/api/mail/attachments/$id': typeof ApiMailAttachmentsIdRouteWithChildren
+  '/api/mail/labels/$': typeof ApiMailLabelsSplatRoute
   '/api/mail/messages/$id': typeof ApiMailMessagesIdRoute
   '/api/mail/sent/$id': typeof ApiMailSentIdRoute
   '/api/mail/attachments/$id/complete': typeof ApiMailAttachmentsIdCompleteRoute
@@ -308,6 +317,7 @@ export interface FileRouteTypes {
     | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
     | '/api/mail/attachments/$id'
+    | '/api/mail/labels/$'
     | '/api/mail/messages/$id'
     | '/api/mail/sent/$id'
     | '/api/mail/attachments/$id/complete'
@@ -337,6 +347,7 @@ export interface FileRouteTypes {
     | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
     | '/api/mail/attachments/$id'
+    | '/api/mail/labels/$'
     | '/api/mail/messages/$id'
     | '/api/mail/sent/$id'
     | '/api/mail/attachments/$id/complete'
@@ -369,6 +380,7 @@ export interface FileRouteTypes {
     | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
     | '/api/mail/attachments/$id'
+    | '/api/mail/labels/$'
     | '/api/mail/messages/$id'
     | '/api/mail/sent/$id'
     | '/api/mail/attachments/$id/complete'
@@ -390,6 +402,7 @@ export interface RootRouteChildren {
   ApiV1WorkspaceEntryRoute: typeof ApiV1WorkspaceEntryRoute
   ApiV1WorkspaceSelectionRoute: typeof ApiV1WorkspaceSelectionRoute
   ApiV1WorkspacesRoute: typeof ApiV1WorkspacesRoute
+  ApiMailLabelsSplatRoute: typeof ApiMailLabelsSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -569,6 +582,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMailAttachmentsIdRouteImport
       parentRoute: typeof ApiMailAttachmentsRoute
     }
+    '/api/mail/labels/$': {
+      id: '/api/mail/labels/$'
+      path: '/api/mail/labels/$'
+      fullPath: '/api/mail/labels/$'
+      preLoaderRoute: typeof ApiMailLabelsSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/mail/messages/$id': {
       id: '/api/mail/messages/$id'
       path: '/$id'
@@ -724,6 +744,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1WorkspaceEntryRoute: ApiV1WorkspaceEntryRoute,
   ApiV1WorkspaceSelectionRoute: ApiV1WorkspaceSelectionRoute,
   ApiV1WorkspacesRoute: ApiV1WorkspacesRoute,
+  ApiMailLabelsSplatRoute: ApiMailLabelsSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
