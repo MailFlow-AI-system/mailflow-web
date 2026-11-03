@@ -648,3 +648,18 @@ it('uses secure random bytes for HTTP workspace delivery IDs and preserves the I
     vi.unstubAllGlobals()
   }
 })
+
+it('only mounts the label controls while the Composer window is visible', () => {
+  const { result } = renderHook(() => useComposerController('light', undefined, async () => {}))
+  const details = { cancel: vi.fn(), reason: 'none' as const }
+
+  expect(result.current.context.labels).toBeUndefined()
+  act(() => result.current.onOpenChange(true, details))
+  expect(result.current.context.labels).toBeDefined()
+  act(() => result.current.setState('minimized'))
+  expect(result.current.context.labels).toBeUndefined()
+  act(() => result.current.setState('normal'))
+  expect(result.current.context.labels).toBeDefined()
+  act(() => result.current.onOpenChange(false, details))
+  expect(result.current.context.labels).toBeUndefined()
+})

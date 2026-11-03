@@ -238,3 +238,25 @@ it('forwards sent detail and inline attachment bytes only through fixed authenti
     expect(response.headers.get('Cache-Control')).toBe('private, no-store')
   }
 })
+
+it('forwards the workspace-scoped label search and rejects untrusted assignment origins', async () => {
+  const fetcher = vi.fn<typeof fetch>(async () => Response.json({ items: [] }))
+  const proxy = createOutgoingMailProxy('https://api.example.test', fetcher)
+  const search = new Request(`${origin}/api/mail/labels/team-a?q=Fin&cursor=abc&userId=ignored`, {
+    headers: { 'X-Workspace-Identity': 'owner' },
+  })
+  expect((await proxy(search)).status).toBe(200)
+  expect(String(fetcher.mock.calls[0]?.[0])).toBe(
+    'https://api.example.test/api/v1/workspaces/team-a/mail/labels?q=Fin&cursor=abc',
+  )
+  const id = '00000000-0000-4000-8000-000000000001'
+  const assignment = `${origin}/api/mail/labels/team-a/sent/${id}/${id}`
+  expect((await proxy(new Request(assignment, { method: 'PUT' }))).status).toBe(403)
+  expect(fetcher).toHaveBeenCalledTimes(1)
+  expect(
+    (await proxy(new Request(assignment, { method: 'PUT', headers: { origin } }))).status,
+  ).toBe(200)
+  expect(String(fetcher.mock.calls[1]?.[0])).toBe(
+    `https://api.example.test/api/v1/workspaces/team-a/mail/sent/${id}/labels/${id}`,
+  )
+})

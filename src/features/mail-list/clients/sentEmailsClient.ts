@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { mailLabelSchema } from '#/features/mail-labels/mailLabel'
 import {
   readWorkspaceResponse,
   WorkspaceIdentityChangedError,
@@ -11,6 +12,7 @@ const sentEmailSchema = z.object({
   cc: z.array(z.string()),
   bcc: z.array(z.string()),
   recipientName: z.string().trim().default(''),
+  labels: z.array(mailLabelSchema).optional(),
   subject: z.string(),
   text: z.string(),
   sentAt: z.string().nullable(),

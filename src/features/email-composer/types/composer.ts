@@ -2,9 +2,10 @@ import type { WindowOpenChangeDetails, WindowState } from '@mailflow/ui/componen
 import type { Editor } from '@tiptap/react'
 import type { ReactNode, RefObject } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
+import type { MailLabel } from '../clients/labels'
 import type { CompositionWarning, NormalizedComposition } from './CompositionValidation'
 import type { DraftValues } from './DraftValues'
-import type { EmailDeliveryContext } from './EmailDelivery'
+import type { EmailDeliveryContext, MailDeliveryScope } from './EmailDelivery'
 
 export type { Attachment } from './DraftValues'
 export type RecipientField = 'to' | 'cc' | 'bcc' | 'recipientName' | 'subject'
@@ -37,6 +38,11 @@ export type ComposerValidationState = {
   warningsOpen: boolean
 }
 export type ComposerContextValue = {
+  labels?: {
+    items: MailLabel[]
+    setItems: (items: MailLabel[]) => void
+    resolveScope: () => Promise<MailDeliveryScope>
+  }
   sending: boolean
   discarding: boolean
   sendFailed: boolean

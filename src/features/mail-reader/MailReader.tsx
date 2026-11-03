@@ -13,6 +13,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { MailLabelBadges } from '#/features/mail-labels/MailLabelBadges'
 import { getSenderAvatarColorClass } from '#/features/mail-list/senderAvatarColor'
 import { showFeatureUnavailable } from '#/lib/showFeatureUnavailable'
 import type { MailDetail, MailFolder } from './mailDetail'
@@ -136,7 +137,7 @@ export function ReaderToolbar({
 }) {
   return (
     <header
-      className={`flex min-h-[49px] w-full shrink-0 flex-wrap items-center gap-1 border-b px-4 py-2 ${className}`}
+      className={`flex min-h-[49px] w-full shrink-0 flex-wrap items-center gap-1 border-b px-4 py-2 lg:py-2.5 ${className}`}
       role="toolbar"
       aria-label="Message actions"
     >
@@ -292,6 +293,7 @@ export function MailReaderView({
                 <h2 className="break-words text-2xl font-semibold tracking-tight">
                   {message.subject || '(No subject)'}
                 </h2>
+                <MailLabelBadges labels={message.labels} />
                 <div className="mt-6 flex items-start gap-3">
                   <Avatar aria-hidden="true" className="h-10 w-10 shrink-0">
                     <AvatarFallback
