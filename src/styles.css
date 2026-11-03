@@ -32,3 +32,16 @@ body {
     scrollbar-color: var(--border) transparent;
   }
 }
+
+/* The picker portal positions the popup again when its in-flow loading row changes height. */
+body:has([data-slot="label-picker"] [aria-expanded="true"])
+  :has(> [role="listbox"][aria-busy="true"])
+  > [role="listbox"]
+  + [role="status"] {
+  position: absolute;
+  inset-inline-end: 0.25rem;
+  bottom: 0.25rem;
+  pointer-events: none;
+  border-radius: var(--radius-md);
+  background: var(--popover);
+}

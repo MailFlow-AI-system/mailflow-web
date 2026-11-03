@@ -1,7 +1,9 @@
 import { z } from 'zod'
+import { mailLabelSchema } from '#/features/mail-labels/mailLabel'
 
 export const mailDetailSchema = z.object({
   id: z.string(),
+  labels: z.array(mailLabelSchema).optional(),
   subject: z.string(),
   senderName: z.string().nullable(),
   senderEmail: z.string().nullable(),

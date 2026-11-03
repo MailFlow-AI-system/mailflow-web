@@ -27,6 +27,7 @@ export function SentMailList({
           senderName: message.recipientName || message.to.join(', '),
           subject: message.subject || '(Sem assunto)',
           body: message.text,
+          labels: message.labels,
           receivedAt: message.sentAt ?? '',
         })),
       }}
