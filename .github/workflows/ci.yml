@@ -60,8 +60,9 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: MailFlow-AI-system/mailflow-core
-          # Includes the email reader endpoints and Inbox attachment schema.
-          ref: 5fa183df12a0bd6d44a95bb5088f2d8efc098dd4
+          # Includes the email reader endpoints, the Inbox attachment schema, and the draft
+          # routes (search and bulk discard) from mailflow-core#37. Re-pin to the merge commit.
+          ref: 35640cb5152c389a0a30c206211fc9329d1e1b55
           path: core
           persist-credentials: false
 
