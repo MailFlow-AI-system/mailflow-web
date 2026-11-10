@@ -95,7 +95,13 @@ test('session expiry on revalidation discards stale workspace authority without 
   await login(page, `http://${data.host}:3003/login`)
   await expect(page.getByRole('combobox', { name: 'Workspace: Acme Corp' })).toBeVisible()
   await control('expire-session')
-  await page.evaluate(() => window.dispatchEvent(new Event('visibilitychange')))
+  // A periodic revalidation can reach login first, which destroys the page context mid-call;
+  // that is the outcome under test, so only that specific error is tolerated.
+  await page
+    .evaluate(() => window.dispatchEvent(new Event('visibilitychange')))
+    .catch((error: unknown) => {
+      if (!String(error).includes('Execution context was destroyed')) throw error
+    })
   await expect(page.getByRole('heading', { name: 'Sign in to MailFlow' })).toBeVisible()
   await expect(page.getByRole('combobox')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Compose', exact: true })).toHaveCount(0)
