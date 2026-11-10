@@ -35,6 +35,16 @@ describe('Sent response scope', () => {
     expect(getCurrentSession).toHaveBeenCalledWith({ signal })
   })
 
+  it('sends the trimmed search text and omits it when empty', async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => response({ items: [], nextOffset: null }))
+    vi.stubGlobal('fetch', fetcher)
+    const signal = new AbortController().signal
+    await fetchSentEmails('owner', workspace.id, 0, signal, '  invoice & 100% ')
+    expect(fetcher.mock.calls[0]?.[0]).toBe('/api/mail/sent?offset=0&q=invoice%20%26%20100%25')
+    await fetchSentEmails('owner', workspace.id, 0, signal, '   ')
+    expect(fetcher.mock.calls[1]?.[0]).toBe('/api/mail/sent?offset=0')
+  })
+
   it.each(['', 'workspace-b'])(
     'rejects an unexpected workspace header %j before parsing body',
     async (actual) => {

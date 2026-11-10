@@ -60,6 +60,32 @@ afterEach(async () => {
   vi.resetAllMocks()
 })
 
+describe('Sent search', () => {
+  it('requests each search text separately without showing results from another search', async () => {
+    vi.mocked(fetchSentEmails).mockImplementation(
+      async (_userId, _workspaceId, _offset, _signal, q) => page(q ? `match-${q}` : 'everything'),
+    )
+    const { result, rerender } = renderHook(({ q }) => useSentEmails('owner', q), {
+      wrapper,
+      initialProps: { q: '' },
+    })
+    await waitFor(() => expect(result.current.messages.map(({ id }) => id)).toEqual(['everything']))
+    rerender({ q: 'invoice' })
+    expect(result.current.messages).toEqual([])
+    expect(result.current.isPending).toBe(true)
+    await waitFor(() =>
+      expect(result.current.messages.map(({ id }) => id)).toEqual(['match-invoice']),
+    )
+    expect(fetchSentEmails).toHaveBeenLastCalledWith(
+      'owner',
+      a.id,
+      0,
+      expect.any(AbortSignal),
+      'invoice',
+    )
+  })
+})
+
 describe('Sent workspace query scope', () => {
   it('never displays cached A messages as B and partitions pages by user and workspace', async () => {
     vi.mocked(fetchSentEmails).mockImplementation(async (_userId, workspaceId) => page(workspaceId))
@@ -70,10 +96,10 @@ describe('Sent workspace query scope', () => {
     expect(result.current.messages).toEqual([])
     await waitFor(() => expect(result.current.messages.map(({ id }) => id)).toEqual([b.id]))
     expect(
-      queryClient.getQueryData(['sent-emails', 'owner', a.id, window.location.hostname]),
+      queryClient.getQueryData(['sent-emails', 'owner', a.id, window.location.hostname, '']),
     ).toBeDefined()
     expect(
-      queryClient.getQueryData(['sent-emails', 'owner', b.id, window.location.hostname]),
+      queryClient.getQueryData(['sent-emails', 'owner', b.id, window.location.hostname, '']),
     ).toBeDefined()
     expect(readSentWorkspace).not.toHaveBeenCalled()
   })
@@ -127,7 +153,7 @@ describe('Sent workspace query scope', () => {
     expect(fetchSentEmails).not.toHaveBeenCalled()
     await act(async () => release(a))
     await waitFor(() => expect(result.current.messages.map(({ id }) => id)).toEqual(['default-a']))
-    expect(fetchSentEmails).toHaveBeenCalledWith('owner', a.id, 0, expect.any(AbortSignal))
+    expect(fetchSentEmails).toHaveBeenCalledWith('owner', a.id, 0, expect.any(AbortSignal), '')
   })
 
   it('hides cached A while the default is revalidated and refetches B after a default change', async () => {
@@ -193,7 +219,7 @@ describe('Sent workspace query scope', () => {
     version = 1
     await act(async () => queryClient.invalidateQueries({ queryKey: ['sent-emails', 'owner'] }))
     await waitFor(() => expect(result.current.messages.map(({ id }) => id)).toEqual([`${b.id}-1`]))
-    expect(fetchSentEmails).toHaveBeenLastCalledWith('owner', b.id, 0, expect.any(AbortSignal))
+    expect(fetchSentEmails).toHaveBeenLastCalledWith('owner', b.id, 0, expect.any(AbortSignal), '')
   })
 })
 
@@ -213,9 +239,9 @@ it('never reuses another signed-in identity cache even within the same workspace
     expect(result.current.messages.map(({ id }) => id)).toEqual(['mail-for-new-owner']),
   )
   expect(
-    queryClient.getQueryData(['sent-emails', 'owner', a.id, window.location.hostname]),
+    queryClient.getQueryData(['sent-emails', 'owner', a.id, window.location.hostname, '']),
   ).toBeDefined()
   expect(
-    queryClient.getQueryData(['sent-emails', 'new-owner', a.id, window.location.hostname]),
+    queryClient.getQueryData(['sent-emails', 'new-owner', a.id, window.location.hostname, '']),
   ).toBeDefined()
 })

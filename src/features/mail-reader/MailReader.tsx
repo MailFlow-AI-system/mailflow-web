@@ -41,6 +41,7 @@ export function MailReader({
       onRetry={() => void detail.refetch()}
       onBack={onBack}
       toolbarClassName={toolbarClassName}
+      showReplySuggestion={folder !== 'sent'}
     />
   )
 }
@@ -218,12 +219,15 @@ export function MailReaderView({
   onRetry,
   onBack,
   toolbarClassName,
+  showReplySuggestion = true,
 }: {
   message?: MailDetail
   error?: boolean
   onRetry?: () => void
   onBack: () => void
   toolbarClassName?: string
+  // A message you sent has nothing to reply to.
+  showReplySuggestion?: boolean
 }) {
   const [bodyState, setBodyState] = useState<{ id: string; status: 'ready' | 'error' } | null>(null)
   const messageId = message?.id
@@ -389,34 +393,36 @@ export function MailReaderView({
                     ))}
                   </div>
                 ) : null}
-                <div className="mt-10 rounded-xl border bg-gradient-to-br from-primary/5 to-transparent p-5">
-                  <div className="mb-3 flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">Sugestão de resposta com IA</span>
+                {showReplySuggestion ? (
+                  <div className="mt-10 rounded-xl border bg-gradient-to-br from-primary/5 to-transparent p-5">
+                    <div className="mb-3 flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">AI reply suggestion</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      AI suggestions are currently unavailable.
+                    </p>
+                    <div className="mt-4 flex gap-2">
+                      <Button
+                        type="button"
+                        onClick={showFeatureUnavailable}
+                        size="sm"
+                        className="gap-1.5"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Use reply
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={showFeatureUnavailable}
+                        size="sm"
+                        variant="ghost"
+                      >
+                        Regenerate
+                      </Button>
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    AI suggestions are currently unavailable.
-                  </p>
-                  <div className="mt-4 flex gap-2">
-                    <Button
-                      type="button"
-                      onClick={showFeatureUnavailable}
-                      size="sm"
-                      className="gap-1.5"
-                    >
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Usar resposta
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={showFeatureUnavailable}
-                      size="sm"
-                      variant="ghost"
-                    >
-                      Regenerar
-                    </Button>
-                  </div>
-                </div>
+                ) : null}
               </article>
             ) : null}
           </>

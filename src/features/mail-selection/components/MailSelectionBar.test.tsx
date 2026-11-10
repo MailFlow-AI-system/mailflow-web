@@ -1,5 +1,6 @@
 import { act, cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { useMailSelection } from '../hooks/useMailSelection'
 import { MailSelectionBar } from './MailSelectionBar'
@@ -8,6 +9,7 @@ import { MailSelectionProvider } from './MailSelectionProvider'
 const visibleIds = ['a', 'b', 'c']
 
 type BarProps = {
+  actions?: ReactNode
   ids?: string[]
   disabled?: boolean
   hiddenReason?: string
@@ -15,12 +17,20 @@ type BarProps = {
   touch?: boolean
 }
 
-function Bar({ ids = visibleIds, disabled = false, hiddenReason, controls, touch }: BarProps) {
+function Bar({
+  actions,
+  ids = visibleIds,
+  disabled = false,
+  hiddenReason,
+  controls,
+  touch,
+}: BarProps) {
   const selection = useMailSelection()
   if (!selection) return null
   return (
     <>
       <MailSelectionBar
+        {...(actions ? { actions } : {})}
         disabled={disabled}
         heading="Inbox"
         selection={selection}
@@ -57,6 +67,19 @@ describe('MailSelectionBar', () => {
     expect(selectAll()).toHaveAttribute('aria-checked', 'false')
     expect(screen.queryByText(/selected/)).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Clear selection' })).not.toBeInTheDocument()
+  })
+
+  it.each([false, true])('offers bulk actions only while selecting (touch: %s)', async (touch) => {
+    renderBar({ actions: <button type="button">Delete selected</button>, touch })
+    expect(screen.queryByRole('button', { name: 'Delete selected' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'pick a' }))
+    expect(screen.getByRole('button', { name: 'Delete selected' })).toBeInTheDocument()
+    await userEvent.click(
+      touch
+        ? screen.getByRole('button', { name: 'Clear selection and exit selection mode' })
+        : screen.getByRole('button', { name: 'Clear selection' }),
+    )
+    expect(screen.queryByRole('button', { name: 'Delete selected' })).not.toBeInTheDocument()
   })
 
   it('turns the title row into the selection bar when messages are selected', async () => {

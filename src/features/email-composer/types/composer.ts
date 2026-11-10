@@ -3,6 +3,7 @@ import type { Editor } from '@tiptap/react'
 import type { ReactNode, RefObject } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import type { MailLabel } from '../clients/labels'
+import type { DraftSaveStatus } from '../hooks/usePersistedDraft'
 import type { CompositionWarning, NormalizedComposition } from './CompositionValidation'
 import type { DraftValues } from './DraftValues'
 import type { EmailDeliveryContext, MailDeliveryScope } from './EmailDelivery'
@@ -23,6 +24,7 @@ export type ComposerRootProps = {
     context?: EmailDeliveryContext,
   ) => Promise<void>
   onSent?: () => void
+  onDraftChanged?: () => void
   onValidated?: (composition: ValidatedComposition) => void | Promise<void>
 }
 export type ComposerLayoutProps = { children: ReactNode; assistant?: ReactNode }
@@ -38,6 +40,13 @@ export type ComposerValidationState = {
   warningsOpen: boolean
 }
 export type ComposerContextValue = {
+  persistence?: {
+    status: DraftSaveStatus
+    error: string
+    conflict: boolean
+    saveCopy: () => Promise<boolean>
+  }
+  openDraft?: (id: string) => Promise<void>
   labels?: {
     items: MailLabel[]
     setItems: (items: MailLabel[]) => void
@@ -54,7 +63,7 @@ export type ComposerContextValue = {
   removeAttachment: (id: string) => void | Promise<void>
   baselineDraftSignature: string
   saved: boolean
-  saveDraft: () => void
+  saveDraft: () => void | Promise<void>
   confirm: boolean
   setConfirm: (value: boolean) => void
   discard: () => void | Promise<void>

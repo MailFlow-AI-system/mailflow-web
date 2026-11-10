@@ -6,12 +6,10 @@ import { type EmailDeliveryContext, EmailDeliveryError } from '../types/EmailDel
 import { assignSentLabels } from './labels'
 import { mailRequestFailure, resolveDeliveryScope } from './mailContext'
 
-const failureMessage =
-  'Não foi possível enviar o e-mail. Sua mensagem foi mantida. Tente novamente.'
-const verificationFailure =
-  'Não foi possível verificar os arquivos. Sua mensagem foi mantida. Tente novamente.'
+const failureMessage = 'The email could not be sent. Your message was kept. Try again.'
+const verificationFailure = 'The files could not be verified. Your message was kept. Try again.'
 const uncertainDelivery =
-  'Não foi possível confirmar o envio anterior. Sua mensagem foi mantida. Verifique a pasta Enviados antes de tentar outro envio.'
+  'The previous send could not be confirmed. Your message was kept. Check the Sent folder before trying to send again.'
 class MissingAttachmentError extends EmailDeliveryError {}
 const reservationSchema = z.object({
   id: z.uuid(),
@@ -177,7 +175,7 @@ async function upload(
       })
       if (!response.ok)
         throw new EmailDeliveryError(
-          'Não foi possível salvar os arquivos. Sua mensagem foi mantida. Tente novamente.',
+          'The files could not be saved. Your message was kept. Try again.',
         )
       reservation.uploaded = true
     }
@@ -219,12 +217,12 @@ async function upload(
       if (verified.status === 'rejected') {
         const message =
           verified.rejectionReason === 'unsupported_archive'
-            ? 'O formato compactado não é suportado. Anexe o arquivo em formato ZIP.'
+            ? 'This compressed format is not supported. Attach the file as a ZIP.'
             : verified.rejectionReason === 'unsafe_archive'
-              ? 'O arquivo compactado excede os limites de verificação. Reduza seu tamanho ou a quantidade de pastas e arquivos.'
+              ? 'The compressed file exceeds the verification limits. Reduce its size or the number of folders and files.'
               : verified.rejectionReason === 'checksum_mismatch'
-                ? 'O arquivo salvo não corresponde ao original. Remova e anexe o arquivo novamente.'
-                : 'Um arquivo não foi aprovado na verificação. Remova ou substitua o arquivo antes de enviar.'
+                ? 'The saved file does not match the original. Remove it and attach the file again.'
+                : 'A file did not pass verification. Remove or replace the file before sending.'
         throw new EmailDeliveryError(message)
       }
       if (verified.status !== 'clean') throw new EmailDeliveryError(verificationFailure)
@@ -238,29 +236,39 @@ async function upload(
   throw new EmailDeliveryError(verificationFailure)
 }
 
+export async function prepareEmail(
+  composition: Pick<ValidatedComposition, 'body' | 'attachments'>,
+  context: EmailDeliveryContext,
+) {
+  const document = new DOMParser().parseFromString(composition.body, 'text/html')
+  const inlineImages = embedInlineImages(document)
+  const files: LocalAttachment[] = [
+    ...composition.attachments.map(({ id, file }) => ({ key: `file:${id}`, file })),
+    ...inlineImages,
+  ]
+  if (getAttachmentSizeIssues(files.map(({ file }) => file.size)).length) {
+    throw new EmailDeliveryError(
+      'Use up to 10 files, with at most 10 MB per file and 20 MB in total, including images. Your message was kept.',
+    )
+  }
+  const scope = await resolveDeliveryScope(context)
+  const headers = { 'X-Workspace-Id': scope.workspace.id, 'X-Workspace-Identity': scope.userId }
+  const attachments = []
+  for (const [index, attachment] of files.entries()) {
+    attachments.push(await upload(attachment, context, index, files.length, headers))
+  }
+  return { html: document.body.innerHTML, text: getPlainText(document), attachments, scope }
+}
+
 export async function sendEmail(
   composition: ValidatedComposition,
   id: string,
   context: EmailDeliveryContext = { uploads: new Map(), scope: { current: null } },
 ) {
   try {
-    const document = new DOMParser().parseFromString(composition.body, 'text/html')
-    const inlineImages = embedInlineImages(document)
-    const files: LocalAttachment[] = [
-      ...composition.attachments.map(({ id, file }) => ({ key: `file:${id}`, file })),
-      ...inlineImages,
-    ]
-    if (getAttachmentSizeIssues(files.map(({ file }) => file.size)).length) {
-      throw new EmailDeliveryError(
-        'Use até 10 arquivos, com no máximo 10 MB por arquivo e 20 MB no total, incluindo imagens. Sua mensagem foi mantida.',
-      )
-    }
-    const scope = await resolveDeliveryScope(context)
+    const { html, text, attachments, scope } = await prepareEmail(composition, context)
     const headers = { 'X-Workspace-Id': scope.workspace.id, 'X-Workspace-Identity': scope.userId }
-    const attachments = []
-    for (const [index, attachment] of files.entries()) {
-      attachments.push(await upload(attachment, context, index, files.length, headers))
-    }
+    const files = attachments
     await resolveDeliveryScope(context)
     context.onProgress?.({ phase: 'sending', completed: files.length, total: files.length })
     const attachmentIds = new Set(attachments.map((attachment) => attachment.id))
@@ -283,9 +291,10 @@ export async function sendEmail(
         bcc: composition.bcc,
         ...(composition.recipientName ? { recipientName: composition.recipientName } : {}),
         subject: composition.subject,
-        html: document.body.innerHTML,
-        text: getPlainText(document),
+        html,
+        text,
         attachments,
+        ...(context.draft ? { draft: context.draft } : {}),
       }),
     })
     if (!response.ok) throw await mailRequestFailure(response, failureMessage)
@@ -306,9 +315,9 @@ export async function sendEmail(
         try {
           await assignSentLabels(scope, messageId, labelIds)
         } catch {
-          toast.error('E-mail enviado, mas não foi possível aplicar as etiquetas.', {
+          toast.error('Email sent, but the labels could not be applied.', {
             duration: Infinity,
-            action: { label: 'Tentar novamente', onClick: () => void applyLabels() },
+            action: { label: 'Try again', onClick: () => void applyLabels() },
           })
         }
       }

@@ -1,5 +1,5 @@
 import { Button } from '@mailflow/ui/components'
-import { Clock, Save, Send } from '@mailflow/ui/icons'
+import { Clock, Save, Send, Trash2 } from '@mailflow/ui/icons'
 import { useFormContext, useFormState } from 'react-hook-form'
 import { showFeatureUnavailable } from '#/lib/showFeatureUnavailable'
 import { useComposer } from '../context'
@@ -9,22 +9,41 @@ import { ComposerLabels } from './ComposerLabels'
 import { CompositionWarnings } from './CompositionWarnings'
 
 export function Footer() {
-  const { labels, saveDraft, validation, sending, discarding, sendFailed, sendProgress } =
-    useComposer()
+  const {
+    labels,
+    saveDraft,
+    validation,
+    sending,
+    discarding,
+    sendFailed,
+    sendProgress,
+    persistence,
+    setConfirm,
+  } = useComposer()
   const { control } = useFormContext<DraftValues>()
   const { errors, isSubmitting } = useFormState({ control })
   const { dirty, saved } = useDraftStatus()
   const status = sending
-    ? sendProgress || 'Enviando e-mail…'
-    : sendFailed
-      ? 'Falha no envio. Tente novamente.'
-      : validation.ready
-        ? 'Mensagem pronta'
-        : dirty
-          ? 'Alterações não salvas'
-          : saved
-            ? 'Rascunho nesta aba'
-            : 'Não enviado'
+    ? sendProgress || 'Sending email…'
+    : persistence?.status === 'saving'
+      ? 'Saving…'
+      : persistence?.status === 'error'
+        ? 'Failed to save the draft'
+        : sendFailed
+          ? 'Failed to send. Try again.'
+          : validation.ready
+            ? 'Message ready'
+            : persistence
+              ? persistence.status === 'saved'
+                ? 'Draft saved'
+                : dirty
+                  ? 'Unsaved changes'
+                  : 'Not sent'
+              : dirty
+                ? 'Unsaved changes'
+                : saved
+                  ? 'Draft in this tab'
+                  : 'Not sent'
 
   return (
     <>
@@ -39,22 +58,22 @@ export function Footer() {
           >
             <Send aria-hidden="true" className="size-4" />
             {discarding
-              ? 'Aguarde…'
+              ? 'Please wait…'
               : sending
-                ? 'Enviando…'
+                ? 'Sending…'
                 : sendFailed
-                  ? 'Tentar novamente'
+                  ? 'Try again'
                   : validation.ready
-                    ? 'Mensagem pronta'
-                    : 'Enviar'}
+                    ? 'Message ready'
+                    : 'Send'}
           </Button>
           <Button
             type="button"
             variant="outline"
             size="icon"
-            aria-label="Agendar envio"
+            aria-label="Schedule send"
             onClick={showFeatureUnavailable}
-            title="Agendamento ainda não disponível"
+            title="Scheduling is not available yet"
           >
             <Clock aria-hidden="true" className="size-4" />
           </Button>
@@ -64,17 +83,53 @@ export function Footer() {
             size="sm"
             className="gap-2"
             onClick={saveDraft}
-            title="Manter o rascunho nesta aba"
+            disabled={sending}
+            title={persistence ? 'Save draft' : 'Keep the draft in this tab'}
           >
             <Save aria-hidden="true" className="size-4" />
-            Rascunho
+            Save draft
           </Button>
           {labels ? <ComposerLabels /> : null}
+          {persistence ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={sending}
+              aria-label="Discard draft"
+              title="Discard draft"
+              onClick={() => setConfirm(true)}
+            >
+              <Trash2 aria-hidden="true" className="size-4" />
+            </Button>
+          ) : null}
         </div>
         <span role="status" className="text-xs text-muted-foreground">
           {status}
         </span>
       </div>
+      {persistence?.error ? (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center gap-2 px-4 pb-3 text-xs text-destructive"
+        >
+          <p>{persistence.error}</p>
+          <Button type="button" variant="outline" size="sm" disabled={sending} onClick={saveDraft}>
+            Try saving again
+          </Button>
+          {persistence.conflict ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={sending}
+              onClick={() => void persistence.saveCopy()}
+            >
+              Save as new draft
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
       {errors.root?.server?.message ? (
         <p role="alert" className="px-4 pb-3 text-xs text-destructive">
           {errors.root.server.message}

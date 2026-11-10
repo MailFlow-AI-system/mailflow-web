@@ -49,7 +49,7 @@ export function Content({ children }: Pick<ComposerRootProps, 'children'>) {
   const lastFocus = useRef<ComposerFocusMemory>({ element: null, revision })
   return (
     <WindowContent
-      lang="pt-BR"
+      lang="en-US"
       data-theme={theme}
       initialFocus={() =>
         lastFocus.current.revision === revision && lastFocus.current.element?.isConnected
@@ -66,7 +66,7 @@ export function Content({ children }: Pick<ComposerRootProps, 'children'>) {
       }}
     >
       <WindowDescription className="sr-only">
-        Escreva e envie sua mensagem. A IA ainda não está disponível.
+        Write and send your message. AI is not available yet.
       </WindowDescription>
       {children}
     </WindowContent>
@@ -77,15 +77,15 @@ export function Header() {
   const { state } = useComposer()
   return (
     <WindowHeader>
-      <WindowTitle>Nova mensagem</WindowTitle>
+      <WindowTitle>New message</WindowTitle>
       <div className="flex items-center gap-1">
-        <WindowMinimize aria-label="Minimizar janela" className="size-7 [&_svg]:size-3.5" />
+        <WindowMinimize aria-label="Minimize window" className="size-7 [&_svg]:size-3.5" />
         <WindowMaximize
-          aria-label={state === 'maximized' ? 'Restaurar tamanho' : 'Maximizar janela'}
+          aria-label={state === 'maximized' ? 'Restore size' : 'Maximize window'}
           className="size-7 [&_svg]:size-3.5"
         />
         <WindowClose
-          aria-label="Fechar janela"
+          aria-label="Close window"
           render={<Button variant="ghost" size="icon" />}
           className="size-7"
         >
@@ -122,16 +122,16 @@ export function Minimized() {
   const subject = useWatch({ control, name: 'subject' })
   return (
     <WindowMinimized
-      lang="pt-BR"
+      lang="en-US"
       className="bottom-20"
-      aria-label="Mensagem minimizada"
+      aria-label="Minimized message"
       data-theme={theme}
     >
-      <WindowRestore aria-label="Restaurar mensagem" className="max-w-60 gap-2">
+      <WindowRestore aria-label="Restore message" className="max-w-60 gap-2">
         <Maximize2 aria-hidden="true" className="size-3.5 shrink-0" />
-        <span className="truncate">{subject || 'Nova mensagem'}</span>
+        <span className="truncate">{subject || 'New message'}</span>
       </WindowRestore>
-      <WindowClose aria-label="Fechar janela" render={<Button variant="ghost" size="icon" />}>
+      <WindowClose aria-label="Close window" render={<Button variant="ghost" size="icon" />}>
         <X aria-hidden="true" className="size-3.5" />
       </WindowClose>
     </WindowMinimized>

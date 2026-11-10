@@ -24,8 +24,10 @@ vi.mock('#/features/mail-list/components/MailList', () => ({
   MailList: () => <div data-testid="inbox-list" />,
 }))
 vi.mock('#/features/mail-list/components/SentMailList', () => ({
-  SentMailList: ({ userId }: { userId: string }) => (
-    <div data-testid="sent-list" data-owner={userId} />
+  SentMailList: ({ userId, heading }: { userId: string; heading?: string }) => (
+    <div data-testid="sent-list" data-owner={userId}>
+      {heading ? <h1 className="px-3 py-3 text-sm font-semibold">{heading}</h1> : null}
+    </div>
   ),
 }))
 
@@ -51,11 +53,11 @@ describe('Sent page', () => {
     inbox.unmount()
 
     render(<Sent />)
-    const sentPanel = screen.getByRole('region', { name: 'Enviados' })
+    const sentPanel = screen.getByRole('region', { name: 'Sent' })
     expect(sentPanel.parentElement).toHaveClass(layoutClass ?? '')
     expect(sentPanel.className).toBe(panelClass)
     // The Inbox title row belongs to its list now; Sent keeps the same title text style.
-    expect(screen.getByRole('heading', { name: 'Enviados', level: 1 })).toHaveClass(
+    expect(screen.getByRole('heading', { name: 'Sent', level: 1 })).toHaveClass(
       'text-sm',
       'font-semibold',
     )
@@ -67,6 +69,6 @@ describe('Sent page', () => {
     environment.VITE_WORKSPACE_BASE_HOST = 'workspace.test'
     render(<Sent />)
     expect(screen.getByTestId('sent-list')).toHaveAttribute('data-owner', 'owner')
-    expect(screen.getByRole('heading', { name: 'Enviados' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Sent' })).toBeVisible()
   })
 })

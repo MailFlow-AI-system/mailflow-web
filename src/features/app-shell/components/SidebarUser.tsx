@@ -22,7 +22,7 @@ export function SidebarUser({ user, signOutAction }: SidebarUserProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label={`Abrir menu de ${user.name}`}
+        aria-label={`Open menu for ${user.name}`}
         className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-1 focus-visible:ring-sidebar-ring group-data-[collapsible=icon]:hidden"
       >
         <Avatar aria-hidden="true" className="size-7">

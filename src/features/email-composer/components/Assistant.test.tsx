@@ -25,7 +25,7 @@ it('shows the unavailable warning for every assistant action without submitting'
   await user.keyboard('{Enter}')
   expect(warning).toHaveBeenCalledTimes(9)
   expect(warning).toHaveBeenCalledWith(
-    'Esta funcionalidade está em desenvolvimento e ainda não está disponível.',
+    'This feature is under development and is not available yet.',
     { id: 'feature-unavailable' },
   )
   expect(submit).not.toHaveBeenCalled()

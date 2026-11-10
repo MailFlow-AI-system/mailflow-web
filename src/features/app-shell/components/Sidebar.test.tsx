@@ -29,7 +29,6 @@ it('keeps unavailable navigation disabled without warnings and preserves working
     </SidebarProvider>,
   )
   const labels = [
-    'Drafts',
     'Starred',
     'Spam',
     'Trash',
@@ -50,7 +49,8 @@ it('keeps unavailable navigation disabled without warnings and preserves working
     expect(button).toHaveAttribute('aria-disabled', 'true')
     button.click()
   }
-  const drafts = screen.getByRole('button', { name: 'Drafts' })
+  const drafts = screen.getByRole('link', { name: 'Drafts' })
+  expect(drafts).toHaveAttribute('href', '/drafts')
   drafts.focus()
   await user.keyboard('{Enter}')
   expect(warning).not.toHaveBeenCalled()

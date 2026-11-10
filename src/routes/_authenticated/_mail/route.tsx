@@ -1,8 +1,6 @@
-import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, getRouteApi, Outlet, useRouterState } from '@tanstack/react-router'
-import { useCallback } from 'react'
 import { LogoutMenuItem } from '#/features/auth/LogoutMenuItem'
-import { sendEmail } from '#/features/email-composer/clients/sendEmail'
+import { useComposerHandlers } from '#/features/email-composer/hooks/useComposerHandlers'
 import { MailboxSearch } from '#/features/mail-list/components/MailboxSearch'
 import { normalizeMailSearch } from '#/features/mail-list/types/mailSearch'
 import { ReaderToolbar } from '#/features/mail-reader/MailReader'
@@ -10,6 +8,8 @@ import { WorkspaceBoundary } from '#/features/workspaces/components/WorkspaceBou
 import { AppShell } from '@/features/app-shell'
 import { EmailComposer } from '@/features/email-composer'
 
+// Mailboxes whose list can be searched; the others keep the inert search field.
+const searchableMailboxes = new Set(['/inbox', '/sent', '/drafts'])
 const mailRoute = getRouteApi('/_authenticated/_mail')
 const authenticatedRoute = getRouteApi('/_authenticated')
 
@@ -21,22 +21,18 @@ export const Route = createFileRoute('/_authenticated/_mail')({
 function MailLayout() {
   const { user } = authenticatedRoute.useRouteContext()
   const { message } = mailRoute.useSearch()
-  const queryClient = useQueryClient()
-  const onSent = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: ['sent-workspace', user.id] })
-    await queryClient.invalidateQueries({ queryKey: ['sent-emails', user.id] })
-  }, [queryClient, user.id])
+  const handlers = useComposerHandlers(user.id)
   const pathname = useRouterState({ select: (state) => state.location.pathname })
 
   return (
-    <EmailComposer.Root key={user.id} userId={user.id} onSend={sendEmail} onSent={onSent}>
+    <EmailComposer.Root key={user.id} userId={user.id} {...handlers}>
       <AppShell.Root>
         <AppShell.Sidebar user={user} userMenu={<LogoutMenuItem />} />
         <AppShell.Main>
           <AppShell.Header>
-            <AppShell.Header.Mailbox>
-              {pathname === '/inbox' ? (
-                <MailboxSearch userId={user.id} />
+            <AppShell.Header.Mailbox fullWidth={pathname === '/drafts'}>
+              {searchableMailboxes.has(pathname) ? (
+                <MailboxSearch userId={user.id} prefetch={pathname === '/inbox'} />
               ) : (
                 <AppShell.Header.Search />
               )}

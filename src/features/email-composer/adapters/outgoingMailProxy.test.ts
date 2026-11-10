@@ -2,6 +2,73 @@ import { describe, expect, it, vi } from 'vitest'
 import { createOutgoingMailProxy } from './outgoingMailProxy'
 
 const origin = 'https://mail.example.test'
+it('proxies draft reads and JSON mutations without allowing arbitrary paths or cross-site deletion', async () => {
+  const id = '0198f0a8-0000-7000-8000-000000000001'
+  const fetcher = vi.fn<typeof fetch>(async () => Response.json({ ok: true }))
+  const proxy = createOutgoingMailProxy('https://api.example.test', fetcher)
+  for (const method of ['GET', 'PUT', 'DELETE']) {
+    const response = await proxy(
+      new Request(`${origin}/api/mail/drafts/${id}`, {
+        method,
+        headers: { origin, 'Content-Type': 'application/json' },
+        ...(method !== 'GET' ? { body: '{"version":1}' } : {}),
+      }),
+    )
+    expect(response.status).toBe(200)
+    const [url, init] = fetcher.mock.calls.at(-1) ?? []
+    expect(String(url)).toBe(`https://api.example.test/api/v1/mail/drafts/${id}`)
+    if (method !== 'GET') expect(await new Response(init?.body).text()).toBe('{"version":1}')
+  }
+  await proxy(new Request(`${origin}/api/mail/drafts?offset=20&userId=foreign`))
+  expect(String(fetcher.mock.calls.at(-1)?.[0])).toBe(
+    'https://api.example.test/api/v1/mail/drafts?offset=20',
+  )
+  expect(
+    (await proxy(new Request(`${origin}/api/mail/drafts/${id}`, { method: 'DELETE' }))).status,
+  ).toBe(403)
+  expect((await proxy(new Request(`${origin}/api/mail/drafts/${id}/evil`))).status).toBe(404)
+})
+it('forwards only the bounded search text for Sent and draft lists', async () => {
+  const fetcher = vi.fn<typeof fetch>(async () => Response.json({ items: [] }))
+  const proxy = createOutgoingMailProxy('https://api.example.test', fetcher)
+  for (const path of ['sent', 'drafts']) {
+    await proxy(new Request(`${origin}/api/mail/${path}?offset=20&q=invoice%20100&userId=foreign`))
+    expect(String(fetcher.mock.calls.at(-1)?.[0])).toBe(
+      `https://api.example.test/api/v1/mail/${path}?offset=20&q=invoice+100`,
+    )
+    await proxy(new Request(`${origin}/api/mail/${path}`))
+    expect(String(fetcher.mock.calls.at(-1)?.[0])).toBe(
+      `https://api.example.test/api/v1/mail/${path}`,
+    )
+  }
+})
+it('proxies bulk draft deletion only as a same-origin JSON POST', async () => {
+  const fetcher = vi.fn<typeof fetch>(async () => Response.json({ results: [] }))
+  const proxy = createOutgoingMailProxy('https://api.example.test', fetcher)
+  const send = (init: RequestInit) =>
+    proxy(new Request(`${origin}/api/mail/drafts/discard`, { method: 'POST', ...init }))
+  const body = '{"items":[{"id":"0198f0a8-0000-7000-8000-000000000001","version":1}]}'
+  expect(
+    (await send({ headers: { origin, 'content-type': 'application/json' }, body })).status,
+  ).toBe(200)
+  expect(String(fetcher.mock.calls.at(-1)?.[0])).toBe(
+    'https://api.example.test/api/v1/mail/drafts/discard',
+  )
+  expect(fetcher.mock.calls.at(-1)?.[1]?.method).toBe('POST')
+  expect(
+    (
+      await send({
+        headers: { origin: 'https://evil.test', 'content-type': 'application/json' },
+        body,
+      })
+    ).status,
+  ).toBe(403)
+  expect((await send({ headers: { 'content-type': 'application/json' }, body })).status).toBe(403)
+  expect((await send({ headers: { origin, 'content-type': 'text/plain' }, body })).status).toBe(415)
+  expect(
+    (await proxy(new Request(`${origin}/api/mail/drafts/discard`, { headers: { origin } }))).status,
+  ).toBe(404)
+})
 function request(path = '/api/mail/send', requestOrigin = origin) {
   return new Request(`${origin}${path}`, {
     method: 'POST',

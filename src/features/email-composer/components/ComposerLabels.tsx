@@ -95,7 +95,7 @@ function LabelOptions({
         }}
       >
         <LabelPicker
-          aria-label="Buscar etiquetas"
+          aria-label="Search labels"
           value={null}
           query={query}
           onQueryChange={setQuery}
@@ -122,17 +122,17 @@ function LabelOptions({
             void (pages.isFetchNextPageError ? pages.fetchNextPage() : pages.refetch())
           }
         >
-          Tentar carregar etiquetas novamente
+          Retry loading labels
         </Button>
       )}
-      <ul aria-label="Etiquetas selecionadas" className="flex flex-wrap gap-2">
+      <ul aria-label="Selected labels" className="flex flex-wrap gap-2">
         {items.map((label) => (
           <li key={label.id}>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              aria-label={`Remover etiqueta ${label.name}`}
+              aria-label={`Remove label ${label.name}`}
               onClick={() => setItems(items.filter((item) => item.id !== label.id))}
             >
               <span className="size-2 rounded-full" style={{ backgroundColor: label.color }} />
@@ -141,12 +141,13 @@ function LabelOptions({
           </li>
         ))}
       </ul>
-      <AlertDialogClose render={<Button type="button" />}>Concluir</AlertDialogClose>
+      <AlertDialogClose render={<Button type="button" />}>Done</AlertDialogClose>
     </>
   )
 }
 
-export function ComposerLabels() {
+// `icon` matches the message reader's icon-only toolbar buttons (used by the inline draft editor).
+export function ComposerLabels({ trigger = 'button' }: { trigger?: 'button' | 'icon' }) {
   const { labels, sending } = useComposer()
   const [open, setOpen] = useState(false)
   const [scope, setScope] = useState<MailDeliveryScope | null>(null)
@@ -167,36 +168,50 @@ export function ComposerLabels() {
         if (next) loadScope()
       }}
     >
-      <AlertDialogTrigger
-        render={<Button type="button" variant="outline" size="sm" disabled={sending} />}
-      >
-        <Tag aria-hidden="true" className="size-4" />
-        Etiquetas{labels.items.length ? ` (${labels.items.length})` : ''}
-      </AlertDialogTrigger>
+      {trigger === 'icon' ? (
+        <AlertDialogTrigger
+          render={
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              disabled={sending}
+              aria-label={`Labels${labels.items.length ? ` (${labels.items.length})` : ''}`}
+              title="Labels"
+            />
+          }
+        >
+          <Tag aria-hidden="true" className="h-3.5 w-3.5" />
+        </AlertDialogTrigger>
+      ) : (
+        <AlertDialogTrigger
+          render={<Button type="button" variant="outline" size="sm" disabled={sending} />}
+        >
+          <Tag aria-hidden="true" className="size-4" />
+          Labels{labels.items.length ? ` (${labels.items.length})` : ''}
+        </AlertDialogTrigger>
+      )}
       <AlertDialogContent>
         <div className="flex items-center justify-between gap-2">
-          <AlertDialogTitle>Etiquetas</AlertDialogTitle>
+          <AlertDialogTitle>Labels</AlertDialogTitle>
           <AlertDialogClose
-            render={
-              <Button type="button" variant="ghost" size="icon" aria-label="Fechar etiquetas" />
-            }
+            render={<Button type="button" variant="ghost" size="icon" aria-label="Close labels" />}
           >
             <X aria-hidden="true" className="size-4" />
           </AlertDialogClose>
         </div>
-        <AlertDialogDescription>
-          Escolha as etiquetas para esta mensagem enviada.
-        </AlertDialogDescription>
+        <AlertDialogDescription>Choose labels for this sent message.</AlertDialogDescription>
         {scope ? (
           <LabelOptions scope={scope} items={labels.items} setItems={labels.setItems} />
         ) : failed ? (
           <Button type="button" variant="outline" onClick={loadScope}>
-            Tentar carregar workspace novamente
+            Retry loading workspace
           </Button>
         ) : (
-          <p role="status">Carregando workspace…</p>
+          <p role="status">Loading workspace…</p>
         )}
-        {!scope && <AlertDialogClose render={<Button type="button" />}>Concluir</AlertDialogClose>}
+        {!scope && <AlertDialogClose render={<Button type="button" />}>Done</AlertDialogClose>}
       </AlertDialogContent>
     </AlertDialog>
   )
