@@ -26,9 +26,13 @@ function Actions({ children, className = 'flex' }: AppShellHeaderActionsProps) {
   return <div className={`ml-auto items-center ${className}`}>{children}</div>
 }
 
-function Mailbox({ children }: AppShellHeaderMailboxProps) {
+function Mailbox({ children, fullWidth = false }: AppShellHeaderMailboxProps) {
   return (
-    <div className="flex w-full min-w-0 items-center gap-2 border-border lg:w-[380px] xl:w-[420px] lg:shrink-0 lg:border-r lg:border-b lg:px-3 lg:py-2.5">
+    <div
+      className={`flex w-full min-w-0 items-center gap-2 border-border lg:border-b lg:px-3 lg:py-2.5 ${
+        fullWidth ? '' : 'lg:w-[380px] xl:w-[420px] lg:shrink-0 lg:border-r'
+      }`}
+    >
       {children}
     </div>
   )
@@ -36,7 +40,7 @@ function Mailbox({ children }: AppShellHeaderMailboxProps) {
 
 function MailboxSearch({ value, onChange }: AppShellHeaderSearchProps) {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
-  const label = `Buscar em ${mailboxSearchScope(pathname)}…`
+  const label = `Search in ${mailboxSearchScope(pathname)}…`
   const inputRef = useRef<HTMLInputElement>(null)
   const canClear = Boolean(value && onChange)
 
@@ -79,7 +83,7 @@ function MailboxSearch({ value, onChange }: AppShellHeaderSearchProps) {
 function MailboxFilters() {
   return (
     <Button
-      aria-label="Filtros"
+      aria-label="Filters"
       className="h-8 w-8 shrink-0"
       onClick={showFeatureUnavailable}
       size="icon"

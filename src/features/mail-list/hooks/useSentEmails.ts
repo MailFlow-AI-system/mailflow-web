@@ -4,7 +4,8 @@ import { useWorkspaceContext } from '#/features/workspaces/hooks/useWorkspaceCon
 import { useWorkspaceIdentityRecovery } from '#/features/workspaces/hooks/useWorkspaceIdentityRecovery'
 import { fetchSentEmails, readSentWorkspace } from '../clients/sentEmailsClient'
 
-export function useSentEmails(userId: string) {
+export function useSentEmails(userId: string, search = '') {
+  const q = search.trim()
   const state = useWorkspaceContext()
   const hostname = typeof window === 'undefined' ? 'server' : window.location.hostname
   const foreignIdentity = Boolean(state && state.identityId !== userId)
@@ -30,11 +31,11 @@ export function useSentEmails(userId: string) {
     (useDefault ? current.isPending || current.isFetching : state.status === 'loading')
   const contextFailed = foreignIdentity || (!scopeLoading && !workspace)
   const query = useInfiniteQuery({
-    queryKey: ['sent-emails', userId, workspace?.id ?? null, hostname],
+    queryKey: ['sent-emails', userId, workspace?.id ?? null, hostname, q],
     initialPageParam: 0,
     queryFn: ({ pageParam, signal }) => {
       if (!workspace) throw new Error('Sent workspace could not be verified')
-      return fetchSentEmails(userId, workspace.id, pageParam, signal)
+      return fetchSentEmails(userId, workspace.id, pageParam, signal, q)
     },
     enabled: Boolean(workspace),
     getNextPageParam: (page) => page.nextOffset ?? undefined,

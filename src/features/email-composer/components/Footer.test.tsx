@@ -94,10 +94,10 @@ describe('composer footer', () => {
   it('shows ready status even when draft fields or body remain dirty', () => {
     render(<ReadyComposer />)
 
-    expect(screen.getByRole('status')).toHaveTextContent('Mensagem pronta')
-    expect(screen.getByRole('button', { name: 'Mensagem pronta' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Agendar envio' })).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Rascunho' })).toBeVisible()
+    expect(screen.getByRole('status')).toHaveTextContent('Message ready')
+    expect(screen.getByRole('button', { name: 'Message ready' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Schedule send' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Save draft' })).toBeVisible()
   })
 
   it('shows the unavailable warning for scheduling without submitting the form', async () => {
@@ -109,33 +109,33 @@ describe('composer footer', () => {
         <ReadyComposer />
       </form>,
     )
-    const schedule = screen.getByRole('button', { name: 'Agendar envio' })
+    const schedule = screen.getByRole('button', { name: 'Schedule send' })
     expect(schedule).not.toHaveAttribute('aria-disabled', 'true')
     schedule.focus()
     await user.keyboard(' ')
     expect(warning).toHaveBeenCalledWith(
-      'Esta funcionalidade está em desenvolvimento e ainda não está disponível.',
+      'This feature is under development and is not available yet.',
       { id: 'feature-unavailable' },
     )
     expect(submit).not.toHaveBeenCalled()
-    expect(screen.getByRole('button', { name: 'Mensagem pronta' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Message ready' })).toBeDisabled()
     warning.mockRestore()
   })
 
   it('refreshes the saved baseline on repeated saves and retains attachment ids', async () => {
     render(<SavedComposer />)
     fireEvent.click(screen.getByRole('button', { name: 'Add saved file' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Rascunho' }))
-    expect(screen.getByRole('status')).toHaveTextContent('Rascunho nesta aba')
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }))
+    expect(screen.getByRole('status')).toHaveTextContent('Draft in this tab')
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit subject' }))
-    expect(screen.getByRole('status')).toHaveTextContent('Alterações não salvas')
-    fireEvent.click(screen.getByRole('button', { name: 'Rascunho' }))
-    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Rascunho nesta aba'))
+    expect(screen.getByRole('status')).toHaveTextContent('Unsaved changes')
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }))
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Draft in this tab'))
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove saved file' }))
-    expect(screen.getByRole('status')).toHaveTextContent('Alterações não salvas')
+    expect(screen.getByRole('status')).toHaveTextContent('Unsaved changes')
     fireEvent.click(screen.getByRole('button', { name: 'Restore saved file' }))
-    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Rascunho nesta aba'))
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Draft in this tab'))
   })
 })

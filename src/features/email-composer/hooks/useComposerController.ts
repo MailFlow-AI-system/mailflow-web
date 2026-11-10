@@ -2,7 +2,9 @@ import { toast, type WindowOpenChangeDetails, type WindowState } from '@mailflow
 import { useEditor } from '@tiptap/react'
 import { cn } from 'cn'
 import { useCallback, useId, useRef, useState } from 'react'
+import { useWatch } from 'react-hook-form'
 import { discardEmail } from '../clients/discardEmail'
+import { readDraft } from '../clients/drafts'
 import type { MailLabel } from '../clients/labels'
 import { resolveDeliveryScope } from '../clients/mailContext'
 import { draftSignature, emptyBody, emptyFields } from '../draft'
@@ -19,6 +21,7 @@ import { type EmailDeliveryContext, EmailDeliveryError } from '../types/EmailDel
 import { createCompositionId } from '../utils/compositionId'
 import { useCompositionValidation } from './useCompositionValidation'
 import { emptyDraft, useDraftForm } from './useDraftForm'
+import { usePersistedDraft } from './usePersistedDraft'
 
 function recipientFields(values: DraftValues): DraftFields {
   return {
@@ -36,6 +39,7 @@ export function useComposerController(
   onSend?: ComposerRootProps['onSend'],
   onSent?: ComposerRootProps['onSent'],
   userId?: string,
+  onDraftChanged?: () => void,
 ): ComposerController {
   const draft = useDraftForm()
   const [labels, setLabels] = useState<MailLabel[]>([])
@@ -82,6 +86,7 @@ export function useComposerController(
   const sessionRef = useRef(0)
   const [session, setSession] = useState(0)
   const editorRef = useRef<ReturnType<typeof useEditor>>(null)
+  const initialBody = useRef(emptyBody)
   const invalidateValidationRef = useRef<() => void>(() => {})
   const setDraftBodyRef = useRef(draft.setValue)
   setDraftBodyRef.current = draft.setValue
@@ -90,11 +95,11 @@ export function useComposerController(
       immediatelyRender: false,
       shouldRerenderOnTransaction: false,
       extensions: composerExtensions,
-      content: emptyBody,
+      content: initialBody.current,
       editorProps: {
         attributes: {
           role: 'textbox',
-          'aria-label': 'Corpo da mensagem',
+          'aria-label': 'Message body',
           'aria-multiline': 'true',
           class: cn(
             'min-h-[280px] wrap-anywhere p-2 text-sm outline-none',
@@ -125,6 +130,23 @@ export function useComposerController(
     [session],
   )
   editorRef.current = editor
+  const watchedDraft = useWatch({ control: draft.control })
+  const persistence = usePersistedDraft({
+    enabled: Boolean(userId && onSend),
+    active: open && !sending && !discarding,
+    signature: JSON.stringify({ watchedDraft, labels }),
+    read: () => ({
+      values: {
+        ...draft.getValues(),
+        body: editorRef.current
+          ? getEditorBodySnapshot(editorRef.current).body
+          : draft.getValues('body'),
+      },
+      labels,
+    }),
+    context: deliveryContext,
+    onChange: onDraftChanged,
+  })
 
   const focusInvalidField = useCallback(
     (field: 'to' | 'cc' | 'bcc' | 'recipientName' | 'attachments') => {
@@ -159,17 +181,20 @@ export function useComposerController(
       setSending(true)
       setSendFailed(false)
       editorRef.current?.setEditable(false)
-      const signature = JSON.stringify({
-        ...composition,
-        attachments: composition.attachments.map(({ id, file }) => ({
-          id,
-          name: file.name,
-          size: file.size,
-          lastModified: file.lastModified,
-        })),
-      })
-      const notification = toast.loading('Enviando e-mail…')
+      const notification = toast.loading('Sending email…')
       try {
+        if (persistence.enabled && !(await persistence.save()))
+          throw new EmailDeliveryError('Save the draft before sending. Your message was kept.')
+        const signature = JSON.stringify({
+          ...composition,
+          draft: persistence.reference(),
+          attachments: composition.attachments.map(({ id, file }) => ({
+            id,
+            name: file.name,
+            size: file.size,
+            lastModified: file.lastModified,
+          })),
+        })
         if (
           pendingDelivery.current &&
           pendingDelivery.current.signature !== signature &&
@@ -178,7 +203,7 @@ export function useComposerController(
           const result = await discardEmail(deliveryContext())
           if (result.retainedMessageIds.length)
             throw new EmailDeliveryError(
-              'Não foi possível descartar o envio anterior com segurança. Seus anexos foram preservados. Verifique Enviados antes de iniciar outra mensagem.',
+              'The previous send could not be safely discarded. Your attachments were preserved. Check Sent before starting another message.',
             )
           messageIds.current.clear()
           attachmentIds.current.clear()
@@ -188,13 +213,14 @@ export function useComposerController(
           pendingDelivery.current = { signature, id: createCompositionId() }
         await onSend(composition, pendingDelivery.current.id, {
           ...deliveryContext(),
+          draft: persistence.reference(),
           onProgress: ({ phase, completed, total }) => {
             const progress =
               phase === 'uploading'
-                ? `Salvando arquivo ${completed + 1} de ${total}…`
+                ? `Saving file ${completed + 1} of ${total}…`
                 : phase === 'verifying'
-                  ? `Verificando arquivo ${completed + 1} de ${total}…`
-                  : 'Enviando e-mail…'
+                  ? `Verifying file ${completed + 1} of ${total}…`
+                  : 'Sending email…'
             setSendProgress(progress)
             toast.loading(progress, { id: notification })
           },
@@ -204,7 +230,7 @@ export function useComposerController(
         const message =
           error instanceof EmailDeliveryError
             ? error.message
-            : 'Não foi possível confirmar o envio. Sua mensagem foi mantida. Tente novamente.'
+            : 'The send could not be confirmed. Your message was kept. Try again.'
         toast.error(message, { id: notification })
         throw new Error(message)
       } finally {
@@ -214,10 +240,10 @@ export function useComposerController(
         editorRef.current?.setEditable(true)
       }
       discardRef.current()
-      toast.success('E-mail enviado com sucesso.', { id: notification })
+      toast.success('Email sent successfully.', { id: notification })
       onSent?.()
     },
-    [onSend, onSent, deliveryContext],
+    [onSend, onSent, deliveryContext, persistence],
   )
   const validation = useCompositionValidation({
     draft,
@@ -241,6 +267,8 @@ export function useComposerController(
 
   const resetDraft = useCallback(() => {
     if (sendingRef.current) return
+    persistence.reset()
+    initialBody.current = emptyBody
     pendingDelivery.current = null
     messageIds.current.clear()
     messageIds.current = new Set()
@@ -263,13 +291,18 @@ export function useComposerController(
     setOpen(false)
     setShowCc(false)
     pendingRecipientFocusRef.current = null
-  }, [draft, validation.reset])
+  }, [draft, validation.reset, persistence.reset])
 
   discardRef.current = resetDraft
 
   const discard = useCallback(() => {
     if (sendingRef.current || discardingRef.current) return
-    if (!messageIds.current.size && !attachmentIds.current.size && !uploads.current.size) {
+    if (
+      !persistence.enabled &&
+      !messageIds.current.size &&
+      !attachmentIds.current.size &&
+      !uploads.current.size
+    ) {
       resetDraft()
       return
     }
@@ -277,18 +310,19 @@ export function useComposerController(
     setDiscarding(true)
     editorRef.current?.setEditable(false)
     return discardEmail(deliveryContext())
-      .then((result) => {
+      .then(async (result) => {
+        if (persistence.enabled && !(await persistence.discard())) return
         resetDraft()
         if (result.retainedMessageIds.length)
           toast.info(
-            'O rascunho foi descartado. O envio anterior pode ter sido aceito; seus anexos foram preservados. Verifique Enviados.',
+            'The draft was discarded. The previous send may have been accepted; your attachments were preserved. Check Sent.',
           )
       })
       .catch((error) => {
         toast.error(
           error instanceof EmailDeliveryError
             ? error.message
-            : 'Não foi possível concluir o descarte. O rascunho foi mantido. Tente novamente.',
+            : 'The discard could not be completed. The draft was kept. Try again.',
         )
       })
       .finally(() => {
@@ -296,7 +330,7 @@ export function useComposerController(
         setDiscarding(false)
         editorRef.current?.setEditable(true)
       })
-  }, [deliveryContext, resetDraft])
+  }, [deliveryContext, resetDraft, persistence])
 
   const releaseRemovedUploads = useCallback(
     (keys: string[]) => {
@@ -324,7 +358,7 @@ export function useComposerController(
           toast.error(
             error instanceof EmailDeliveryError
               ? error.message
-              : 'Não foi possível liberar o arquivo. Suas referências foram mantidas para tentar novamente.',
+              : 'The file could not be released. Your references were kept so you can try again.',
           )
           return false
         })
@@ -351,10 +385,63 @@ export function useComposerController(
     void releaseRemovedUploads(removed)
   }
 
-  const saveDraft = useCallback(() => {
+  const saveDraft = useCallback(async () => {
+    if (persistence.enabled) {
+      if (await persistence.save()) {
+        if (persistence.reference()) toast.success('Draft saved.')
+      }
+      return
+    }
     setBaselineDraftSignature(readDraftSignature())
     setSaved(true)
-  }, [readDraftSignature])
+  }, [readDraftSignature, persistence])
+
+  const openDraft = useCallback(
+    async (id: string) => {
+      if (sendingRef.current || discardingRef.current) return
+      if (persistence.enabled && !(await persistence.save())) return
+      discardingRef.current = true
+      setDiscarding(true)
+      try {
+        const restoredContext: EmailDeliveryContext = {
+          userId,
+          uploads: new Map(),
+          scope: { current: null },
+        }
+        const restored = await readDraft(id, restoredContext)
+        uploads.current = restoredContext.uploads
+        scope.current = restoredContext.scope
+        messageIds.current = new Set()
+        attachmentIds.current = new Set(
+          [...restoredContext.uploads.values()].map((file) => file.id),
+        )
+        pendingDelivery.current = null
+        validation.reset()
+        initialBody.current = restored.values.body
+        draft.reset(restored.values)
+        setLabels(restored.labels)
+        setShowCc(Boolean(restored.values.cc || restored.values.bcc))
+        setBaselineDraftSignature(
+          draftSignature(
+            recipientFields(restored.values),
+            restored.values.body,
+            restored.values.attachments,
+          ),
+        )
+        persistence.adopt(restored)
+        sessionRef.current += 1
+        setSession((previous) => previous + 1)
+        setState('normal')
+        setOpen(true)
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'The draft could not be reopened.')
+      } finally {
+        discardingRef.current = false
+        setDiscarding(false)
+      }
+    },
+    [draft, persistence, validation.reset, userId],
+  )
 
   const addAttachments = useCallback(
     (files: File[]) => {
@@ -393,6 +480,15 @@ export function useComposerController(
   return {
     draft,
     context: {
+      persistence: persistence.enabled
+        ? {
+            status: persistence.status,
+            error: persistence.error,
+            conflict: persistence.conflict,
+            saveCopy: persistence.saveCopy,
+          }
+        : undefined,
+      openDraft,
       labels:
         onSend && open && state !== 'minimized'
           ? {
@@ -406,7 +502,7 @@ export function useComposerController(
       sending: sending || discarding,
       discarding,
       sendFailed,
-      sendProgress: discarding ? 'Descartando arquivos…' : sendProgress,
+      sendProgress: discarding ? 'Discarding files…' : sendProgress,
       sessionRef,
       revision: session,
       editor,
@@ -438,6 +534,13 @@ export function useComposerController(
     onOpenChange: (next: boolean, details: WindowOpenChangeDetails) => {
       if (!next && (sendingRef.current || discardingRef.current)) {
         details.cancel()
+        return
+      }
+      if (!next && persistence.enabled) {
+        details.cancel()
+        void persistence.save().then((saved) => {
+          if (saved) resetDraft()
+        })
         return
       }
       if (!next && isDirty()) {

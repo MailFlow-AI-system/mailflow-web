@@ -48,7 +48,7 @@ test('isolates real inboxes across tabs, search, pagination and refresh', async 
   expect(pages.next.items).toHaveLength(8)
   expect(new Set([...pages.first.items, ...pages.next.items].map((item) => item.id)).size).toBe(16)
   expect(JSON.stringify(pages)).not.toContain('Northwind private message')
-  await page.getByRole('searchbox', { name: 'Buscar em inbox…', exact: true }).fill('Acme private')
+  await page.getByRole('searchbox', { name: 'Search in inbox…', exact: true }).fill('Acme private')
   await expect(
     page
       .getByRole('region', { name: 'Inbox message list', exact: true })
@@ -58,14 +58,14 @@ test('isolates real inboxes across tabs, search, pagination and refresh', async 
   })
   await expect(page).toHaveURL(/q=Acme/)
   await page
-    .getByRole('searchbox', { name: 'Buscar em inbox…', exact: true })
+    .getByRole('searchbox', { name: 'Search in inbox…', exact: true })
     .fill('Northwind private')
   await expect(
     page
       .getByRole('region', { name: 'Inbox message list', exact: true })
       .getByText('No messages found.', { exact: true }),
   ).toBeVisible()
-  await page.getByRole('searchbox', { name: 'Buscar em inbox…', exact: true }).fill('')
+  await page.getByRole('searchbox', { name: 'Search in inbox…', exact: true }).fill('')
   await expect(
     page
       .getByRole('region', { name: 'Inbox message list', exact: true })

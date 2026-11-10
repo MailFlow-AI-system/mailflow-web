@@ -24,10 +24,10 @@ export function CompositionWarnings() {
         if (!open) validation.cancelWarnings()
       }}
     >
-      <AlertDialogContent lang="pt-BR" data-theme={theme} initialFocus={safeRef}>
-        <AlertDialogTitle>Revisar antes de continuar</AlertDialogTitle>
+      <AlertDialogContent lang="en-US" data-theme={theme} initialFocus={safeRef}>
+        <AlertDialogTitle>Review before continuing</AlertDialogTitle>
         <AlertDialogDescription>
-          A mensagem tem estes avisos. Você pode continuar editando ou aceitar os avisos.
+          This message has the following warnings. You can keep editing or accept the warnings.
         </AlertDialogDescription>
         <ul className="list-disc space-y-1 pl-5 text-sm">
           {validation.warnings.map((warning) => (
@@ -36,14 +36,14 @@ export function CompositionWarnings() {
         </ul>
         <div className="flex flex-wrap justify-end gap-2">
           <AlertDialogClose ref={safeRef} render={<Button type="button" variant="outline" />}>
-            Continuar editando
+            Keep editing
           </AlertDialogClose>
           <Button
             type="button"
             disabled={isSubmitting}
             onClick={() => void validation.confirmWarnings()}
           >
-            Continuar mesmo assim
+            Continue anyway
           </Button>
         </div>
       </AlertDialogContent>

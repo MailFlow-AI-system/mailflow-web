@@ -21,10 +21,10 @@ test('ingests real Faro spans and correlates all workspace outcomes through Web/
   await expect.poll(async () => JSON.stringify(await envelopes())).toContain('session_start')
   await page.getByRole('button', { name: 'Compose', exact: true }).click()
   await page
-    .getByRole('textbox', { name: 'Assunto', exact: true })
+    .getByRole('textbox', { name: 'Subject', exact: true })
     .fill('private-telemetry-subject')
-  await page.getByRole('textbox', { name: 'Corpo da mensagem' }).fill('private-telemetry-body')
-  await page.getByRole('button', { name: 'Minimizar janela' }).click()
+  await page.getByRole('textbox', { name: 'Message body' }).fill('private-telemetry-body')
+  await page.getByRole('button', { name: 'Minimize window' }).click()
   const records = async (): Promise<WorkspaceTelemetryRecord[]> =>
     (
       await fetch('http://127.0.0.1:8083/__telemetry', {
@@ -146,11 +146,11 @@ test('ingests real Faro spans and correlates all workspace outcomes through Web/
   expect(after.preference).toBeNull()
   expect(after.globalMailCalls).toBe(0)
   expect(after.hasActiveOrganization).toBe(false)
-  await page.getByRole('button', { name: 'Restaurar mensagem' }).click()
-  await expect(page.getByRole('textbox', { name: 'Assunto', exact: true })).toHaveValue(
+  await page.getByRole('button', { name: 'Restore message' }).click()
+  await expect(page.getByRole('textbox', { name: 'Subject', exact: true })).toHaveValue(
     'private-telemetry-subject',
   )
-  await expect(page.getByRole('textbox', { name: 'Corpo da mensagem' })).toHaveText(
+  await expect(page.getByRole('textbox', { name: 'Message body' })).toHaveText(
     'private-telemetry-body',
   )
   await testInfo.attach('local-correlation', {

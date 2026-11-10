@@ -41,7 +41,7 @@ describe('draft zodResolver attachment errors', () => {
     const result = await resolveDraft(draftWithSizes(9 * mb, 10 * mb + 1))
 
     expect(result.errors.attachments?.[1]).toMatchObject({
-      file: { message: 'Cada anexo deve ter no máximo 10 MB.' },
+      file: { message: 'Each attachment must be at most 10 MB.' },
     })
   })
 
@@ -49,7 +49,7 @@ describe('draft zodResolver attachment errors', () => {
     const result = await resolveDraft(draftWithSizes(9 * mb, 9 * mb, 7 * mb + 1))
 
     expect(result.errors.attachments).toMatchObject({
-      root: { message: 'Os anexos devem somar no máximo 20 MB.' },
+      root: { message: 'Attachments must total at most 20 MB.' },
     })
   })
 
@@ -57,8 +57,8 @@ describe('draft zodResolver attachment errors', () => {
     const result = await resolveDraft(draftWithSizes(10 * mb, 10 * mb + 1, 5 * mb))
 
     expect(result.errors.attachments).toMatchObject({
-      1: { file: { message: 'Cada anexo deve ter no máximo 10 MB.' } },
-      root: { message: 'Os anexos devem somar no máximo 20 MB.' },
+      1: { file: { message: 'Each attachment must be at most 10 MB.' } },
+      root: { message: 'Attachments must total at most 20 MB.' },
     })
   })
 

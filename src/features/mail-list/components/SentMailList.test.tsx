@@ -46,6 +46,29 @@ function mount() {
     </QueryClientProvider>,
   )
 }
+describe('SentMailList search', () => {
+  it('requests the matching messages and reports an empty search result', async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(pageResponse({ items: [], nextOffset: null }))
+    vi.stubGlobal('fetch', fetcher)
+    render(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <WorkspaceContext value={workspaceState}>
+          <SentMailList userId="owner" q="invoice" />
+        </WorkspaceContext>
+      </QueryClientProvider>,
+    )
+    await waitFor(() =>
+      expect(fetcher.mock.calls[0]?.[0]).toBe('/api/mail/sent?offset=0&q=invoice'),
+    )
+    expect(await screen.findByText('No messages found.')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('No messages found for this search')
+  })
+})
+
 describe('SentMailList', () => {
   it('shows loading, persisted sent emails and pagination', async () => {
     const fetcher = vi

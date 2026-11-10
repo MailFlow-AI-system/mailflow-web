@@ -21,10 +21,10 @@ import { EmojiPicker } from './EmojiPicker'
 import { LinkEditor } from './LinkEditor'
 
 const marks: FormatAction[] = [
-  { name: 'Negrito', mark: 'bold', icon: Bold, command: (chain) => chain.toggleBold() },
-  { name: 'Itálico', mark: 'italic', icon: Italic, command: (chain) => chain.toggleItalic() },
+  { name: 'Bold', mark: 'bold', icon: Bold, command: (chain) => chain.toggleBold() },
+  { name: 'Italic', mark: 'italic', icon: Italic, command: (chain) => chain.toggleItalic() },
   {
-    name: 'Sublinhado',
+    name: 'Underline',
     mark: 'underline',
     icon: Underline,
     command: (chain) => chain.toggleUnderline(),
@@ -32,13 +32,13 @@ const marks: FormatAction[] = [
 ]
 const lists: FormatAction[] = [
   {
-    name: 'Lista com marcadores',
+    name: 'Bulleted list',
     mark: 'bulletList',
     icon: List,
     command: (chain) => chain.toggleBulletList(),
   },
   {
-    name: 'Lista numerada',
+    name: 'Numbered list',
     mark: 'orderedList',
     icon: ListOrdered,
     command: (chain) => chain.toggleOrderedList(),
@@ -90,7 +90,7 @@ function EditorToolbar() {
   return (
     <>
       <Toolbar
-        aria-label="Formatação da mensagem"
+        aria-label="Message formatting"
         className="flex-wrap border-t border-border bg-muted/20 px-2 py-1.5"
       >
         {renderActions(marks)}
@@ -98,8 +98,8 @@ function EditorToolbar() {
         {renderActions(lists)}
         <ToolbarSeparator className="mx-1 h-4" />
         <ToolbarButton
-          aria-label="Inserir link"
-          title="Inserir link"
+          aria-label="Insert link"
+          title="Insert link"
           aria-pressed={active?.link ?? false}
           aria-expanded={panel === 'link'}
           disabled={disabled}
@@ -109,8 +109,8 @@ function EditorToolbar() {
           <Link2 aria-hidden="true" className="size-3.5" />
         </ToolbarButton>
         <ToolbarButton
-          aria-label="Inserir imagem"
-          title="Inserir imagem"
+          aria-label="Insert image"
+          title="Insert image"
           disabled={disabled}
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => imageInput.current?.click()}
@@ -118,8 +118,8 @@ function EditorToolbar() {
           <Image aria-hidden="true" className="size-3.5" />
         </ToolbarButton>
         <ToolbarButton
-          aria-label="Inserir emoji"
-          title="Inserir emoji"
+          aria-label="Insert emoji"
+          title="Insert emoji"
           disabled={disabled}
           aria-expanded={panel === 'emoji'}
           onMouseDown={(event) => event.preventDefault()}
@@ -129,8 +129,8 @@ function EditorToolbar() {
         </ToolbarButton>
         <ToolbarButton
           ref={attachmentTriggerRef}
-          aria-label="Anexar arquivo"
-          title="Anexar arquivo"
+          aria-label="Attach file"
+          title="Attach file"
           aria-invalid={hasAttachmentErrors}
           aria-describedby={hasAttachmentErrors ? attachmentErrorId : undefined}
           onClick={() => attachmentInput.current?.click()}
@@ -142,7 +142,7 @@ function EditorToolbar() {
         hidden
         ref={imageInput}
         type="file"
-        aria-label="Selecionar imagem"
+        aria-label="Select image"
         accept="image/png,image/jpeg,image/gif,image/webp"
         onChange={async (event) => {
           const file = event.currentTarget.files?.[0]
@@ -158,9 +158,7 @@ function EditorToolbar() {
             editor.chain().focus().setTextSelection(from).setImage({ src, alt: file.name }).run()
           } catch (cause) {
             if (session === sessionRef.current)
-              setError(
-                cause instanceof Error ? cause.message : 'Não foi possível inserir a imagem.',
-              )
+              setError(cause instanceof Error ? cause.message : 'The image could not be inserted.')
           }
         }}
       />
@@ -169,7 +167,7 @@ function EditorToolbar() {
         ref={attachmentInput}
         type="file"
         multiple
-        aria-label="Selecionar anexos"
+        aria-label="Select attachments"
         onChange={(event) => {
           addAttachments(Array.from(event.currentTarget.files ?? []))
           event.currentTarget.value = ''

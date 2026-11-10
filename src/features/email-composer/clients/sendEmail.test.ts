@@ -103,7 +103,7 @@ describe('sendEmail private uploads', () => {
       await expect(sendEmail(message, 'same-id', delivery)).rejects.toThrow()
       changed = true
       await expect(sendEmail(message, 'same-id', delivery)).rejects.toThrow(
-        change === 'workspace' ? 'workspace' : 'sessão',
+        change === 'workspace' ? 'workspace' : 'session',
       )
       expect(callsTo(fetcher, '/api/mail/send')).toHaveLength(1)
       expect(callsTo(fetcher, '/api/mail/attachments')).toHaveLength(1)
@@ -141,7 +141,7 @@ describe('sendEmail private uploads', () => {
         ...context(),
         userId: 'another-user',
       }),
-    ).rejects.toThrow('sessão')
+    ).rejects.toThrow('session')
     expect(callsTo(fetcher, '/api/mail/attachments')).toHaveLength(0)
     expect(callsTo(fetcher, '/api/mail/send')).toHaveLength(0)
   })
@@ -165,7 +165,7 @@ describe('sendEmail private uploads', () => {
       const delivery = context()
       await expect(
         sendEmail({ ...composition, attachments: [file()] }, 'id', delivery),
-      ).rejects.toThrow('mantida')
+      ).rejects.toThrow('was kept')
       expect(callsTo(fetcher, '/api/mail/attachments')).toHaveLength(0)
       expect(delivery.scope.current).toBeNull()
     },
@@ -239,7 +239,7 @@ describe('sendEmail private uploads', () => {
     await sendEmail(message, 'first-id', delivery)
     current = { ...workspaceContext, userId: 'user-two' }
     delivery.userId = 'user-two'
-    await expect(sendEmail(message, 'second-id', delivery)).rejects.toThrow('sessão')
+    await expect(sendEmail(message, 'second-id', delivery)).rejects.toThrow('session')
     expect(delivery.scope.current).toEqual(workspaceContext)
     expect(callsTo(fetcher, '/api/mail/send')).toHaveLength(1)
   })
@@ -257,7 +257,7 @@ describe('sendEmail private uploads', () => {
       const delivery = context()
       await expect(
         sendEmail({ ...composition, attachments: [file()] }, 'id', delivery),
-      ).rejects.toThrow('mantida')
+      ).rejects.toThrow('was kept')
       expect(fetcher).toHaveBeenCalledTimes(1)
       expect(delivery.uploads.size).toBe(0)
       expect(delivery.scope.current).toBeNull()
@@ -320,7 +320,7 @@ describe('sendEmail private uploads', () => {
     })
     const delivery = context()
     const message = { ...composition, attachments: [file()] }
-    await expect(sendEmail(message, 'request-id', delivery)).rejects.toThrow('mantida')
+    await expect(sendEmail(message, 'request-id', delivery)).rejects.toThrow('was kept')
     await sendEmail(message, 'request-id', delivery)
     expect(callsTo(fetcher, '/api/mail/attachments')).toHaveLength(1)
     const sends = callsTo(fetcher, '/api/mail/send')
@@ -457,7 +457,7 @@ describe('sendEmail private uploads', () => {
       const message = { ...composition, attachments: [file()] }
       await expect(sendEmail(message, 'same-message', delivery)).rejects.toThrow()
       clock.mockReturnValue(1_800_000_000_000 + 86_400_001)
-      await expect(sendEmail(message, 'same-message', delivery)).rejects.toThrow('confirmar')
+      await expect(sendEmail(message, 'same-message', delivery)).rejects.toThrow('confirmed')
       expect(callsTo(fetcher, '/api/mail/attachments')).toHaveLength(1)
       expect(callsTo(fetcher, '/api/mail/send')).toHaveLength(1)
     },
@@ -576,8 +576,8 @@ describe('sendEmail private uploads', () => {
           : Response.json({ status: 'failed' }),
     )
     vi.stubGlobal('fetch', fetcher)
-    await expect(sendEmail(composition, 'id')).rejects.toThrow('Não foi possível enviar')
-    await expect(sendEmail(composition, 'id')).rejects.toThrow('Não foi possível enviar')
+    await expect(sendEmail(composition, 'id')).rejects.toThrow('The email could not be sent')
+    await expect(sendEmail(composition, 'id')).rejects.toThrow('The email could not be sent')
   })
 
   it('preserves paragraph, list and explicit line break separation in plain text', async () => {
@@ -645,15 +645,15 @@ describe('sendEmail private uploads', () => {
     vi.stubGlobal('fetch', fetcher)
     await expect(
       sendEmail({ ...composition, attachments: [file()] }, 'id', context()),
-    ).rejects.toThrow('Não foi possível enviar')
+    ).rejects.toThrow('The email could not be sent')
     expect(fetcher).toHaveBeenCalledTimes(2)
   })
 
   it.each([
-    ['unsupported_archive', 'formato ZIP'],
-    ['unsafe_archive', 'Reduza seu tamanho'],
-    ['checksum_mismatch', 'Remova e anexe'],
-    ['infected', 'Remova ou substitua'],
+    ['unsupported_archive', 'as a ZIP'],
+    ['unsafe_archive', 'Reduce its size'],
+    ['checksum_mismatch', 'Remove it and attach'],
+    ['infected', 'Remove or replace'],
   ])('provides safe remediation for rejected files (%s)', async (rejectionReason, message) => {
     const fetcher = provider()
     const normal = fetcher.getMockImplementation()

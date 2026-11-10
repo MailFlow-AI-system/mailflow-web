@@ -1,5 +1,5 @@
 import { Button } from '@mailflow/ui/components'
-import { useCallback, useEffect, useId, useRef } from 'react'
+import { type ReactNode, useCallback, useEffect, useId, useRef } from 'react'
 
 import { MailSelectionBar } from '#/features/mail-selection/components/MailSelectionBar'
 import { useCoarseLayout } from '#/features/mail-selection/hooks/useCoarseLayout'
@@ -68,6 +68,8 @@ type MailListViewProps = {
   onSelect?: (id: string) => void
   onAutoSelect?: (id: string) => void
   selection?: MailSelection | undefined
+  // Mailbox-specific bulk actions shown in the selection bar.
+  selectionActions?: ReactNode
   heading?: string
 }
 
@@ -80,6 +82,7 @@ export function MailListView({
   onSelect,
   onAutoSelect,
   selection,
+  selectionActions,
   heading,
 }: MailListViewProps) {
   const listId = useId()
@@ -162,6 +165,7 @@ export function MailListView({
       </p>
       {selection ? (
         <MailSelectionBar
+          actions={selectionActions}
           controls={listId}
           disabled={showSearchSkeletons}
           heading={heading ?? label}
