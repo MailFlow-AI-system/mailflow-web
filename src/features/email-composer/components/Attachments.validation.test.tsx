@@ -41,16 +41,16 @@ describe('attachment validation presentation', () => {
 
     const alert = await screen.findByRole('alert')
     await waitFor(() => expect(alert.querySelectorAll('li')).toHaveLength(3))
-    expect(alert).toHaveTextContent('Anexo 1:')
-    expect(alert).toHaveTextContent('Anexo 2:')
+    expect(alert).toHaveTextContent('Attachment 1:')
+    expect(alert).toHaveTextContent('Attachment 2:')
     expect(alert).toHaveTextContent('20 MB')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remover first.bin' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Remove first.bin' }))
     await waitFor(() => expect(alert.querySelectorAll('li')).toHaveLength(1))
-    expect(alert).toHaveTextContent('Anexo 1:')
+    expect(alert).toHaveTextContent('Attachment 1:')
     expect(alert).not.toHaveTextContent('20 MB')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remover second.bin' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Remove second.bin' }))
     await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
   })
 })

@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { type EmailDeliveryContext, EmailDeliveryError } from '../types/EmailDelivery'
 import { mailRequestFailure, resolveDeliveryScope } from './mailContext'
 
-const failure = 'Não foi possível concluir o descarte. O rascunho foi mantido. Tente novamente.'
+const failure = 'The discard could not be completed. The draft was kept. Try again.'
 const responseSchema = z.strictObject({
   status: z.literal('discarded'),
   retainedMessageIds: z.array(z.uuid()).max(100),

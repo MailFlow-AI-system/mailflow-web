@@ -18,6 +18,12 @@ vi.mock('@mailflow/ui/components', async (original) => ({
   toast: { loading, success, error, info },
 }))
 vi.mock('../clients/discardEmail', () => ({ discardEmail: discardRemote }))
+vi.mock('../clients/drafts', async (original) => ({
+  ...(await original<object>()),
+  saveDraft: vi.fn(async (input) => ({ id: input.id, version: input.version + 1 })),
+  deleteDraft: vi.fn(async () => {}),
+  readDraft: vi.fn(),
+}))
 afterEach(() => {
   vi.clearAllMocks()
   discardRemote.mockResolvedValue({ retainedMessageIds: [] })
@@ -204,7 +210,7 @@ describe('useComposerController email delivery', () => {
       attempt = result.current.context.validation.validate()
     })
     await waitFor(() => expect(onSend).toHaveBeenCalledTimes(1))
-    expect(loading).toHaveBeenCalledWith('Enviando e-mail…')
+    expect(loading).toHaveBeenCalledWith('Sending email…')
     expect(onSent).not.toHaveBeenCalled()
     expect(result.current.context.sending).toBe(true)
     expect(result.current.context.editor?.isEditable).toBe(false)
@@ -223,7 +229,7 @@ describe('useComposerController email delivery', () => {
     expect(result.current.draft.getValues('attachments')).toEqual([])
     expect(result.current.open).toBe(false)
     expect(result.current.context.sending).toBe(false)
-    expect(success).toHaveBeenCalledWith('E-mail enviado com sucesso.', { id: 'delivery-toast' })
+    expect(success).toHaveBeenCalledWith('Email sent successfully.', { id: 'delivery-toast' })
     expect(onSent).toHaveBeenCalledTimes(1)
   })
   it('retains recipients, content and attachments on failure and allows retry', async () => {
@@ -238,7 +244,9 @@ describe('useComposerController email delivery', () => {
     })
     await act(async () => result.current.context.validation.validate())
     expect(result.current.context.sendFailed).toBe(true)
-    expect(error).toHaveBeenCalledWith(expect.stringContaining('mantida'), { id: 'delivery-toast' })
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('was kept'), {
+      id: 'delivery-toast',
+    })
     expect(result.current.draft.getValues('to')).toBe('ada@example.test')
     expect(result.current.draft.getValues('attachments')).toHaveLength(1)
     expect(result.current.context.editor?.isEditable).toBe(true)
@@ -338,7 +346,7 @@ it('owns upload progress and retry cache within the Composition and clears them 
   }
   await compose()
   await act(async () => result.current.context.validation.validate())
-  expect(loading).toHaveBeenCalledWith('Salvando arquivo 1 de 1…', { id: 'delivery-toast' })
+  expect(loading).toHaveBeenCalledWith('Saving file 1 of 1…', { id: 'delivery-toast' })
   expect(result.current.context.sendFailed).toBe(true)
   await act(async () => result.current.context.validation.validate())
   const first = deliveries[0] as {
@@ -440,7 +448,7 @@ describe('Composition remote discard', () => {
       await discarding
     })
     expect(result.current.draft.getValues('subject')).toBe('')
-    expect(info).toHaveBeenCalledWith(expect.stringContaining('anexos foram preservados'))
+    expect(info).toHaveBeenCalledWith(expect.stringContaining('attachments were preserved'))
   })
 
   it('retains the draft and retry references if remote discard fails', async () => {
@@ -449,7 +457,7 @@ describe('Composition remote discard', () => {
     await act(async () => result.current.context.discard())
     expect(result.current.draft.getValues('subject')).toBe('Original subject')
     expect(result.current.draft.getValues('attachments')).toHaveLength(1)
-    expect(error).toHaveBeenCalledWith(expect.stringContaining('rascunho foi mantido'))
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('The draft was kept'))
     expect(result.current.context.editor?.isEditable).toBe(true)
   })
 
@@ -460,10 +468,7 @@ describe('Composition remote discard', () => {
     await act(async () => result.current.context.validation.validate())
     expect(onSend).toHaveBeenCalledTimes(1)
     expect(result.current.draft.getValues('subject')).toBe('Edited subject')
-    expect(error).toHaveBeenCalledWith(
-      expect.stringContaining('envio anterior'),
-      expect.any(Object),
-    )
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('previous send'), expect.any(Object))
   })
 
   it('releases a removed uploaded file without cancelling other message attempts', async () => {

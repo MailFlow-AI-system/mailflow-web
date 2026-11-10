@@ -107,13 +107,11 @@ test('refreshes the current workspace Sent list after a controlled real Core sen
       .getByText('Acme sent message 21', { exact: true }),
   ).toBeVisible()
   await page.getByRole('button', { name: 'Compose', exact: true }).click()
-  await page.getByRole('textbox', { name: 'Para', exact: true }).fill('recipient@example.test')
-  await page.getByRole('textbox', { name: 'Assunto', exact: true }).fill('Acme newly sent message')
-  await page
-    .getByRole('textbox', { name: 'Corpo da mensagem', exact: true })
-    .fill('Scoped sent body')
-  await page.getByRole('button', { name: 'Enviar', exact: true }).click()
-  await expect(page.getByText('E-mail enviado com sucesso.', { exact: true })).toBeVisible()
+  await page.getByRole('textbox', { name: 'To', exact: true }).fill('recipient@example.test')
+  await page.getByRole('textbox', { name: 'Subject', exact: true }).fill('Acme newly sent message')
+  await page.getByRole('textbox', { name: 'Message body', exact: true }).fill('Scoped sent body')
+  await page.getByRole('button', { name: 'Send', exact: true }).click()
+  await expect(page.getByText('Email sent successfully.', { exact: true })).toBeVisible()
   await expect(
     page
       .getByRole('region', { name: 'Sent message list', exact: true })
@@ -136,21 +134,21 @@ test('uploads verified attachments and an inline image on localhost and sends on
   await login(page, `http://${data.host}:3003/login`)
   await expect(page.getByRole('button', { name: 'Compose', exact: true })).toBeEnabled()
   await page.getByRole('button', { name: 'Compose', exact: true }).click()
-  await page.getByRole('textbox', { name: 'Para', exact: true }).fill('recipient@example.test')
+  await page.getByRole('textbox', { name: 'To', exact: true }).fill('recipient@example.test')
   await page
-    .getByRole('textbox', { name: 'Assunto', exact: true })
+    .getByRole('textbox', { name: 'Subject', exact: true })
     .fill('Localhost verified upload test')
-  const body = page.getByRole('textbox', { name: 'Corpo da mensagem', exact: true })
+  const body = page.getByRole('textbox', { name: 'Message body', exact: true })
   await body.fill('Controlled fixture delivery with attachment and inline image.')
   const fileChooser = page.waitForEvent('filechooser')
-  await page.getByRole('button', { name: 'Anexar arquivo', exact: true }).click()
+  await page.getByRole('button', { name: 'Attach file', exact: true }).click()
   await (await fileChooser).setFiles({
     name: 'localhost-notes.txt',
     mimeType: 'text/plain',
     buffer: Buffer.from('Localhost attachment acceptance'),
   })
   const imageChooser = page.waitForEvent('filechooser')
-  await page.getByRole('button', { name: 'Inserir imagem', exact: true }).click()
+  await page.getByRole('button', { name: 'Insert image', exact: true }).click()
   await (await imageChooser).setFiles({
     name: 'localhost-inline.png',
     mimeType: 'image/png',
@@ -160,10 +158,10 @@ test('uploads verified attachments and an inline image on localhost and sends on
     ),
   })
   await expect(body.locator('img')).toBeVisible()
-  const send = page.getByRole('button', { name: 'Enviar', exact: true })
+  const send = page.getByRole('button', { name: 'Send', exact: true })
   await expect(send).toBeEnabled({ timeout: 15000 })
   await send.click()
-  await expect(page.getByText('E-mail enviado com sucesso.', { exact: true })).toBeVisible()
+  await expect(page.getByText('Email sent successfully.', { exact: true })).toBeVisible()
   await page.goto(`http://${data.host}:3003/sent`)
   await expect(
     page

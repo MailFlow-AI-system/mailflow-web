@@ -11,6 +11,7 @@ export function Root({
   onSend,
   onSent,
   userId,
+  onDraftChanged,
 }: ComposerRootProps) {
   const { draft, context, setState, ...window } = useComposerController(
     theme,
@@ -18,6 +19,7 @@ export function Root({
     onSend,
     onSent,
     userId,
+    onDraftChanged,
   )
   return (
     <FormProvider {...draft}>

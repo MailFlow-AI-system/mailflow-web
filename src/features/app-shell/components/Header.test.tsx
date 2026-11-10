@@ -13,6 +13,22 @@ import { Header } from './Header'
 describe('Header mailbox toolbar', () => {
   afterEach(cleanup)
 
+  it('spans the whole header when the mailbox list has no reading pane', () => {
+    render(
+      <Header.Mailbox fullWidth>
+        <Header.Search />
+        <Header.Filters />
+        <button type="button">Compose</button>
+      </Header.Mailbox>,
+    )
+    const toolbar = screen.getByRole('searchbox').parentElement?.parentElement
+    expect(toolbar).toHaveClass('w-full', 'lg:border-b', 'lg:py-2.5', 'lg:px-3')
+    expect(toolbar).not.toHaveClass('lg:w-[380px]')
+    expect(toolbar).not.toHaveClass('xl:w-[420px]')
+    expect(toolbar).not.toHaveClass('lg:border-r')
+    expect(toolbar).not.toHaveClass('lg:shrink-0')
+  })
+
   it('scopes search to the current mailbox and reserves the list column on desktop', () => {
     render(
       <Header.Mailbox>
@@ -22,7 +38,7 @@ describe('Header mailbox toolbar', () => {
       </Header.Mailbox>,
     )
 
-    const search = screen.getByRole('searchbox', { name: 'Buscar em spam…' })
+    const search = screen.getByRole('searchbox', { name: 'Search in spam…' })
     const toolbar = search.parentElement?.parentElement
     expect(toolbar).toHaveClass(
       'lg:w-[380px]',
@@ -33,7 +49,7 @@ describe('Header mailbox toolbar', () => {
     )
     expect(toolbar).not.toHaveClass('border-r')
     expect(toolbar).not.toHaveClass('pr-3')
-    expect(search).toHaveAttribute('placeholder', 'Buscar em spam…')
+    expect(search).toHaveAttribute('placeholder', 'Search in spam…')
     expect(search).toHaveClass(
       'focus-visible:border-input',
       'focus-visible:ring-1',
@@ -42,7 +58,7 @@ describe('Header mailbox toolbar', () => {
     expect(search).not.toHaveClass('focus-visible:ring-[3px]')
     expect(search).not.toHaveClass('focus-visible:ring-ring/50')
     expect(search).not.toHaveClass('focus-visible:border-ring')
-    expect(toolbar).toContainElement(screen.getByRole('button', { name: 'Filtros' }))
+    expect(toolbar).toContainElement(screen.getByRole('button', { name: 'Filters' }))
     expect(toolbar).toContainElement(screen.getByRole('button', { name: 'Compose' }))
   })
 
@@ -53,7 +69,7 @@ describe('Header mailbox toolbar', () => {
     await user.tab()
     await user.keyboard('{Enter}')
     expect(warning).toHaveBeenCalledWith(
-      'Esta funcionalidade está em desenvolvimento e ainda não está disponível.',
+      'This feature is under development and is not available yet.',
       { id: 'feature-unavailable' },
     )
     warning.mockRestore()
@@ -75,7 +91,7 @@ describe('Header mailbox toolbar', () => {
     const onChange = vi.fn()
     render(<Header.Search onChange={onChange} value="invoice" />)
 
-    const search = screen.getByRole('searchbox', { name: 'Buscar em spam…' })
+    const search = screen.getByRole('searchbox', { name: 'Search in spam…' })
     await user.click(screen.getByRole('button', { name: 'Clear search' }))
 
     expect(onChange).toHaveBeenCalledWith('')
@@ -89,7 +105,7 @@ describe('Header mailbox toolbar', () => {
       const onChange = vi.fn()
       render(<Header.Search onChange={onChange} value="invoice" />)
 
-      const search = screen.getByRole('searchbox', { name: 'Buscar em spam…' })
+      const search = screen.getByRole('searchbox', { name: 'Search in spam…' })
       const clear = screen.getByRole('button', { name: 'Clear search' })
       await user.click(search)
       await user.tab()

@@ -24,6 +24,7 @@ export type DeliveryProgress = {
 }
 
 export type EmailDeliveryContext = {
+  draft?: { id: string; version: number }
   labels?: MailLabel[]
   uploads: Map<string, AttachmentUploadState>
   scope: { current: MailDeliveryScope | null }

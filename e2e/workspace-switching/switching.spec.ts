@@ -89,9 +89,9 @@ test('selects another workspace directly without composer draft confirmation', a
   const data = await fixture()
   await page.getByRole('button', { name: 'Compose', exact: true }).click()
   await page
-    .getByRole('textbox', { name: 'Assunto', exact: true })
+    .getByRole('textbox', { name: 'Subject', exact: true })
     .fill('Workspace scope regression')
-  await page.getByRole('button', { name: 'Minimizar janela' }).click()
+  await page.getByRole('button', { name: 'Minimize window' }).click()
   await page.getByRole('combobox', { name: 'Workspace: Acme Corp' }).click()
   await page.getByRole('option', { name: 'Northwind' }).click()
   await expectEntryUrl(page, `http://${data.targetHost}:3003/inbox`)

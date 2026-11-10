@@ -8,6 +8,6 @@ export const linkSchema = z.object({
     .string()
     .refine(
       (value) => normalizeLink(value) !== null,
-      'Informe um endereço HTTP, HTTPS ou mailto válido.',
+      'Enter a valid HTTP, HTTPS or mailto address.',
     ),
 }) satisfies z.ZodType<LinkValues>

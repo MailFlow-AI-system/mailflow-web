@@ -49,12 +49,12 @@ describe('validateComposition', () => {
       {
         code: 'empty-subject',
         field: 'subject',
-        message: 'O assunto está vazio. Deseja continuar mesmo assim?',
+        message: 'The subject is empty. Do you want to continue anyway?',
       },
       {
         code: 'empty-body',
         field: 'body',
-        message: 'O corpo do e-mail está vazio. Deseja continuar mesmo assim?',
+        message: 'The email body is empty. Do you want to continue anyway?',
       },
     ])
   })
@@ -70,7 +70,7 @@ describe('validateComposition', () => {
     expect(result.success).toBe(false)
     expect(result.issues).toContainEqual({
       field: 'to',
-      message: 'Adicione pelo menos um destinatário em Para.',
+      message: 'Add at least one recipient in To.',
     })
     expect(result.warnings.map(({ code }) => code)).toEqual(['empty-subject', 'empty-body'])
   })

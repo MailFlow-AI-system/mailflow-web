@@ -74,13 +74,13 @@ test('a real delayed response from the previous identity is rejected after login
     ).toBe(true)
     await logout(page)
     await login(page, `http://${data.targetHost}:3003/login`, data.otherEmail)
-    await expect(page.getByRole('button', { name: 'Abrir menu de Other User' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Open menu for Other User' })).toBeVisible()
   } finally {
     await delay.release()
   }
-  await expect(otherTab.getByRole('button', { name: 'Abrir menu de Other User' })).toBeVisible()
+  await expect(otherTab.getByRole('button', { name: 'Open menu for Other User' })).toBeVisible()
   await expect(otherTab.getByRole('combobox', { name: 'Workspace: Northwind' })).toBeVisible()
-  await expect(otherTab.getByRole('button', { name: 'Abrir menu de Workspace Test' })).toHaveCount(
+  await expect(otherTab.getByRole('button', { name: 'Open menu for Workspace Test' })).toHaveCount(
     0,
   )
   await otherTab.getByRole('combobox', { name: 'Workspace: Northwind' }).click()

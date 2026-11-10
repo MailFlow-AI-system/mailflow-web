@@ -11,7 +11,7 @@ describe('SidebarSearch', () => {
     const user = userEvent.setup()
     render(<SidebarSearch />)
 
-    const search = screen.getByRole('searchbox', { name: 'Buscar tudo' })
+    const search = screen.getByRole('searchbox', { name: 'Search everything' })
     expect(search).toHaveClass('text-xs', 'md:text-sm')
     expect(search).toHaveClass(
       'focus-visible:border-input',
@@ -32,7 +32,7 @@ describe('SidebarSearch', () => {
   it('uses a smaller font when compact is set', () => {
     render(<SidebarSearch textSize="compact" />)
 
-    const search = screen.getByRole('searchbox', { name: 'Buscar tudo' })
+    const search = screen.getByRole('searchbox', { name: 'Search everything' })
     expect(search).toHaveClass('text-xs', 'md:text-xs')
     expect(search).not.toHaveClass('md:text-sm')
   })

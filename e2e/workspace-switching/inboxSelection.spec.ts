@@ -19,7 +19,7 @@ test('selects, searches, selects all and clears messages in the real workspace i
 
   const rowCheckboxes = page.getByRole('checkbox', { name: /^Select message from / })
   const selectAll = page.getByRole('checkbox', { name: 'Select all loaded messages' })
-  const search = page.getByRole('searchbox', { name: 'Buscar em inbox…', exact: true })
+  const search = page.getByRole('searchbox', { name: 'Search in inbox…', exact: true })
   const loaded = await rowCheckboxes.count()
   expect(loaded).toBeGreaterThan(1)
   await expect(page.getByRole('heading', { level: 1, name: 'Inbox' })).toBeVisible()

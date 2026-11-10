@@ -32,7 +32,7 @@ vi.mock('@tanstack/react-router', () => ({
 }))
 
 vi.mock('#/features/mail-list/components/MailboxSearch', () => ({
-  MailboxSearch: () => <input aria-label="Buscar em inbox" data-testid="global-mailbox-search" />,
+  MailboxSearch: () => <input aria-label="Search in inbox" data-testid="global-mailbox-search" />,
 }))
 
 vi.mock('@/features/app-shell', () => {
@@ -43,8 +43,8 @@ vi.mock('@/features/app-shell', () => {
   Header.Actions = ({ children }: { children: ReactNode }) => (
     <div data-testid="reader-header-actions">{children}</div>
   )
-  Header.Search = () => <input aria-label="Buscar em inbox" />
-  Header.Filters = () => <button type="button">Filtros</button>
+  Header.Search = () => <input aria-label="Search in inbox" />
+  Header.Filters = () => <button type="button">Filters</button>
 
   return {
     AppShell: {
@@ -146,8 +146,8 @@ describe('MailLayout', () => {
     const toolbar = screen.getByTestId('mailbox-toolbar')
     expect(screen.getByTestId('app-shell')).toBeInTheDocument()
     expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).not.toBeInTheDocument()
-    expect(toolbar).toContainElement(screen.getByRole('textbox', { name: 'Buscar em inbox' }))
-    expect(toolbar).toContainElement(screen.getByRole('button', { name: 'Filtros' }))
+    expect(toolbar).toContainElement(screen.getByRole('textbox', { name: 'Search in inbox' }))
+    expect(toolbar).toContainElement(screen.getByRole('button', { name: 'Filters' }))
     expect(toolbar).toContainElement(screen.getByRole('button', { name: 'Compose' }))
     expect(screen.getByTestId('route-outlet')).toBeInTheDocument()
   })

@@ -14,7 +14,7 @@ describe('SidebarUser', () => {
       />,
     )
 
-    const trigger = screen.getByRole('button', { name: 'Abrir menu de Ada Lovelace' })
+    const trigger = screen.getByRole('button', { name: 'Open menu for Ada Lovelace' })
     expect(trigger).toHaveTextContent('Ada Lovelace')
     expect(trigger).toHaveTextContent('ada@example.test')
     expect(trigger).toHaveTextContent('AL')
@@ -30,7 +30,7 @@ describe('SidebarUser', () => {
       />,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Abrir menu de Ada Lovelace' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Open menu for Ada Lovelace' }))
 
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument()
   })

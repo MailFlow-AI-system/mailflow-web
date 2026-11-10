@@ -10,6 +10,16 @@ export function createOutgoingMailProxy(apiBaseUrl: string, fetcher: typeof fetc
       request.method === 'GET' &&
       /^\/api\/mail\/sent\/[a-zA-Z0-9_-]{1,128}$/.test(incoming.pathname)
     const readingContext = request.method === 'GET' && incoming.pathname === '/api/mail/context'
+    const listingDrafts = request.method === 'GET' && incoming.pathname === '/api/mail/drafts'
+    const draftPath =
+      /^\/api\/mail\/drafts\/[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/.test(
+        incoming.pathname,
+      )
+    const discardingDrafts =
+      request.method === 'POST' && incoming.pathname === '/api/mail/drafts/discard'
+    const mutatingDraft =
+      discardingDrafts || (draftPath && ['PUT', 'DELETE'].includes(request.method))
+    const draftRoute = listingDrafts || (draftPath && request.method === 'GET') || mutatingDraft
     const attachmentPath =
       /^\/api\/mail\/attachments\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}(?:\/(complete|download|inline))?$/.exec(
         incoming.pathname,
@@ -32,6 +42,7 @@ export function createOutgoingMailProxy(apiBaseUrl: string, fetcher: typeof fetc
     const assigningLabel = request.method === 'PUT' && Boolean(labelPath?.[2])
     const labelRoute = palettePath || listingLabels || creatingLabel || assigningLabel
     const mutating =
+      mutatingDraft ||
       Boolean(creatingLabel) ||
       assigningLabel ||
       sending ||
@@ -47,7 +58,8 @@ export function createOutgoingMailProxy(apiBaseUrl: string, fetcher: typeof fetc
       !readingSent &&
       !attachmentRoute &&
       !readingContext &&
-      !labelRoute
+      !labelRoute &&
+      !draftRoute
     )
       return new Response(null, { status: 404, headers: privateHeaders })
     const suppliedOrigin = request.headers.get('origin')
@@ -70,7 +82,7 @@ export function createOutgoingMailProxy(apiBaseUrl: string, fetcher: typeof fetc
         ? `/api/v1/workspaces/${palettePath[1]}/mail/labels/palette`
         : labelRoute && labelPath
           ? `/api/v1/workspaces/${labelPath[1]}/mail/${labelPath[2] ? `sent/${labelPath[2]}/labels/${labelPath[3]}` : 'labels'}`
-          : attachmentRoute || readingSent
+          : attachmentRoute || readingSent || draftRoute
             ? incoming.pathname.replace('/api/mail/', '/api/v1/mail/')
             : readingContext
               ? '/api/v1/mail/context'
@@ -87,8 +99,12 @@ export function createOutgoingMailProxy(apiBaseUrl: string, fetcher: typeof fetc
         if (value !== null) upstreamUrl.searchParams.set(key, value)
       }
     }
-    if (listing && incoming.searchParams.has('offset'))
-      upstreamUrl.searchParams.set('offset', incoming.searchParams.get('offset') ?? '')
+    if (listing || listingDrafts) {
+      for (const key of ['offset', 'q']) {
+        const value = incoming.searchParams.get(key)
+        if (value !== null) upstreamUrl.searchParams.set(key, value)
+      }
+    }
     const headers = new Headers()
     for (const name of ['accept', 'content-type', 'origin', 'traceparent', 'tracestate']) {
       const value = request.headers.get(name)

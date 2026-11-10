@@ -10,13 +10,13 @@ import { useRef } from 'react'
 import { useComposer } from '../context'
 
 export function CloseConfirmation() {
-  const { confirm, setConfirm, discard, sending, triggerRef, theme } = useComposer()
+  const { confirm, setConfirm, discard, sending, triggerRef, theme, persistence } = useComposer()
   const safeRef = useRef<HTMLButtonElement>(null)
   const confirmed = useRef(false)
   return (
     <AlertDialog open={confirm} onOpenChange={setConfirm}>
       <AlertDialogContent
-        lang="pt-BR"
+        lang="en-US"
         data-theme={theme}
         initialFocus={safeRef}
         finalFocus={() => {
@@ -25,13 +25,17 @@ export function CloseConfirmation() {
           return triggerRef.current ?? true
         }}
       >
-        <AlertDialogTitle>Fechar sem salvar?</AlertDialogTitle>
+        <AlertDialogTitle>
+          {persistence ? 'Discard draft?' : 'Close without saving?'}
+        </AlertDialogTitle>
         <AlertDialogDescription>
-          Há alterações não salvas. Continue editando ou descarte a mensagem.
+          {persistence
+            ? 'The draft and its attachments will be deleted. This action cannot be undone.'
+            : 'There are unsaved changes. Keep editing or discard the message.'}
         </AlertDialogDescription>
         <div className="flex flex-wrap justify-end gap-2">
           <AlertDialogClose ref={safeRef} render={<Button variant="outline" />}>
-            Continuar editando
+            Keep editing
           </AlertDialogClose>
           <Button
             variant="destructive"
@@ -41,7 +45,7 @@ export function CloseConfirmation() {
               void discard()
             }}
           >
-            Descartar mensagem
+            Discard message
           </Button>
         </div>
       </AlertDialogContent>

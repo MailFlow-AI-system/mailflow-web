@@ -63,14 +63,14 @@ describe('MailReader', () => {
       'Print',
       'More',
       'Ask AI',
-      'Usar resposta',
-      'Regenerar',
+      'Use reply',
+      'Regenerate',
     ]) {
       const button = screen.getByRole('button', { name })
       expect(button).toBeEnabled()
       fireEvent.click(button)
       expect(warning).toHaveBeenLastCalledWith(
-        'Esta funcionalidade está em desenvolvimento e ainda não está disponível.',
+        'This feature is under development and is not available yet.',
         { id: 'feature-unavailable' },
       )
     }
@@ -91,6 +91,15 @@ describe('MailReader', () => {
     expect(warning).toHaveBeenCalledOnce()
     expect(submit).not.toHaveBeenCalled()
   })
+  it('offers the AI reply suggestion for received messages but not for sent ones', () => {
+    const received = render(<MailReaderView message={message} onBack={vi.fn()} />)
+    expect(screen.getByText('AI reply suggestion')).toBeVisible()
+    received.unmount()
+    render(<MailReaderView message={message} onBack={vi.fn()} showReplySuggestion={false} />)
+    expect(screen.queryByText('AI reply suggestion')).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: message.subject })).toBeVisible()
+  })
+
   it('keeps HTML metadata and attachments hidden until the complete document has its final height', async () => {
     render(
       <MailReaderView

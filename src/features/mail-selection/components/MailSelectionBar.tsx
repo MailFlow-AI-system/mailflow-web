@@ -1,9 +1,11 @@
 import { Badge, Button, Checkbox } from '@mailflow/ui/components'
 import { EyeOff, X } from '@mailflow/ui/icons'
-import { useEffect, useId, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import type { MailSelection } from '../types/selection'
 
 type MailSelectionBarProps = {
+  // Mailbox-specific bulk actions, shown only while messages are being selected.
+  actions?: ReactNode
   heading: string
   selection: MailSelection
   visibleIds: readonly string[]
@@ -14,6 +16,7 @@ type MailSelectionBarProps = {
 }
 
 export function MailSelectionBar({
+  actions,
   heading,
   selection,
   visibleIds,
@@ -67,16 +70,19 @@ export function MailSelectionBar({
               <span className="whitespace-nowrap text-[15px] font-semibold">
                 {count === 0 ? 'Select items' : `${count} selected`}
               </span>
-              <Button
-                aria-controls={controls}
-                className="ml-auto h-11 px-3 text-sm text-primary"
-                disabled={disabled || visibleIds.length === 0}
-                onClick={() => selection.setManySelected(visibleIds, !allSelected)}
-                type="button"
-                variant="ghost"
-              >
-                {allSelected ? 'Deselect all' : 'Select all'}
-              </Button>
+              <div className="ml-auto flex items-center gap-1">
+                {actions}
+                <Button
+                  aria-controls={controls}
+                  className="h-11 px-3 text-sm text-primary"
+                  disabled={disabled || visibleIds.length === 0}
+                  onClick={() => selection.setManySelected(visibleIds, !allSelected)}
+                  type="button"
+                  variant="ghost"
+                >
+                  {allSelected ? 'Deselect all' : 'Select all'}
+                </Button>
+              </div>
             </>
           ) : (
             <>
@@ -138,15 +144,18 @@ export function MailSelectionBar({
               {`${hiddenCount} ${hiddenReason}`}
             </Badge>
           ) : null}
-          <Button
-            className="ml-auto h-7 text-xs"
-            onClick={selection.clear}
-            size="sm"
-            type="button"
-            variant="ghost"
-          >
-            Clear selection
-          </Button>
+          <div className="ml-auto flex items-center gap-1">
+            {actions}
+            <Button
+              className="h-7 text-xs"
+              onClick={selection.clear}
+              size="sm"
+              type="button"
+              variant="ghost"
+            >
+              Clear selection
+            </Button>
+          </div>
         </>
       ) : null}
       {live}
