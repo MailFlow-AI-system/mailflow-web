@@ -23,7 +23,7 @@ async function request(scope: MailDeliveryScope, path: string, init?: RequestIni
       },
     },
   )
-  if (!response.ok) throw new Error('Não foi possível atualizar as etiquetas.')
+  if (!response.ok) throw new Error('The labels could not be updated.')
   return response.json()
 }
 

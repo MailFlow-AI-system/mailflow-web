@@ -148,7 +148,7 @@ test('a new identity cannot reuse the previous identity preference or cached wor
   await login(page, 'http://localhost:3003/login', data.otherEmail)
   await expectEntryUrl(page, `http://${data.targetHost}:3003/inbox`)
   await expect(
-    page.getByRole('button', { name: 'Abrir menu de Other User', exact: true }),
+    page.getByRole('button', { name: 'Open menu for Other User', exact: true }),
   ).toBeVisible()
   await expect(page.getByRole('option', { name: 'Acme Corp' })).toHaveCount(0)
   await page.getByRole('combobox', { name: 'Workspace: Northwind' }).click()

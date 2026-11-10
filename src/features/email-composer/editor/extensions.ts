@@ -21,5 +21,5 @@ export const composerExtensions = [
     },
   }),
   Image.configure({ allowBase64: true }),
-  Placeholder.configure({ placeholder: 'Escreva sua mensagem…' }),
+  Placeholder.configure({ placeholder: 'Write your message…' }),
 ]

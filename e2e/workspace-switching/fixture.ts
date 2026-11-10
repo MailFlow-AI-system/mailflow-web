@@ -31,7 +31,7 @@ export async function login(page: Page, url: string, email?: string) {
 }
 export async function logout(page: Page) {
   await expect(page.getByRole('button', { name: 'Compose', exact: true })).toBeEnabled()
-  await page.getByRole('button', { name: /^Abrir menu de / }).click()
+  await page.getByRole('button', { name: /^Open menu for / }).click()
   await page.getByRole('menuitem', { name: 'Sign out', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Sign in to MailFlow' })).toBeVisible()
 }

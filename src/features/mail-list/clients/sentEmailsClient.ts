@@ -42,10 +42,12 @@ export async function fetchSentEmails(
   workspaceId: string,
   offset: number,
   signal: AbortSignal,
+  search = '',
 ) {
+  const q = search.trim()
   return pageSchema.parse(
     await readWorkspaceResponse(
-      `/api/mail/sent?offset=${offset}`,
+      `/api/mail/sent?offset=${offset}${q ? `&q=${encodeURIComponent(q)}` : ''}`,
       userId,
       signal,
       {

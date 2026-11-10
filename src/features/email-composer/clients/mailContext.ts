@@ -3,7 +3,7 @@ import { workspaceSchema } from '#/features/workspaces/schemas'
 import { type EmailDeliveryContext, EmailDeliveryError } from '../types/EmailDelivery'
 
 const sessionChanged =
-  'Sua sessão mudou. Sua mensagem foi mantida. Volte à conta original antes de tentar novamente.'
+  'Your session changed. Your message was kept. Return to the original account before trying again.'
 const selectorSchema = z
   .string()
   .min(1)
@@ -21,11 +21,11 @@ export async function mailRequestFailure(response: Response, fallback: string) {
     return new EmailDeliveryError(sessionChanged)
   if (code === 'workspace_required')
     return new EmailDeliveryError(
-      'Defina um workspace padrão com acesso para enviar. Sua mensagem foi mantida. Tente novamente após configurar o workspace.',
+      'Set a default workspace with permission to send. Your message was kept. Try again after configuring the workspace.',
     )
   if (code === 'workspace_unavailable')
     return new EmailDeliveryError(
-      'O workspace de envio está indisponível. Sua mensagem foi mantida. Confirme seu acesso ao workspace e tente novamente.',
+      'The sending workspace is unavailable. Your message was kept. Confirm your workspace access and try again.',
     )
   return new EmailDeliveryError(fallback)
 }
@@ -41,7 +41,7 @@ export async function resolveDeliveryScope(context: EmailDeliveryContext) {
   if (!response.ok)
     throw await mailRequestFailure(
       response,
-      'Não foi possível definir o workspace de envio. Sua mensagem foi mantida. Tente novamente.',
+      'The sending workspace could not be set. Your message was kept. Try again.',
     )
   const scope = contextSchema.parse(await response.json())
   if (userId && scope.userId !== userId) throw new EmailDeliveryError(sessionChanged)
@@ -49,7 +49,7 @@ export async function resolveDeliveryScope(context: EmailDeliveryContext) {
   if (pinned && pinned.userId !== scope.userId) throw new EmailDeliveryError(sessionChanged)
   if (pinned && pinned.workspace.id !== scope.workspace.id)
     throw new EmailDeliveryError(
-      `O workspace de envio mudou. Sua mensagem foi mantida. Volte ao workspace "${pinned.workspace.name}" antes de tentar novamente.`,
+      `The sending workspace changed. Your message was kept. Return to the workspace "${pinned.workspace.name}" before trying again.`,
     )
   context.scope.current ??= scope
   return context.scope.current

@@ -63,6 +63,8 @@ export type AppShellHeaderActionsProps = {
 
 export type AppShellHeaderMailboxProps = {
   children: ReactNode
+  // Spans the header instead of reserving the list column, for lists with no reading pane.
+  fullWidth?: boolean
 }
 
 export type AppShellHeaderSearchProps = {

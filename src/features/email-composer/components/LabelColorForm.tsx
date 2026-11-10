@@ -7,14 +7,14 @@ import { createLabel, fetchLabelPalette, type MailLabel } from '../clients/label
 import type { MailDeliveryScope } from '../types/EmailDelivery'
 
 const colorNames: Record<string, string> = {
-  '#2563eb': 'Azul',
-  '#dc2626': 'Vermelho',
-  '#16a34a': 'Verde',
-  '#9333ea': 'Roxo',
-  '#ea580c': 'Laranja',
-  '#0891b2': 'Ciano',
-  '#be185d': 'Rosa',
-  '#4f46e5': 'Índigo',
+  '#2563eb': 'Blue',
+  '#dc2626': 'Red',
+  '#16a34a': 'Green',
+  '#9333ea': 'Purple',
+  '#ea580c': 'Orange',
+  '#0891b2': 'Cyan',
+  '#be185d': 'Pink',
+  '#4f46e5': 'Indigo',
 }
 
 export function LabelColorForm({
@@ -60,15 +60,15 @@ export function LabelColorForm({
   return (
     <form className="grid gap-3" onSubmit={(event) => void save(event)}>
       <h3 ref={heading} tabIndex={-1} className="font-semibold outline-none">
-        Nova etiqueta
+        New label
       </h3>
       {palette.isError && !palette.data ? (
         <Button type="button" variant="outline" onClick={() => void palette.refetch()}>
-          Tentar carregar cores novamente
+          Retry loading colors
         </Button>
       ) : palette.data ? (
         <fieldset disabled={saving}>
-          <legend className="mb-2 text-sm">Cor da etiqueta</legend>
+          <legend className="mb-2 text-sm">Label color</legend>
           <div className="flex flex-wrap gap-2">
             {palette.data.colors.map((swatch) => (
               <label key={swatch} className="relative cursor-pointer">
@@ -92,25 +92,25 @@ export function LabelColorForm({
           </div>
         </fieldset>
       ) : (
-        <p role="status">Carregando cores…</p>
+        <p role="status">Loading colors…</p>
       )}
       {color && (
         <div>
-          <p className="text-sm">Prévia da etiqueta</p>
+          <p className="text-sm">Label preview</p>
           <MailLabelBadges labels={[{ id: 'preview', name, color }]} />
         </div>
       )}
       {failed && (
         <p role="alert" className="text-sm text-destructive">
-          Não foi possível criar a etiqueta. Tente novamente.
+          The label could not be created. Try again.
         </p>
       )}
       <div className="flex flex-wrap justify-end gap-2">
         <Button type="button" variant="outline" onClick={onBack} disabled={saving}>
-          Voltar
+          Back
         </Button>
         <Button type="submit" disabled={!color || saving}>
-          {saving ? 'Criando…' : 'Criar etiqueta'}
+          {saving ? 'Creating…' : 'Create label'}
         </Button>
       </div>
     </form>

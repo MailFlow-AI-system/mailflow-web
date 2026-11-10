@@ -50,7 +50,7 @@ describe('recipient validation focus', () => {
     const cc = await screen.findByLabelText('Cc')
     await waitFor(() => expect(cc).toHaveFocus())
     expect(cc).toHaveAttribute('aria-invalid', 'true')
-    expect(screen.getByRole('alert')).toHaveTextContent('Informe e-mails válidos.')
+    expect(screen.getByRole('alert')).toHaveTextContent('Enter valid email addresses.')
   })
 
   it('reveals and focuses hidden Bcc after each corrected validation attempt', async () => {
@@ -62,7 +62,7 @@ describe('recipient validation focus', () => {
     const bcc = await screen.findByLabelText('Bcc')
     await waitFor(() => expect(bcc).toHaveFocus())
     expect(bcc).toHaveAttribute('aria-invalid', 'true')
-    expect(screen.getByRole('alert')).toHaveTextContent('Informe e-mails válidos.')
+    expect(screen.getByRole('alert')).toHaveTextContent('Enter valid email addresses.')
 
     act(() => fireEvent.change(bcc, { target: { value: 'grace@example.test' } }))
     await waitFor(() => expect(bcc).toHaveAttribute('aria-invalid', 'false'))
@@ -73,15 +73,15 @@ describe('recipient validation focus', () => {
     })
     await waitFor(() => expect(bcc).toHaveFocus())
     expect(bcc).toHaveAttribute('aria-invalid', 'true')
-    expect(screen.getByRole('alert')).toHaveTextContent('Informe e-mails válidos.')
+    expect(screen.getByRole('alert')).toHaveTextContent('Enter valid email addresses.')
   })
 })
 
 it('places an optional recipient name between the email and subject', () => {
   render(<FieldsHarness />)
-  const email = screen.getByRole('textbox', { name: 'Para' })
-  const name = screen.getByRole('textbox', { name: 'Nome do destinatário (opcional)' })
-  const subject = screen.getByRole('textbox', { name: 'Assunto' })
+  const email = screen.getByRole('textbox', { name: 'To' })
+  const name = screen.getByRole('textbox', { name: 'Recipient name (optional)' })
+  const subject = screen.getByRole('textbox', { name: 'Subject' })
   expect(name).not.toBeRequired()
   expect(name).toHaveValue('')
   expect(email.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()

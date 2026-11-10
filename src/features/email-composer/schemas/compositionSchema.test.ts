@@ -37,7 +37,7 @@ describe('compositionSchema', () => {
       expect(result.error.issues).toContainEqual(
         expect.objectContaining({
           path: ['to'],
-          message: 'Adicione pelo menos um destinatário em Para.',
+          message: 'Add at least one recipient in To.',
         }),
       )
     }
@@ -65,8 +65,8 @@ describe('compositionSchema', () => {
     if (!result.success) {
       expect(result.error.issues).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ path: ['to'], message: 'Informe e-mails válidos.' }),
-          expect.objectContaining({ path: ['cc'], message: 'Informe e-mails válidos.' }),
+          expect.objectContaining({ path: ['to'], message: 'Enter valid email addresses.' }),
+          expect.objectContaining({ path: ['cc'], message: 'Enter valid email addresses.' }),
         ]),
       )
     }
@@ -81,7 +81,7 @@ describe('compositionSchema', () => {
     expect(result.success).toBe(false)
     if (!result.success) {
       expect(result.error.issues).toContainEqual(
-        expect.objectContaining({ path: ['to'], message: 'Informe e-mails válidos.' }),
+        expect.objectContaining({ path: ['to'], message: 'Enter valid email addresses.' }),
       )
     }
   })
@@ -118,11 +118,11 @@ describe('compositionSchema', () => {
         expect.arrayContaining([
           expect.objectContaining({
             path: ['attachments', 1],
-            message: 'Cada anexo deve ter no máximo 10 MB.',
+            message: 'Each attachment must be at most 10 MB.',
           }),
           expect.objectContaining({
             path: ['attachments'],
-            message: 'Os anexos devem somar no máximo 20 MB.',
+            message: 'Attachments must total at most 20 MB.',
           }),
         ]),
       )
@@ -144,7 +144,7 @@ describe('compositionSchema', () => {
       expect(result.error.issues).toContainEqual(
         expect.objectContaining({
           path: ['attachments'],
-          message: 'Os anexos devem somar no máximo 20 MB.',
+          message: 'Attachments must total at most 20 MB.',
         }),
       )
       expect(result.error.issues.some((issue) => issue.path.length === 2)).toBe(false)

@@ -86,7 +86,7 @@ describe('discardEmail', () => {
       )
       vi.stubGlobal('fetch', fetcher)
       await expect(discardEmail(context)).rejects.toThrow(
-        change === 'identity' ? 'sessão' : 'workspace',
+        change === 'identity' ? 'session' : 'workspace',
       )
       expect(fetcher).toHaveBeenCalledTimes(1)
       expect(context.messageIds?.has(first)).toBe(true)
@@ -102,14 +102,14 @@ describe('discardEmail', () => {
         : new Response(null, { status: 502 }),
     )
     vi.stubGlobal('fetch', fetcher)
-    await expect(discardEmail(context)).rejects.toThrow('mantido')
+    await expect(discardEmail(context)).rejects.toThrow('was kept')
     expect(context.messageIds?.has(first)).toBe(true)
     fetcher.mockImplementation(async (path) =>
       String(path) === '/api/mail/context'
         ? Response.json(scope)
         : Response.json({ status: 'discarded', retainedMessageIds: [second] }),
     )
-    await expect(discardEmail(context)).rejects.toThrow('mantido')
+    await expect(discardEmail(context)).rejects.toThrow('was kept')
   })
 
   it('chunks long sessions into bounded idempotent requests', async () => {

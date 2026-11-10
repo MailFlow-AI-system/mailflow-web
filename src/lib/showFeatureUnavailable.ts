@@ -1,7 +1,7 @@
 import { toast } from '@mailflow/ui/components'
 
 export function showFeatureUnavailable() {
-  toast.warning('Esta funcionalidade está em desenvolvimento e ainda não está disponível.', {
+  toast.warning('This feature is under development and is not available yet.', {
     id: 'feature-unavailable',
   })
 }

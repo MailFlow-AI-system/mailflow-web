@@ -188,7 +188,7 @@ describe('useCompositionValidation', () => {
       await firstAttempt
     })
     expect(result.current.validation.ready).toBe(false)
-    expect(result.current.errors.root?.server?.message).toMatch(/tente novamente/i)
+    expect(result.current.errors.root?.server?.message).toMatch(/try again/i)
     expect(result.current.draft.getValues('cc')).toBe('ada@example.test')
     onValidated.mockImplementationOnce(() => Promise.resolve())
     await act(async () => result.current.validation.validate())

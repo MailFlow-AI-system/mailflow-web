@@ -6,11 +6,11 @@ import type { RecipientField } from '../types/composer'
 import type { DraftValues } from '../types/DraftValues'
 
 const fieldLabels: Record<RecipientField, string> = {
-  to: 'Para',
+  to: 'To',
   cc: 'Cc',
   bcc: 'Bcc',
-  recipientName: 'Nome',
-  subject: 'Assunto',
+  recipientName: 'Name',
+  subject: 'Subject',
 }
 
 export function Fields() {
@@ -65,18 +65,18 @@ export function Fields() {
                   node.focus()
                 }
               }}
-              aria-label={field === 'recipientName' ? 'Nome do destinatário (opcional)' : undefined}
+              aria-label={field === 'recipientName' ? 'Recipient name (optional)' : undefined}
               maxLength={field === 'recipientName' ? 200 : undefined}
               aria-invalid={Boolean(error)}
               aria-describedby={error ? `${id}-${field}-error` : undefined}
               className="h-8 min-w-0 flex-1 border-0 bg-transparent px-0 shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent"
               placeholder={
                 field === 'to'
-                  ? 'destinatario@email.com'
+                  ? 'recipient@email.com'
                   : field === 'recipientName'
-                    ? 'Nome do destinatário (opcional)'
+                    ? 'Recipient name (optional)'
                     : field === 'subject'
-                      ? 'Assunto do email'
+                      ? 'Email subject'
                       : undefined
               }
               autoComplete="off"

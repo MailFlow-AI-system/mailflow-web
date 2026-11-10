@@ -12,7 +12,9 @@ export function Attachments() {
   const indexedAttachmentErrors = Array.isArray(errors.attachments)
     ? errors.attachments.flatMap((attachment, index) => {
         const message = attachment?.file?.message
-        return message ? [{ key: `${index}.file`, label: `Anexo ${index + 1}: `, message }] : []
+        return message
+          ? [{ key: `${index}.file`, label: `Attachment ${index + 1}: `, message }]
+          : []
       })
     : []
   const totalAttachmentError = errors.attachments?.root?.message
@@ -23,7 +25,7 @@ export function Attachments() {
   return (
     <>
       {attachments.length > 0 && (
-        <ul aria-label="Arquivos anexados" className="flex list-none flex-wrap gap-2 px-4 pb-3">
+        <ul aria-label="Attached files" className="flex list-none flex-wrap gap-2 px-4 pb-3">
           {attachments.map(({ id, file }) => (
             <li
               key={id}
@@ -39,7 +41,7 @@ export function Attachments() {
                 variant="ghost"
                 size="icon"
                 className="size-6 shrink-0"
-                aria-label={`Remover ${file.name}`}
+                aria-label={`Remove ${file.name}`}
                 onClick={() => removeAttachment(id)}
               >
                 <X aria-hidden="true" className="size-3" />

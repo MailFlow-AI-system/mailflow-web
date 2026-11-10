@@ -58,7 +58,7 @@ describe('draftSchema', () => {
       expect(result.error.issues).toContainEqual(
         expect.objectContaining({
           path: ['attachments', 1, 'file'],
-          message: 'Cada anexo deve ter no máximo 10 MB.',
+          message: 'Each attachment must be at most 10 MB.',
         }),
       )
     }
@@ -79,7 +79,7 @@ describe('draftSchema', () => {
       expect(result.error.issues).toContainEqual(
         expect.objectContaining({
           path: ['attachments', 'root'],
-          message: 'Os anexos devem somar no máximo 20 MB.',
+          message: 'Attachments must total at most 20 MB.',
         }),
       )
       expect(result.error.issues.some((issue) => typeof issue.path[1] === 'number')).toBe(false)

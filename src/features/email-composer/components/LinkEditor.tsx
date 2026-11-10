@@ -13,7 +13,7 @@ export function LinkEditor({ editor, onClose }: LinkEditorProps) {
   const urlField = register('url')
   return (
     <form
-      aria-label="Editar link"
+      aria-label="Edit link"
       className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-3"
       onKeyDown={(event) => {
         if (event.key === 'Escape') {
@@ -35,13 +35,13 @@ export function LinkEditor({ editor, onClose }: LinkEditorProps) {
           urlField.ref(node)
           focusInput(node)
         }}
-        placeholder="https://exemplo.com"
+        placeholder="https://example.com"
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
         className="h-8 min-w-0 flex-1 border-0 bg-transparent shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent"
       />
       <Button size="sm" type="submit">
-        Aplicar
+        Apply
       </Button>
       {editor.isActive('link') && (
         <Button
@@ -52,7 +52,7 @@ export function LinkEditor({ editor, onClose }: LinkEditorProps) {
             onClose()
           }}
         >
-          Remover link
+          Remove link
         </Button>
       )}
       <Button
@@ -63,7 +63,7 @@ export function LinkEditor({ editor, onClose }: LinkEditorProps) {
           editor.commands.focus()
         }}
       >
-        Cancelar
+        Cancel
       </Button>
       {error ? (
         <p role="alert" id={`${id}-error`} className="w-full text-xs text-destructive">

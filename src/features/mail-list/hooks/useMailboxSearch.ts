@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { mailMessagesPageOptions } from '../queries/mailMessagesQuery'
 import { mailQueryParser } from '../types/mailSearch'
 
-export function useMailboxSearch(userId: string, workspaceSlug: string) {
+export function useMailboxSearch(userId: string, workspaceSlug: string, prefetch = true) {
   const [query, setQuery] = useQueryState('q', mailQueryParser.withDefault(''))
   const queryClient = useQueryClient()
   const [draft, setDraft] = useState({ query, value: query })
@@ -34,7 +34,8 @@ export function useMailboxSearch(userId: string, workspaceSlug: string) {
 
     timer.current = setTimeout(() => {
       timer.current = undefined
-      if (workspaceSlug)
+      // Only the Inbox has pages worth warming; other mailboxes search on demand.
+      if (prefetch && workspaceSlug)
         void queryClient.prefetchQuery(
           mailMessagesPageOptions(userId, workspaceSlug, normalized, null),
         )

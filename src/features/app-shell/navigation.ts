@@ -26,7 +26,7 @@ export const navigationSections: readonly NavigationSection[] = [
     items: [
       { label: 'Inbox', icon: Inbox, to: '/inbox' },
       { label: 'Sent', icon: Send, to: '/sent' },
-      { label: 'Drafts', icon: FilePenLine },
+      { label: 'Drafts', icon: FilePenLine, to: '/drafts' },
       { label: 'Starred', icon: Star },
       { label: 'Spam', icon: ShieldAlert },
       { label: 'Trash', icon: Trash2 },
