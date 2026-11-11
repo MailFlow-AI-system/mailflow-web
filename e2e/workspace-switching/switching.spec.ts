@@ -16,7 +16,7 @@ test('selects B with a real shared server session and host-only HttpOnly cookies
   context,
 }, testInfo) => {
   const data = await fixture()
-  await expect(page.getByText('Acme private message', { exact: true })).toBeVisible()
+  await expect(page.getByText('Acme private message', { exact: true }).first()).toBeVisible()
   await page.goto(`http://${data.host}:3003/sent?q=old-private#old-message`)
   await page.getByRole('combobox', { name: 'Workspace: Acme Corp' }).click()
   await page.screenshot({
