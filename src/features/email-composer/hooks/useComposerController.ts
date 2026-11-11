@@ -19,6 +19,7 @@ import type {
 import type { DraftValues } from '../types/DraftValues'
 import { type EmailDeliveryContext, EmailDeliveryError } from '../types/EmailDelivery'
 import { createCompositionId } from '../utils/compositionId'
+import { useBeforeUnloadGuard } from './useBeforeUnloadGuard'
 import { useCompositionValidation } from './useCompositionValidation'
 import { emptyDraft, useDraftForm } from './useDraftForm'
 import { usePersistedDraft } from './usePersistedDraft'
@@ -260,9 +261,12 @@ export function useComposerController(
     return draftSignature(recipientFields(values), body, values.attachments)
   }, [draft])
 
+  const persistenceEnabled = persistence.enabled
+  const persistenceDirty = persistence.dirty
   const isDirty = useCallback(
-    () => readDraftSignature() !== baselineDraftSignature,
-    [baselineDraftSignature, readDraftSignature],
+    () =>
+      persistenceEnabled ? persistenceDirty() : readDraftSignature() !== baselineDraftSignature,
+    [persistenceEnabled, persistenceDirty, baselineDraftSignature, readDraftSignature],
   )
 
   const resetDraft = useCallback(() => {
@@ -387,13 +391,13 @@ export function useComposerController(
 
   const saveDraft = useCallback(async () => {
     if (persistence.enabled) {
-      if (await persistence.save()) {
-        if (persistence.reference()) toast.success('Draft saved.')
-      }
-      return
+      const stored = await persistence.save()
+      if (stored && persistence.reference()) toast.success('Draft saved.')
+      return stored
     }
     setBaselineDraftSignature(readDraftSignature())
     setSaved(true)
+    return true
   }, [readDraftSignature, persistence])
 
   const openDraft = useCallback(
@@ -442,6 +446,18 @@ export function useComposerController(
     },
     [draft, persistence, validation.reset, userId],
   )
+
+  const saveAndClose = useCallback(async () => {
+    // Stay open when the save fails so the message is not lost.
+    if (!(await saveDraft())) return
+    if (persistence.enabled) resetDraft()
+    else {
+      setConfirm(false)
+      setOpen(false)
+    }
+  }, [saveDraft, persistence.enabled, resetDraft])
+
+  useBeforeUnloadGuard(() => sendingRef.current || discardingRef.current || isDirty())
 
   const addAttachments = useCallback(
     (files: File[]) => {
@@ -511,6 +527,8 @@ export function useComposerController(
       baselineDraftSignature,
       saved,
       saveDraft,
+      saveAndClose,
+      isDirty,
       confirm,
       setConfirm,
       discard,

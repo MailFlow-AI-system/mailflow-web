@@ -63,7 +63,9 @@ export type ComposerContextValue = {
   removeAttachment: (id: string) => void | Promise<void>
   baselineDraftSignature: string
   saved: boolean
-  saveDraft: () => void | Promise<void>
+  saveDraft: () => Promise<boolean>
+  saveAndClose: () => Promise<void>
+  isDirty: () => boolean
   confirm: boolean
   setConfirm: (value: boolean) => void
   discard: () => void | Promise<void>

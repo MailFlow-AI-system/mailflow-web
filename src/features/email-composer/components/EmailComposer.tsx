@@ -5,6 +5,7 @@ import { Editor } from './Editor'
 import { Fields } from './Fields'
 import { Footer } from './Footer'
 import { FormattingToolbar } from './FormattingToolbar'
+import { NavigationGuard } from './NavigationGuard'
 import { Root } from './Root'
 import { Content, Header, Layout, Minimized, Trigger } from './Surface'
 
@@ -22,4 +23,5 @@ export const EmailComposer = {
   Assistant,
   Minimized,
   CloseConfirmation,
+  NavigationGuard,
 }
