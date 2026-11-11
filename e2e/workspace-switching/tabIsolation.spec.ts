@@ -171,7 +171,11 @@ test('logout and a different identity cannot recover the previous identity on an
   await otherTab.goto(`http://${data.host}:3003/inbox`)
   await expect(otherTab.getByRole('combobox', { name: 'Workspace: Acme Corp' })).toBeVisible()
   await logout(page)
-  await otherTab.reload()
+  // The stale tab may already be navigating through identity recovery, which aborts the reload.
+  // Either navigation must end on the sign-in screen, so only that final state is asserted.
+  await otherTab.reload().catch((error: Error) => {
+    if (!/ERR_ABORTED|NS_BINDING_ABORTED/.test(error.message)) throw error
+  })
   await expect(otherTab.getByRole('heading', { name: 'Sign in to MailFlow' })).toBeVisible()
   await login(page, `http://${data.targetHost}:3003/login`, data.otherEmail)
   await expect(page.getByRole('combobox', { name: 'Workspace: Northwind' })).toBeVisible()
