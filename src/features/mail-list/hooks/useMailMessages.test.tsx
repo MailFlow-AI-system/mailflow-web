@@ -213,7 +213,8 @@ describe('useMailMessages', () => {
       if (nextPageAttempts < 3) throw new Error('temporary failure')
       return makePage(['second'], null)
     })
-    const { Wrapper } = createWrapper()
+    const { Wrapper, queryClient } = createWrapper()
+    queryClient.setQueryDefaults(['mail-messages-page'], { retryDelay: 0 })
     const { result } = renderHook(() => useMailMessages('user-1', 'acme', ''), { wrapper: Wrapper })
 
     await waitFor(() => expect(result.current.messages.map(({ id }) => id)).toEqual(['first']))
