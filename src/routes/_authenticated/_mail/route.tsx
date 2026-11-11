@@ -64,6 +64,7 @@ function MailLayout() {
       </EmailComposer.Content>
       <EmailComposer.Minimized />
       <EmailComposer.CloseConfirmation />
+      <EmailComposer.NavigationGuard />
     </EmailComposer.Root>
   )
 }

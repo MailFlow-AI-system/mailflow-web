@@ -77,6 +77,7 @@ vi.mock('@/features/email-composer', () => ({
     Assistant: () => null,
     Minimized: () => null,
     CloseConfirmation: () => null,
+    NavigationGuard: () => null,
   },
 }))
 

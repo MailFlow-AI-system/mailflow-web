@@ -119,22 +119,15 @@ export function usePersistedDraft(options: Options) {
     }, 1000)
     return () => window.clearTimeout(timer)
   }, [options.enabled, options.active, options.signature, save])
-  useEffect(() => {
-    if (!options.enabled) return
-    const guard = (event: BeforeUnloadEvent) => {
-      if (state.current.stopped) return
-      const snapshot = latest.current.read()
-      if (
-        (state.current.id || hasContent(snapshot)) &&
-        snapshotSignature(snapshot) !== state.current.signature
-      ) {
-        event.preventDefault()
-        event.returnValue = ''
-      }
-    }
-    window.addEventListener('beforeunload', guard)
-    return () => window.removeEventListener('beforeunload', guard)
-  }, [options.enabled])
+  /** True while the editor holds changes that are not stored on the server yet. */
+  const dirty = useCallback(() => {
+    if (!latest.current.enabled || state.current.stopped) return false
+    const snapshot = latest.current.read()
+    return (
+      Boolean(state.current.id || hasContent(snapshot)) &&
+      snapshotSignature(snapshot) !== state.current.signature
+    )
+  }, [])
   const reset = useCallback(() => {
     state.current = {
       id: '',
@@ -191,6 +184,7 @@ export function usePersistedDraft(options: Options) {
     error,
     conflict,
     save,
+    dirty,
     saveCopy,
     reset,
     adopt,
