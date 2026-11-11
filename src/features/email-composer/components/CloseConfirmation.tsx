@@ -1,54 +1,44 @@
-import {
-  AlertDialog,
-  AlertDialogClose,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogTitle,
-  Button,
-} from '@mailflow/ui/components'
 import { useRef } from 'react'
 import { useComposer } from '../context'
+import { UnsavedChangesDialog } from './UnsavedChangesDialog'
 
 export function CloseConfirmation() {
-  const { confirm, setConfirm, discard, sending, triggerRef, theme, persistence } = useComposer()
-  const safeRef = useRef<HTMLButtonElement>(null)
+  const { confirm, setConfirm, discard, saveAndClose, sending, triggerRef, theme, persistence } =
+    useComposer()
   const confirmed = useRef(false)
+  // A persisted draft is saved as it is edited, so the only choice left is deleting it.
+  const stored = Boolean(persistence)
   return (
-    <AlertDialog open={confirm} onOpenChange={setConfirm}>
-      <AlertDialogContent
-        lang="en-US"
-        data-theme={theme}
-        initialFocus={safeRef}
-        finalFocus={() => {
-          if (!confirmed.current) return true
-          confirmed.current = false
-          return triggerRef.current ?? true
-        }}
-      >
-        <AlertDialogTitle>
-          {persistence ? 'Discard draft?' : 'Close without saving?'}
-        </AlertDialogTitle>
-        <AlertDialogDescription>
-          {persistence
-            ? 'The draft and its attachments will be deleted. This action cannot be undone.'
-            : 'There are unsaved changes. Keep editing or discard the message.'}
-        </AlertDialogDescription>
-        <div className="flex flex-wrap justify-end gap-2">
-          <AlertDialogClose ref={safeRef} render={<Button variant="outline" />}>
-            Keep editing
-          </AlertDialogClose>
-          <Button
-            variant="destructive"
-            disabled={sending}
-            onClick={() => {
+    <UnsavedChangesDialog
+      open={confirm}
+      theme={theme}
+      title={stored ? 'Discard draft?' : 'Unsaved changes'}
+      description={
+        stored
+          ? 'The draft and its attachments will be deleted. This action cannot be undone.'
+          : 'Your message has changes that were not saved. Save it as a draft, discard it, or keep editing.'
+      }
+      continueLabel={stored ? 'Keep editing' : undefined}
+      discardLabel={stored ? 'Discard message' : undefined}
+      busy={sending}
+      onContinue={() => setConfirm(false)}
+      onDiscard={() => {
+        confirmed.current = true
+        void discard()
+      }}
+      onSave={
+        stored
+          ? undefined
+          : () => {
               confirmed.current = true
-              void discard()
-            }}
-          >
-            Discard message
-          </Button>
-        </div>
-      </AlertDialogContent>
-    </AlertDialog>
+              void saveAndClose()
+            }
+      }
+      finalFocus={() => {
+        if (!confirmed.current) return true
+        confirmed.current = false
+        return triggerRef.current ?? true
+      }}
+    />
   )
 }

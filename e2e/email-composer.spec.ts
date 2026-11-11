@@ -139,6 +139,35 @@ test('preserves fields, rich content and attachments across size states and rese
   await expect(page.getByRole('textbox', { name: 'Subject', exact: true })).toHaveValue('')
 })
 
+test('does not ask the browser to confirm leaving while the composer is untouched', async ({
+  page,
+}) => {
+  const prompts: string[] = []
+  page.on('dialog', (dialog) => {
+    prompts.push(dialog.type())
+    void dialog.dismiss()
+  })
+
+  await page.close({ runBeforeUnload: true })
+  await expect.poll(() => page.isClosed()).toBe(true)
+  expect(prompts).toEqual([])
+})
+
+test('blocks a refresh while typed composer content is not yet saved', async ({ page }) => {
+  // Keep the autosave from landing so the change stays unsaved deterministically.
+  await page.route('**/api/mail/drafts/*', (route) => route.abort())
+  await page.getByRole('textbox', { name: 'Subject', exact: true }).fill('Do not lose me')
+  const prompt = page.waitForEvent('dialog')
+  await page.close({ runBeforeUnload: true })
+  const dialog = await prompt
+  expect(dialog.type()).toBe('beforeunload')
+  await dialog.dismiss()
+  expect(page.isClosed()).toBe(false)
+  await expect(page.getByRole('textbox', { name: 'Subject', exact: true })).toHaveValue(
+    'Do not lose me',
+  )
+})
+
 test('uses keyboard focus boundaries and saves a recoverable draft when Escape closes the composer', async ({
   page,
 }) => {
