@@ -62,7 +62,7 @@ jobs:
           repository: MailFlow-AI-system/mailflow-core
           # Includes the email reader endpoints, the Inbox attachment schema, and the draft
           # routes (search and bulk discard) from mailflow-core#37. Re-pin to the merge commit.
-          ref: 35640cb5152c389a0a30c206211fc9329d1e1b55
+          ref: 0cfe20bccb7c8a0dd00b7a6c85eee18411b6f4cc
           path: core
           persist-credentials: false
 
