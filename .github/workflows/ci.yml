@@ -56,13 +56,29 @@ jobs:
           path: web
           persist-credentials: false
 
+      # Web is tested against the Core branch it ships with: a Core branch named like this PR's
+      # branch when one exists (coordinated changes), otherwise the Core branch matching the
+      # PR target (development, staging or main). No commit needs to be tracked by hand.
+      - name: Select compatible Core ref
+        id: core-ref
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          core=https://github.com/MailFlow-AI-system/mailflow-core.git
+          if git ls-remote --exit-code --heads "$core" "refs/heads/$HEAD_REF" > /dev/null; then
+            ref="$HEAD_REF"
+          else
+            ref="$BASE_REF"
+          fi
+          echo "Using Core ref: $ref"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
       - name: Check out compatible Core
         uses: actions/checkout@v5
         with:
           repository: MailFlow-AI-system/mailflow-core
-          # Includes the email reader endpoints, the Inbox attachment schema, and the draft
-          # routes (search and bulk discard) from mailflow-core#37. Re-pin to the merge commit.
-          ref: 0cfe20bccb7c8a0dd00b7a6c85eee18411b6f4cc
+          ref: ${{ steps.core-ref.outputs.ref }}
           path: core
           persist-credentials: false
 
