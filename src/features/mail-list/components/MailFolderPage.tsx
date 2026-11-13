@@ -1,5 +1,8 @@
 import { getRouteApi } from '@tanstack/react-router'
 import { parseAsString, useQueryState } from 'nuqs'
+import { MessageBulkActions } from '#/features/mail-actions/components/MessageBulkActions'
+import { MessageRowActions } from '#/features/mail-actions/components/MessageRowActions'
+import { ReaderMessageActions } from '#/features/mail-actions/components/ReaderMessageActions'
 import { MailReader } from '#/features/mail-reader/MailReader'
 import { MailSelectionProvider } from '#/features/mail-selection/components/MailSelectionProvider'
 import { useWorkspaceContext } from '#/features/workspaces/hooks/useWorkspaceContext'
@@ -48,6 +51,7 @@ export function MailFolderPage({ folder }: { folder: MailFolderName }) {
               folder="messages"
               id={selectedId}
               onBack={() => void setMessage(null)}
+              messageActions={<ReaderMessageActions userId={user.id} id={selectedId} />}
             />
           ) : undefined
         }
@@ -63,6 +67,8 @@ export function MailFolderPage({ folder }: { folder: MailFolderName }) {
           isSearching={isSearching}
           q={q}
           userId={user.id}
+          renderSelectionActions={(messages) => <MessageBulkActions messages={messages} />}
+          renderActions={(message) => <MessageRowActions message={message} />}
         />
       </MailboxLayout>
     </MailSelectionProvider>
