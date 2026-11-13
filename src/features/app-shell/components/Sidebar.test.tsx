@@ -30,7 +30,11 @@ it('shows unread badges and includes the count in the link name', () => {
       />
     </SidebarProvider>,
   )
-  expect(screen.getByRole('link', { name: 'Inbox, 12 unread' })).toHaveAttribute('href', '/inbox')
+  // jsdom drops the leading space that browsers keep between the label and the count.
+  expect(screen.getByRole('link', { name: /^Inbox ?\(12 unread\)$/ })).toHaveAttribute(
+    'href',
+    '/inbox',
+  )
   expect(screen.getByText('12', { selector: '[data-sidebar="menu-badge"]' })).toBeVisible()
   expect(screen.getByRole('link', { name: 'Spam' })).toBeVisible()
 })

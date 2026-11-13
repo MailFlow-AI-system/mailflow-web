@@ -85,14 +85,19 @@ export function useMessageActions(scope: MessageCacheScope) {
           : undefined,
       )
     },
-    onSettled: () =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: mailMessagesScopeKey(userId, workspaceSlug) }),
-        queryClient.invalidateQueries({
-          queryKey: mailMessagesPageScopeKey(userId, workspaceSlug),
-        }),
+    onSettled: async () => {
+      const lists = mailMessagesScopeKey(userId, workspaceSlug)
+      const pages = mailMessagesPageScopeKey(userId, workspaceSlug)
+      // The optimistic patch refreshed each page's timestamp, so pages must be stale before the
+      // lists refetch through them. Other folders reload from Core when they are opened again.
+      queryClient.removeQueries({ queryKey: lists, type: 'inactive' })
+      queryClient.removeQueries({ queryKey: pages, type: 'inactive' })
+      await queryClient.invalidateQueries({ queryKey: pages, refetchType: 'none' })
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: lists }),
         queryClient.invalidateQueries({ queryKey: ['mail-unread-counts', userId, workspaceSlug] }),
-      ]),
+      ])
+    },
   })
   const { mutate } = mutation
   const run = useCallback(

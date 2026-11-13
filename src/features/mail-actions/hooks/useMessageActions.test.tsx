@@ -1,4 +1,9 @@
-import { type InfiniteData, QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import {
+  type InfiniteData,
+  QueryClient,
+  QueryClientProvider,
+  QueryObserver,
+} from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -11,7 +16,10 @@ vi.mock('#/features/auth/adapters/getCurrentSession', () => ({ getCurrentSession
 vi.mock('../clients/messageActionsClient', () => ({ postMessageAction: mocks.post }))
 vi.mock('@mailflow/ui/components', () => ({ toast: mocks.toast }))
 
-import { mailMessagesKey } from '#/features/mail-list/queries/mailMessagesQuery'
+import {
+  mailMessagesKey,
+  mailMessagesPageKey,
+} from '#/features/mail-list/queries/mailMessagesQuery'
 import type { MailMessage, MailMessagesPage } from '#/features/mail-list/types/mailMessage'
 import { useMessageActions } from './useMessageActions'
 
@@ -39,6 +47,13 @@ function setup() {
     pages: [{ items: [message('a'), message('b')], nextCursor: null }],
     pageParams: [null],
   })
+  // The open folder's list stays mounted; its refetch never settles here, so the data shown is
+  // what the action left behind.
+  new QueryObserver(client, {
+    queryKey: inboxKey,
+    queryFn: () => new Promise<never>(() => {}),
+    staleTime: Number.POSITIVE_INFINITY,
+  }).subscribe(() => {})
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   )
@@ -83,6 +98,20 @@ describe('useMessageActions', () => {
       ),
     )
     expect(inboxIds(client)).toEqual(['a', 'b'])
+  })
+
+  it('drops inactive folder caches and stales every page before lists refetch', async () => {
+    mocks.post.mockResolvedValueOnce([{ id: 'a', status: 'ok' }])
+    const { client, hook } = setup()
+    const trashKey = mailMessagesKey('u1', 'acme', '', 'trash')
+    const firstPage = mailMessagesPageKey('u1', 'acme', '', null, 'inbox')
+    client.setQueryData(trashKey, { pages: [], pageParams: [] })
+    client.setQueryData(firstPage, { items: [message('a'), message('b')], nextCursor: null })
+
+    act(() => hook.result.current.run(['a'], 'trash'))
+
+    await waitFor(() => expect(client.getQueryState(trashKey)).toBeUndefined())
+    expect(client.getQueryState(firstPage)).toBeUndefined()
   })
 
   it('reports messages Core could not change and refreshes the lists', async () => {
