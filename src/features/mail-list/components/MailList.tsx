@@ -7,6 +7,7 @@ import { useMailSelection } from '#/features/mail-selection/hooks/useMailSelecti
 import type { MailSelection } from '#/features/mail-selection/types/selection'
 import { useMailListAutoFill } from '../hooks/useMailListAutoFill'
 import { useMailMessages } from '../hooks/useMailMessages'
+import type { MailFolderName } from '../types/mailFolder'
 import type { MailMessage } from '../types/mailMessage'
 import { MailMessageCard } from './MailMessageCard'
 import { MailMessageSkeletonRows } from './MailMessageSkeleton'
@@ -15,6 +16,7 @@ type MailListProps = {
   workspaceSlug: string
   userId: string
   q: string
+  folder?: MailFolderName
   isSearching?: boolean
   selectedId?: string
   onSelect?: (id: string) => void
@@ -26,20 +28,21 @@ export function MailList({
   userId,
   workspaceSlug,
   q,
+  folder = 'inbox',
   isSearching = false,
   selectedId,
   onSelect,
   onAutoSelect,
   heading,
 }: MailListProps) {
-  const mail = useMailMessages(userId, workspaceSlug, q)
+  const mail = useMailMessages(userId, workspaceSlug, q, folder)
   const selection = useMailSelection()
   return (
     <MailListView
       mail={mail}
       q={q}
       isSearching={isSearching}
-      label="Inbox message list"
+      label={`${heading ?? 'Inbox'} message list`}
       selectedId={selectedId}
       onSelect={onSelect}
       onAutoSelect={onAutoSelect}

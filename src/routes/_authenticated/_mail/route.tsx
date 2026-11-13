@@ -9,7 +9,8 @@ import { AppShell } from '@/features/app-shell'
 import { EmailComposer } from '@/features/email-composer'
 
 // Mailboxes whose list can be searched; the others keep the inert search field.
-const searchableMailboxes = new Set(['/inbox', '/sent', '/drafts'])
+const folderMailboxes = new Set(['/inbox', '/starred', '/archive', '/spam', '/trash'])
+const searchableMailboxes = new Set([...folderMailboxes, '/sent', '/drafts'])
 const mailRoute = getRouteApi('/_authenticated/_mail')
 const authenticatedRoute = getRouteApi('/_authenticated')
 
@@ -39,7 +40,7 @@ function MailLayout() {
               <AppShell.Header.Filters />
               <EmailComposer.Trigger />
             </AppShell.Header.Mailbox>
-            {message && (pathname === '/inbox' || pathname === '/sent') ? (
+            {message && (folderMailboxes.has(pathname) || pathname === '/sent') ? (
               <AppShell.Header.Actions className="hidden min-w-0 flex-1 self-start lg:flex">
                 <ReaderToolbar />
               </AppShell.Header.Actions>

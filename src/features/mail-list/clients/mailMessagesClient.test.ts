@@ -52,6 +52,23 @@ describe('fetchMailMessages', () => {
     expect(page.nextCursor).toBeNull()
   })
 
+  it('requests a non-inbox folder and keeps the inbox URL unchanged', async () => {
+    const urls: string[] = []
+    vi.stubGlobal('fetch', async (input: RequestInfo | URL) => {
+      urls.push(String(input))
+      return Response.json(
+        { items: [], nextCursor: null },
+        { headers: { 'X-Workspace-Identity': 'user-1' } },
+      )
+    })
+    const signal = new AbortController().signal
+
+    await fetchMailMessages({ userId: 'user-1', q: '', folder: 'trash', signal })
+    await fetchMailMessages({ userId: 'user-1', q: '', folder: 'inbox', signal })
+
+    expect(urls).toEqual(['/api/mail/messages?q=&folder=trash', '/api/mail/messages?q='])
+  })
+
   it('throws a safe error for unsuccessful responses', async () => {
     const fetcher: typeof fetch = async () =>
       Response.json({ message: 'private details' }, { status: 502 })

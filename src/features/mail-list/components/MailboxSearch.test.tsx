@@ -83,6 +83,7 @@ describe('MailboxSearch', () => {
       'mail-messages-page',
       'user-1',
       'acme',
+      'inbox',
       'invoice',
       null,
     ])

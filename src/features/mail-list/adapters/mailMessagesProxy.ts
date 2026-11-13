@@ -5,6 +5,7 @@ import {
 } from '#/features/workspaces/adapters/workspaceTransport'
 import { resolveWorkspaceHost } from '#/features/workspaces/utils/workspaceHost'
 import { isWorkspaceRequestOrigin } from '#/features/workspaces/utils/workspaceOrigin'
+import { isMailFolderName } from '../types/mailFolder'
 
 export function createMailMessagesProxyHandler(
   apiBaseUrl: string,
@@ -25,6 +26,8 @@ export function createMailMessagesProxyHandler(
     if (!filterBetterAuthCookies(request.headers.get('cookie')))
       return failure(401, 'authentication_required')
     const query = new URLSearchParams({ q: url.searchParams.get('q')?.trim() ?? '' })
+    const folder = url.searchParams.get('folder')
+    if (isMailFolderName(folder) && folder !== 'inbox') query.set('folder', folder)
     const cursor = url.searchParams.get('cursor')
     if (cursor !== null) query.set('cursor', cursor)
     try {

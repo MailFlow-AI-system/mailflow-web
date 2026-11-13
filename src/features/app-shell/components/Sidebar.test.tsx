@@ -29,9 +29,6 @@ it('keeps unavailable navigation disabled without warnings and preserves working
     </SidebarProvider>,
   )
   const labels = [
-    'Starred',
-    'Spam',
-    'Trash',
     'Campaigns',
     'Contacts',
     'Lists',
@@ -56,5 +53,13 @@ it('keeps unavailable navigation disabled without warnings and preserves working
   expect(warning).not.toHaveBeenCalled()
   expect(screen.getByRole('link', { name: 'Inbox' })).toHaveAttribute('href', '/inbox')
   expect(screen.getByRole('link', { name: 'Sent' })).toHaveAttribute('href', '/sent')
+  for (const [name, href] of [
+    ['Starred', '/starred'],
+    ['Archive', '/archive'],
+    ['Spam', '/spam'],
+    ['Trash', '/trash'],
+  ]) {
+    expect(screen.getByRole('link', { name })).toHaveAttribute('href', href)
+  }
   warning.mockRestore()
 })

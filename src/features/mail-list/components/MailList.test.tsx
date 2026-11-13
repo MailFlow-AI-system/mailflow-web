@@ -250,8 +250,13 @@ describe('MailList', () => {
       for (const observer of VisibleIntersectionObserver.instances) observer.notify()
     })
     expect(
-      activeQueryClient.getQueryData<{ pages: unknown[] }>(['mail-messages', 'user-1', 'acme', ''])
-        ?.pages,
+      activeQueryClient.getQueryData<{ pages: unknown[] }>([
+        'mail-messages',
+        'user-1',
+        'acme',
+        'inbox',
+        '',
+      ])?.pages,
     ).toHaveLength(1)
     expect(client.fetchMailMessages).toHaveBeenCalledTimes(2)
   })
@@ -315,11 +320,11 @@ describe('MailList', () => {
 
     act(() => {
       void activeQueryClient.invalidateQueries({
-        queryKey: ['mail-messages-page', 'user-1', 'acme', ''],
+        queryKey: ['mail-messages-page', 'user-1', 'acme', 'inbox', ''],
         refetchType: 'none',
       })
       void activeQueryClient.invalidateQueries({
-        queryKey: ['mail-messages', 'user-1', 'acme', ''],
+        queryKey: ['mail-messages', 'user-1', 'acme', 'inbox', ''],
         exact: true,
       })
     })

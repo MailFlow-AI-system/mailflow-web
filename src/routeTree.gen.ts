@@ -17,6 +17,7 @@ import { Route as PublicForgotPasswordRouteImport } from './routes/_public/forgo
 import { Route as PublicLoginRouteImport } from './routes/_public/login'
 import { Route as PublicResetPasswordRouteImport } from './routes/_public/reset-password'
 import { Route as ApiWorkspaceContextRouteImport } from './routes/api/workspace-context'
+import { Route as AuthenticatedMailArchiveRouteImport } from './routes/_authenticated/_mail/archive'
 import { Route as AuthenticatedMailDraftsRouteImport } from './routes/_authenticated/_mail/drafts'
 import { Route as AuthenticatedMailInboxRouteImport } from './routes/_authenticated/_mail/inbox'
 import { Route as AuthenticatedMailSentRouteImport } from './routes/_authenticated/_mail/sent'
@@ -81,6 +82,12 @@ const ApiWorkspaceContextRoute = ApiWorkspaceContextRouteImport.update({
   path: '/api/workspace-context',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedMailArchiveRoute =
+  AuthenticatedMailArchiveRouteImport.update({
+    id: '/archive',
+    path: '/archive',
+    getParentRoute: () => AuthenticatedMailRouteRoute,
+  } as any)
 const AuthenticatedMailDraftsRoute = AuthenticatedMailDraftsRouteImport.update({
   id: '/drafts',
   path: '/drafts',
@@ -222,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof PublicLoginRoute
   '/reset-password': typeof PublicResetPasswordRoute
   '/api/workspace-context': typeof ApiWorkspaceContextRoute
+  '/archive': typeof AuthenticatedMailArchiveRoute
   '/drafts': typeof AuthenticatedMailDraftsRoute
   '/inbox': typeof AuthenticatedMailInboxRoute
   '/sent': typeof AuthenticatedMailSentRoute
@@ -255,6 +263,7 @@ export interface FileRoutesByTo {
   '/login': typeof PublicLoginRoute
   '/reset-password': typeof PublicResetPasswordRoute
   '/api/workspace-context': typeof ApiWorkspaceContextRoute
+  '/archive': typeof AuthenticatedMailArchiveRoute
   '/drafts': typeof AuthenticatedMailDraftsRoute
   '/inbox': typeof AuthenticatedMailInboxRoute
   '/sent': typeof AuthenticatedMailSentRoute
@@ -292,6 +301,7 @@ export interface FileRoutesById {
   '/_public/reset-password': typeof PublicResetPasswordRoute
   '/api/workspace-context': typeof ApiWorkspaceContextRoute
   '/_public/': typeof PublicIndexRoute
+  '/_authenticated/_mail/archive': typeof AuthenticatedMailArchiveRoute
   '/_authenticated/_mail/drafts': typeof AuthenticatedMailDraftsRoute
   '/_authenticated/_mail/inbox': typeof AuthenticatedMailInboxRoute
   '/_authenticated/_mail/sent': typeof AuthenticatedMailSentRoute
@@ -327,6 +337,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/api/workspace-context'
+    | '/archive'
     | '/drafts'
     | '/inbox'
     | '/sent'
@@ -360,6 +371,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/api/workspace-context'
+    | '/archive'
     | '/drafts'
     | '/inbox'
     | '/sent'
@@ -396,6 +408,7 @@ export interface FileRouteTypes {
     | '/_public/reset-password'
     | '/api/workspace-context'
     | '/_public/'
+    | '/_authenticated/_mail/archive'
     | '/_authenticated/_mail/drafts'
     | '/_authenticated/_mail/inbox'
     | '/_authenticated/_mail/sent'
@@ -499,6 +512,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/workspace-context'
       preLoaderRoute: typeof ApiWorkspaceContextRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/_mail/archive': {
+      id: '/_authenticated/_mail/archive'
+      path: '/archive'
+      fullPath: '/archive'
+      preLoaderRoute: typeof AuthenticatedMailArchiveRouteImport
+      parentRoute: typeof AuthenticatedMailRouteRoute
     }
     '/_authenticated/_mail/drafts': {
       id: '/_authenticated/_mail/drafts'
@@ -686,6 +706,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedMailRouteRouteChildren {
+  AuthenticatedMailArchiveRoute: typeof AuthenticatedMailArchiveRoute
   AuthenticatedMailDraftsRoute: typeof AuthenticatedMailDraftsRoute
   AuthenticatedMailInboxRoute: typeof AuthenticatedMailInboxRoute
   AuthenticatedMailSentRoute: typeof AuthenticatedMailSentRoute
@@ -696,6 +717,7 @@ interface AuthenticatedMailRouteRouteChildren {
 
 const AuthenticatedMailRouteRouteChildren: AuthenticatedMailRouteRouteChildren =
   {
+    AuthenticatedMailArchiveRoute: AuthenticatedMailArchiveRoute,
     AuthenticatedMailDraftsRoute: AuthenticatedMailDraftsRoute,
     AuthenticatedMailInboxRoute: AuthenticatedMailInboxRoute,
     AuthenticatedMailSentRoute: AuthenticatedMailSentRoute,
@@ -822,12 +844,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

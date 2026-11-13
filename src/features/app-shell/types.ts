@@ -14,7 +14,14 @@ export type NavigationItem = {
   to?: MailRoutePath
 }
 
-export type MailRoutePath = '/inbox' | '/sent' | '/drafts' | '/starred' | '/spam' | '/trash'
+export type MailRoutePath =
+  | '/inbox'
+  | '/sent'
+  | '/drafts'
+  | '/starred'
+  | '/archive'
+  | '/spam'
+  | '/trash'
 
 export type NavigationSection = {
   label: string

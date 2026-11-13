@@ -7,13 +7,19 @@ import {
   mailMessagesPageKey,
   mailMessagesPageOptions,
 } from '../queries/mailMessagesQuery'
+import type { MailFolderName } from '../types/mailFolder'
 import type { MailMessagesPage } from '../types/mailMessage'
 
-export function useMailMessages(userId: string, workspaceSlug: string, q: string) {
+export function useMailMessages(
+  userId: string,
+  workspaceSlug: string,
+  q: string,
+  folder: MailFolderName = 'inbox',
+) {
   const normalizedQ = q.trim()
   const queryClient = useQueryClient()
-  const queryKey = mailMessagesKey(userId, workspaceSlug, normalizedQ)
-  const firstPageKey = mailMessagesPageKey(userId, workspaceSlug, normalizedQ, null)
+  const queryKey = mailMessagesKey(userId, workspaceSlug, normalizedQ, folder)
+  const firstPageKey = mailMessagesPageKey(userId, workspaceSlug, normalizedQ, null, folder)
   const firstPage = queryClient.getQueryData<MailMessagesPage>(firstPageKey)
   const query = useInfiniteQuery({
     queryKey,
@@ -23,14 +29,14 @@ export function useMailMessages(userId: string, workspaceSlug: string, q: string
     staleTime: 30_000,
     queryFn: ({ pageParam, signal }) =>
       queryClient.fetchQuery(
-        mailMessagesPageOptions(userId, workspaceSlug, normalizedQ, pageParam, signal),
+        mailMessagesPageOptions(userId, workspaceSlug, normalizedQ, pageParam, signal, folder),
       ),
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     retry: 0,
   })
   const nextCursor = query.data?.pages.at(-1)?.nextCursor ?? null
   const warmPage = useQuery({
-    ...mailMessagesPageOptions(userId, workspaceSlug, normalizedQ, nextCursor),
+    ...mailMessagesPageOptions(userId, workspaceSlug, normalizedQ, nextCursor, undefined, folder),
     enabled: nextCursor !== null,
   })
 
