@@ -26,23 +26,23 @@ function BulkButton({
   onClick: () => void
   children: ReactNode
 }) {
-  // The name starts with the visible label; on narrow lists only the icon and tooltip show.
+  // The list column is too narrow for text labels beside "Clear selection", so the label
+  // lives in the tooltip and the accessible name.
   return (
     <Tooltip>
       <TooltipTrigger
         render={
           <Button
             aria-label={`${label}: selected messages`}
-            className="h-7 gap-1.5 px-2 text-xs"
+            className="size-7 shrink-0"
             onClick={onClick}
-            size="sm"
+            size="icon"
             type="button"
             variant="ghost"
           />
         }
       >
         {children}
-        <span className="hidden xl:inline">{label}</span>
       </TooltipTrigger>
       <TooltipContent>{label}</TooltipContent>
     </Tooltip>
