@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { MailFolderPage, mailFolderHead } from '#/features/mail-list/components/MailFolderPage'
 
-export const Route = createFileRoute('/_authenticated/_mail/spam')({ component: SpamPage })
-
-function SpamPage() {
-  return <h1>Spam</h1>
-}
+export const Route = createFileRoute('/_authenticated/_mail/spam')({
+  component: () => <MailFolderPage folder="spam" />,
+  head: mailFolderHead('spam'),
+})
