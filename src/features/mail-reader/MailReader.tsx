@@ -173,10 +173,11 @@ export function ReaderToolbar({
             onClick={showFeatureUnavailable}
             variant="ghost"
             size="sm"
-            className="h-8 gap-1.5 text-xs"
+            className="h-8 gap-1.5 px-2 text-xs sm:px-3"
           >
             <ActionIcon className="h-3.5 w-3.5" />
-            {String(label)}
+            {/* Phones keep the icon so the folder actions fit beside it. */}
+            <span className="hidden sm:inline">{String(label)}</span>
           </Button>
         )
       })}
