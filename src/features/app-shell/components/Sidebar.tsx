@@ -47,7 +47,7 @@ function NavigationItemButton({ item, unread = 0 }: NavigationItemButtonProps) {
     >
       <Icon aria-hidden="true" />
       <span>{item.label}</span>
-      {unread > 0 ? <span className="sr-only">{`, ${unread} unread`}</span> : null}
+      {unread > 0 ? <span className="sr-only">{` (${unread} unread)`}</span> : null}
     </SidebarMenuButton>
   )
 }
