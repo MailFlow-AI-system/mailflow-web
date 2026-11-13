@@ -30,6 +30,7 @@ const draft = (id: string, overrides: Partial<Record<string, unknown>> = {}) => 
   id,
   version: 2,
   to: 'ada@example.test',
+  recipientName: '',
   subject: 'Quarterly plan',
   text: 'Numbers to review',
   updatedAt: '2026-11-10T12:00:00.000Z',
@@ -71,6 +72,24 @@ describe('useDrafts', () => {
       body: '',
     })
     expect(result.current.items[0]?.version).toBe(2)
+  })
+
+  it('shows the recipient name when there is one, like Inbox and Sent', async () => {
+    vi.mocked(fetchDraftPage).mockResolvedValue({
+      items: [
+        draft('named', { recipientName: 'Ada Lovelace' }),
+        draft('blank-name', { recipientName: '   ' }),
+        draft('name-only', { to: '', recipientName: 'Grace Hopper' }),
+      ],
+      nextOffset: null,
+    })
+    const { result } = renderHook(() => useDrafts('owner'), { wrapper })
+    await waitFor(() => expect(result.current.messages).toHaveLength(3))
+    expect(result.current.messages.map((message) => message.senderName)).toEqual([
+      'Ada Lovelace',
+      'ada@example.test',
+      'Grace Hopper',
+    ])
   })
 
   it('requests each search separately and never shows another search while loading', async () => {
