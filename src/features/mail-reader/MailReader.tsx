@@ -5,7 +5,6 @@ import {
   Forward,
   MoreHorizontal,
   Paperclip,
-  Printer,
   Reply,
   ReplyAll,
   Sparkles,
@@ -186,14 +185,12 @@ export function ReaderToolbar({
       {(messageActions
         ? [
             [Tag, 'Tag'],
-            [Printer, 'Print'],
             [MoreHorizontal, 'More'],
           ]
         : [
             [Archive, 'Archive'],
             [Tag, 'Tag'],
             [Trash2, 'Trash'],
-            [Printer, 'Print'],
             [MoreHorizontal, 'More'],
           ]
       ).map(([Icon, label]) => {
