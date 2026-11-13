@@ -1,6 +1,7 @@
 import { Button, Tooltip, TooltipContent, TooltipTrigger } from '@mailflow/ui/components'
 import { Star } from '@mailflow/ui/icons'
-import type { ReactNode } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { type ReactNode, useEffect } from 'react'
 import { useMailDetail } from '#/features/mail-reader/useMailDetail'
 import { folderMoveActions, moveActionLabels } from '../folderActions'
 import type { MessageAction } from '../messageActions'
@@ -48,6 +49,12 @@ export function ReaderMessageActions({ userId, id }: { userId: string; id: strin
   const actions = useMailActions()
   // Shares the reader's query, so this adds no request.
   const detail = useMailDetail(userId, 'messages', id)
+  const queryClient = useQueryClient()
+  const loadedId = detail.data?.id
+  // Core marked the message read while serving it, so the unread badges are now stale.
+  useEffect(() => {
+    if (loadedId) void queryClient.invalidateQueries({ queryKey: ['mail-unread-counts', userId] })
+  }, [loadedId, queryClient, userId])
   if (!actions) return null
   const { folder, request } = actions
   const run = (action: MessageAction) => request([id], action)

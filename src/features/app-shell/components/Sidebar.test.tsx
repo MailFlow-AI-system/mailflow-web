@@ -20,6 +20,21 @@ import { Sidebar } from './Sidebar'
 
 afterEach(cleanup)
 
+it('shows unread badges and includes the count in the link name', () => {
+  render(
+    <SidebarProvider>
+      <Sidebar
+        user={{ name: 'Ada', email: 'ada@example.test' }}
+        userMenu={null}
+        badges={{ '/inbox': 12, '/spam': 0 }}
+      />
+    </SidebarProvider>,
+  )
+  expect(screen.getByRole('link', { name: 'Inbox, 12 unread' })).toHaveAttribute('href', '/inbox')
+  expect(screen.getByText('12', { selector: '[data-sidebar="menu-badge"]' })).toBeVisible()
+  expect(screen.getByRole('link', { name: 'Spam' })).toBeVisible()
+})
+
 it('keeps unavailable navigation disabled without warnings and preserves working links', async () => {
   const warning = vi.spyOn(toast, 'warning').mockReturnValue('feature-unavailable')
   const user = userEvent.setup()

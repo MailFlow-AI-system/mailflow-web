@@ -3,10 +3,12 @@ import { LogoutMenuItem } from '#/features/auth/LogoutMenuItem'
 import { useComposerHandlers } from '#/features/email-composer/hooks/useComposerHandlers'
 import { MailFolderActions } from '#/features/mail-actions/components/MailFolderActions'
 import { ReaderMessageActions } from '#/features/mail-actions/components/ReaderMessageActions'
+import { useUnreadCounts } from '#/features/mail-actions/hooks/useUnreadCounts'
 import { MailboxSearch } from '#/features/mail-list/components/MailboxSearch'
 import { normalizeMailSearch } from '#/features/mail-list/types/mailSearch'
 import { ReaderToolbar } from '#/features/mail-reader/MailReader'
 import { WorkspaceBoundary } from '#/features/workspaces/components/WorkspaceBoundary'
+import { useWorkspaceContext } from '#/features/workspaces/hooks/useWorkspaceContext'
 import { AppShell } from '@/features/app-shell'
 import { EmailComposer } from '@/features/email-composer'
 
@@ -26,11 +28,13 @@ function MailLayout() {
   const { message } = mailRoute.useSearch()
   const handlers = useComposerHandlers(user.id)
   const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const workspace = useWorkspaceContext()
+  const badges = useUnreadCounts(user.id, workspace?.current?.slug)
 
   return (
     <EmailComposer.Root key={user.id} userId={user.id} {...handlers}>
       <AppShell.Root>
-        <AppShell.Sidebar user={user} userMenu={<LogoutMenuItem />} />
+        <AppShell.Sidebar user={user} userMenu={<LogoutMenuItem />} badges={badges} />
         <MailFolderActions userId={user.id} pathname={pathname}>
           <AppShell.Main>
             <AppShell.Header>
