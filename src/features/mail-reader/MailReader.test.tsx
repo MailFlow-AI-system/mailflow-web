@@ -60,7 +60,6 @@ describe('MailReader', () => {
       'Archive',
       'Tag',
       'Trash',
-      'Print',
       'More',
       'Ask AI',
       'Use reply',
@@ -74,7 +73,8 @@ describe('MailReader', () => {
         { id: 'feature-unavailable' },
       )
     }
-    expect(warning).toHaveBeenCalledTimes(11)
+    expect(warning).toHaveBeenCalledTimes(10)
+    expect(screen.queryByRole('button', { name: 'Print' })).toBeNull()
     expect(screen.queryByText('relatorio-mensal.pdf')).toBeNull()
   })
   it.each(['{Enter}', ' '])('announces an unavailable action with keyboard %s', async (key) => {
