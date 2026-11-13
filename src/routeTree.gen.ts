@@ -32,6 +32,7 @@ import { Route as ApiMailDraftsRouteImport } from './routes/api/mail/drafts'
 import { Route as ApiMailMessagesRouteImport } from './routes/api/mail/messages'
 import { Route as ApiMailSendRouteImport } from './routes/api/mail/send'
 import { Route as ApiMailSentRouteImport } from './routes/api/mail/sent'
+import { Route as ApiMailUnreadCountsRouteImport } from './routes/api/mail/unread-counts'
 import { Route as ApiV1WorkspaceEntryRouteImport } from './routes/api/v1/workspace-entry'
 import { Route as ApiV1WorkspaceSelectionRouteImport } from './routes/api/v1/workspace-selection'
 import { Route as ApiV1WorkspacesRouteImport } from './routes/api/v1/workspaces'
@@ -160,6 +161,11 @@ const ApiMailSentRoute = ApiMailSentRouteImport.update({
   path: '/api/mail/sent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMailUnreadCountsRoute = ApiMailUnreadCountsRouteImport.update({
+  id: '/api/mail/unread-counts',
+  path: '/api/mail/unread-counts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1WorkspaceEntryRoute = ApiV1WorkspaceEntryRouteImport.update({
   id: '/api/v1/workspace-entry',
   path: '/api/v1/workspace-entry',
@@ -250,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/api/mail/messages': typeof ApiMailMessagesRouteWithChildren
   '/api/mail/send': typeof ApiMailSendRoute
   '/api/mail/sent': typeof ApiMailSentRouteWithChildren
+  '/api/mail/unread-counts': typeof ApiMailUnreadCountsRoute
   '/api/v1/workspace-entry': typeof ApiV1WorkspaceEntryRoute
   '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
@@ -285,6 +292,7 @@ export interface FileRoutesByTo {
   '/api/mail/messages': typeof ApiMailMessagesRouteWithChildren
   '/api/mail/send': typeof ApiMailSendRoute
   '/api/mail/sent': typeof ApiMailSentRouteWithChildren
+  '/api/mail/unread-counts': typeof ApiMailUnreadCountsRoute
   '/api/v1/workspace-entry': typeof ApiV1WorkspaceEntryRoute
   '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
@@ -324,6 +332,7 @@ export interface FileRoutesById {
   '/api/mail/messages': typeof ApiMailMessagesRouteWithChildren
   '/api/mail/send': typeof ApiMailSendRoute
   '/api/mail/sent': typeof ApiMailSentRouteWithChildren
+  '/api/mail/unread-counts': typeof ApiMailUnreadCountsRoute
   '/api/v1/workspace-entry': typeof ApiV1WorkspaceEntryRoute
   '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
@@ -361,6 +370,7 @@ export interface FileRouteTypes {
     | '/api/mail/messages'
     | '/api/mail/send'
     | '/api/mail/sent'
+    | '/api/mail/unread-counts'
     | '/api/v1/workspace-entry'
     | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
@@ -396,6 +406,7 @@ export interface FileRouteTypes {
     | '/api/mail/messages'
     | '/api/mail/send'
     | '/api/mail/sent'
+    | '/api/mail/unread-counts'
     | '/api/v1/workspace-entry'
     | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
@@ -434,6 +445,7 @@ export interface FileRouteTypes {
     | '/api/mail/messages'
     | '/api/mail/send'
     | '/api/mail/sent'
+    | '/api/mail/unread-counts'
     | '/api/v1/workspace-entry'
     | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
@@ -461,6 +473,7 @@ export interface RootRouteChildren {
   ApiMailMessagesRoute: typeof ApiMailMessagesRouteWithChildren
   ApiMailSendRoute: typeof ApiMailSendRoute
   ApiMailSentRoute: typeof ApiMailSentRouteWithChildren
+  ApiMailUnreadCountsRoute: typeof ApiMailUnreadCountsRoute
   ApiV1WorkspaceEntryRoute: typeof ApiV1WorkspaceEntryRoute
   ApiV1WorkspaceSelectionRoute: typeof ApiV1WorkspaceSelectionRoute
   ApiV1WorkspacesRoute: typeof ApiV1WorkspacesRoute
@@ -628,6 +641,13 @@ declare module '@tanstack/react-router' {
       path: '/api/mail/sent'
       fullPath: '/api/mail/sent'
       preLoaderRoute: typeof ApiMailSentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mail/unread-counts': {
+      id: '/api/mail/unread-counts'
+      path: '/api/mail/unread-counts'
+      fullPath: '/api/mail/unread-counts'
+      preLoaderRoute: typeof ApiMailUnreadCountsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/workspace-entry': {
@@ -857,6 +877,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMailMessagesRoute: ApiMailMessagesRouteWithChildren,
   ApiMailSendRoute: ApiMailSendRoute,
   ApiMailSentRoute: ApiMailSentRouteWithChildren,
+  ApiMailUnreadCountsRoute: ApiMailUnreadCountsRoute,
   ApiV1WorkspaceEntryRoute: ApiV1WorkspaceEntryRoute,
   ApiV1WorkspaceSelectionRoute: ApiV1WorkspaceSelectionRoute,
   ApiV1WorkspacesRoute: ApiV1WorkspacesRoute,
