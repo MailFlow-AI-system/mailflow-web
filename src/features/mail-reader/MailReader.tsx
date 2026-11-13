@@ -5,14 +5,13 @@ import {
   Forward,
   MoreHorizontal,
   Paperclip,
-  Printer,
   Reply,
   ReplyAll,
   Sparkles,
   Tag,
   Trash2,
 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { MailLabelBadges } from '#/features/mail-labels/MailLabelBadges'
 import { getSenderAvatarColorClass } from '#/features/mail-list/senderAvatarColor'
 import { showFeatureUnavailable } from '#/lib/showFeatureUnavailable'
@@ -26,12 +25,14 @@ export function MailReader({
   id,
   onBack,
   toolbarClassName,
+  messageActions,
 }: {
   userId: string
   folder: MailFolder
   id: string
   onBack: () => void
   toolbarClassName?: string
+  messageActions?: ReactNode
 }) {
   const detail = useMailDetail(userId, folder, id)
   return (
@@ -42,6 +43,7 @@ export function MailReader({
       onBack={onBack}
       toolbarClassName={toolbarClassName}
       showReplySuggestion={folder !== 'sent'}
+      messageActions={messageActions}
     />
   )
 }
@@ -132,9 +134,12 @@ function MailBody({
 export function ReaderToolbar({
   onBack,
   className = '',
+  messageActions,
 }: {
   onBack?: () => void
   className?: string
+  // Folder actions for the open message; without them Archive and Trash stay unavailable.
+  messageActions?: ReactNode
 }) {
   return (
     <header
@@ -167,21 +172,28 @@ export function ReaderToolbar({
             onClick={showFeatureUnavailable}
             variant="ghost"
             size="sm"
-            className="h-8 gap-1.5 text-xs"
+            className="h-8 gap-1.5 px-2 text-xs sm:px-3"
           >
             <ActionIcon className="h-3.5 w-3.5" />
-            {String(label)}
+            {/* Phones keep the icon so the folder actions fit beside it. */}
+            <span className="hidden sm:inline">{String(label)}</span>
           </Button>
         )
       })}
       <div aria-hidden="true" className="mx-1 h-5 w-px bg-border" />
-      {[
-        [Archive, 'Archive'],
-        [Tag, 'Tag'],
-        [Trash2, 'Trash'],
-        [Printer, 'Print'],
-        [MoreHorizontal, 'More'],
-      ].map(([Icon, label]) => {
+      {messageActions}
+      {(messageActions
+        ? [
+            [Tag, 'Tag'],
+            [MoreHorizontal, 'More'],
+          ]
+        : [
+            [Archive, 'Archive'],
+            [Tag, 'Tag'],
+            [Trash2, 'Trash'],
+            [MoreHorizontal, 'More'],
+          ]
+      ).map(([Icon, label]) => {
         const ActionIcon = Icon as typeof Reply
         return (
           <Button
@@ -220,12 +232,14 @@ export function MailReaderView({
   onBack,
   toolbarClassName,
   showReplySuggestion = true,
+  messageActions,
 }: {
   message?: MailDetail
   error?: boolean
   onRetry?: () => void
   onBack: () => void
   toolbarClassName?: string
+  messageActions?: ReactNode
   // A message you sent has nothing to reply to.
   showReplySuggestion?: boolean
 }) {
@@ -245,7 +259,7 @@ export function MailReaderView({
   const date = message ? new Date(message.date) : null
   return (
     <section aria-label="Message reader" className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <ReaderToolbar onBack={onBack} className={toolbarClassName} />
+      <ReaderToolbar onBack={onBack} className={toolbarClassName} messageActions={messageActions} />
       <div className="relative min-h-0 flex-1 overflow-auto overscroll-contain [scrollbar-gutter:stable]">
         {showError ? (
           <div className="grid justify-items-center gap-3 p-8">

@@ -31,6 +31,16 @@ vi.mock('@tanstack/react-router', () => ({
     select({ location: { pathname: '/inbox' } }),
 }))
 
+vi.mock('#/features/mail-actions/components/MailFolderActions', () => ({
+  MailFolderActions: ({ children }: { children: ReactNode }) => children,
+}))
+vi.mock('#/features/mail-actions/components/ReaderMessageActions', () => ({
+  ReaderMessageActions: () => null,
+}))
+vi.mock('#/features/mail-actions/hooks/useUnreadCounts', () => ({
+  useUnreadCounts: () => undefined,
+}))
+
 vi.mock('#/features/mail-list/components/MailboxSearch', () => ({
   MailboxSearch: () => <input aria-label="Search in inbox" data-testid="global-mailbox-search" />,
 }))

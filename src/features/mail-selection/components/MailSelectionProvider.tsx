@@ -8,6 +8,7 @@ export function MailSelectionProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(selectionReducer, emptySelection)
   const value = useMemo<MailSelection>(
     () => ({
+      ids: [...state.ids],
       count: state.ids.size,
       selecting: state.mode || state.ids.size > 0,
       isSelected: (id) => state.ids.has(id),

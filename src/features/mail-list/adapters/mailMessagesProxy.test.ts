@@ -83,6 +83,22 @@ describe('createMailMessagesProxyHandler', () => {
     expect(fetcher).not.toHaveBeenCalled()
   })
 
+  it('forwards a known folder and drops unknown folders', async () => {
+    const upstream: URL[] = []
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      upstream.push(new URL(String(input)))
+      return Response.json({ items: [], nextCursor: null })
+    })
+    const proxy = createMailMessagesProxyHandler(apiOrigin, fetcher, 'workspace.test')
+    const headers = { Cookie: 'better-auth.session_token=opaque' }
+
+    await proxy(new Request(`${webOrigin}/api/mail/messages?folder=archive`, { headers }))
+    await proxy(new Request(`${webOrigin}/api/mail/messages?folder=../admin`, { headers }))
+
+    expect(upstream[0]?.searchParams.get('folder')).toBe('archive')
+    expect(upstream[1]?.searchParams.has('folder')).toBe(false)
+  })
+
   it('returns a generic private gateway error when Core cannot be reached', async () => {
     const fetcher = vi.fn(async () => {
       throw new Error('sensitive upstream detail')

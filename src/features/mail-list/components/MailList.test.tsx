@@ -108,7 +108,7 @@ describe('MailList', () => {
 
     await waitFor(() => expect(status).toHaveTextContent('No messages found.'))
     expect(screen.getByRole('status')).toBe(status)
-    expect(within(region).getByText('No messages found.')).toBeInTheDocument()
+    expect(within(region).getByRole('heading', { name: 'Inbox is empty' })).toBeInTheDocument()
   })
 
   it('announces filtered loading and empty results', async () => {
@@ -129,9 +129,9 @@ describe('MailList', () => {
 
     await waitFor(() => expect(status).toHaveTextContent('No messages found for this search'))
     expect(
-      within(screen.getByRole('region', { name: 'Inbox message list' })).getByText(
-        'No messages found.',
-      ),
+      within(screen.getByRole('region', { name: 'Inbox message list' })).getByRole('heading', {
+        name: 'No messages match “ada”',
+      }),
     ).toBeInTheDocument()
   })
 
@@ -250,8 +250,13 @@ describe('MailList', () => {
       for (const observer of VisibleIntersectionObserver.instances) observer.notify()
     })
     expect(
-      activeQueryClient.getQueryData<{ pages: unknown[] }>(['mail-messages', 'user-1', 'acme', ''])
-        ?.pages,
+      activeQueryClient.getQueryData<{ pages: unknown[] }>([
+        'mail-messages',
+        'user-1',
+        'acme',
+        'inbox',
+        '',
+      ])?.pages,
     ).toHaveLength(1)
     expect(client.fetchMailMessages).toHaveBeenCalledTimes(2)
   })
@@ -315,11 +320,11 @@ describe('MailList', () => {
 
     act(() => {
       void activeQueryClient.invalidateQueries({
-        queryKey: ['mail-messages-page', 'user-1', 'acme', ''],
+        queryKey: ['mail-messages-page', 'user-1', 'acme', 'inbox', ''],
         refetchType: 'none',
       })
       void activeQueryClient.invalidateQueries({
-        queryKey: ['mail-messages', 'user-1', 'acme', ''],
+        queryKey: ['mail-messages', 'user-1', 'acme', 'inbox', ''],
         exact: true,
       })
     })

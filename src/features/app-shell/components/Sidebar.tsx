@@ -5,6 +5,7 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   Sidebar as SidebarRoot,
@@ -19,7 +20,7 @@ import { SidebarSearch } from './SidebarSearch'
 import { SidebarUser } from './SidebarUser'
 import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 
-function NavigationItemButton({ item }: NavigationItemButtonProps) {
+function NavigationItemButton({ item, unread = 0 }: NavigationItemButtonProps) {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const Icon = item.icon
   const active = Boolean(item.to && (pathname === item.to || pathname === `${item.to}/`))
@@ -46,11 +47,12 @@ function NavigationItemButton({ item }: NavigationItemButtonProps) {
     >
       <Icon aria-hidden="true" />
       <span>{item.label}</span>
+      {unread > 0 ? <span className="sr-only">{` (${unread} unread)`}</span> : null}
     </SidebarMenuButton>
   )
 }
 
-function SidebarNavigation({ user, userMenu }: AppShellSidebarProps) {
+function SidebarNavigation({ user, userMenu, badges }: AppShellSidebarProps) {
   return (
     <>
       <SidebarHeader>
@@ -83,11 +85,19 @@ function SidebarNavigation({ user, userMenu }: AppShellSidebarProps) {
           <SidebarGroup key={section.label}>
             <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
             <SidebarMenu>
-              {section.items.map((item) => (
-                <SidebarMenuItem key={item.label}>
-                  <NavigationItemButton item={item} />
-                </SidebarMenuItem>
-              ))}
+              {section.items.map((item) => {
+                const unread = (item.to && badges?.[item.to]) || 0
+                return (
+                  <SidebarMenuItem key={item.label}>
+                    <NavigationItemButton item={item} unread={unread} />
+                    {unread > 0 ? (
+                      <SidebarMenuBadge aria-hidden="true">
+                        {unread > 99 ? '99+' : unread}
+                      </SidebarMenuBadge>
+                    ) : null}
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
           </SidebarGroup>
         ))}
@@ -107,10 +117,10 @@ function SidebarNavigation({ user, userMenu }: AppShellSidebarProps) {
   )
 }
 
-export function Sidebar({ user, userMenu }: AppShellSidebarProps) {
+export function Sidebar({ user, userMenu, badges }: AppShellSidebarProps) {
   return (
     <SidebarRoot collapsible="icon">
-      <SidebarNavigation user={user} userMenu={userMenu} />
+      <SidebarNavigation user={user} userMenu={userMenu} badges={badges} />
     </SidebarRoot>
   )
 }
