@@ -57,7 +57,7 @@ export function useDrafts(userId: string, search = '') {
   ).filter((item) => !seen.has(item.id) && Boolean(seen.add(item.id)))
   const messages: MailMessage[] = items.map((draft) => ({
     id: draft.id,
-    senderName: draft.to || '(No recipient)',
+    senderName: draft.recipientName.trim() || draft.to || '(No recipient)',
     subject: draft.subject || '(No subject)',
     body: draft.text,
     receivedAt: draft.updatedAt,
