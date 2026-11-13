@@ -19,6 +19,7 @@ const item = (id: string, version: number) => ({
   id,
   version,
   to: '',
+  recipientName: '',
   subject: id,
   text: '',
   updatedAt: '2026-11-10T12:00:00.000Z',
