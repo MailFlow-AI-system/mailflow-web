@@ -63,7 +63,7 @@ test('isolates real inboxes across tabs, search, pagination and refresh', async 
   await expect(
     page
       .getByRole('region', { name: 'Inbox message list', exact: true })
-      .getByText('No messages found.', { exact: true }),
+      .getByRole('heading', { name: 'No messages match “Northwind private”' }),
   ).toBeVisible()
   await page.getByRole('searchbox', { name: 'Search in inbox…', exact: true }).fill('')
   await expect(

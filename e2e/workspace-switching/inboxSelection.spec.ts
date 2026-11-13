@@ -112,7 +112,8 @@ test('keeps checkbox selection independent from the opened message', async ({ pa
   await expect(page).toHaveURL(initialUrl)
   await expect(reader.getByRole('heading', { name: 'Acme private message' })).toBeVisible()
 
-  const anotherMessage = list.getByRole('listitem').nth(1).getByRole('button')
+  // The first button opens the message; the row's quick actions follow it.
+  const anotherMessage = list.getByRole('listitem').nth(1).getByRole('button').first()
   await anotherMessage.focus()
   await page.keyboard.press('Enter')
   await expect(page).not.toHaveURL(initialUrl)
