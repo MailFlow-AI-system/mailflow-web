@@ -1,6 +1,8 @@
 import { createFileRoute, getRouteApi, Outlet, useRouterState } from '@tanstack/react-router'
 import { LogoutMenuItem } from '#/features/auth/LogoutMenuItem'
 import { useComposerHandlers } from '#/features/email-composer/hooks/useComposerHandlers'
+import { MailFolderActions } from '#/features/mail-actions/components/MailFolderActions'
+import { ReaderMessageActions } from '#/features/mail-actions/components/ReaderMessageActions'
 import { MailboxSearch } from '#/features/mail-list/components/MailboxSearch'
 import { normalizeMailSearch } from '#/features/mail-list/types/mailSearch'
 import { ReaderToolbar } from '#/features/mail-reader/MailReader'
@@ -29,29 +31,37 @@ function MailLayout() {
     <EmailComposer.Root key={user.id} userId={user.id} {...handlers}>
       <AppShell.Root>
         <AppShell.Sidebar user={user} userMenu={<LogoutMenuItem />} />
-        <AppShell.Main>
-          <AppShell.Header>
-            <AppShell.Header.Mailbox fullWidth={pathname === '/drafts'}>
-              {searchableMailboxes.has(pathname) ? (
-                <MailboxSearch userId={user.id} prefetch={pathname === '/inbox'} />
-              ) : (
-                <AppShell.Header.Search />
-              )}
-              <AppShell.Header.Filters />
-              <EmailComposer.Trigger />
-            </AppShell.Header.Mailbox>
-            {message && (folderMailboxes.has(pathname) || pathname === '/sent') ? (
-              <AppShell.Header.Actions className="hidden min-w-0 flex-1 self-start lg:flex">
-                <ReaderToolbar />
-              </AppShell.Header.Actions>
-            ) : null}
-          </AppShell.Header>
-          <AppShell.Content>
-            <WorkspaceBoundary>
-              <Outlet />
-            </WorkspaceBoundary>
-          </AppShell.Content>
-        </AppShell.Main>
+        <MailFolderActions userId={user.id} pathname={pathname}>
+          <AppShell.Main>
+            <AppShell.Header>
+              <AppShell.Header.Mailbox fullWidth={pathname === '/drafts'}>
+                {searchableMailboxes.has(pathname) ? (
+                  <MailboxSearch userId={user.id} prefetch={pathname === '/inbox'} />
+                ) : (
+                  <AppShell.Header.Search />
+                )}
+                <AppShell.Header.Filters />
+                <EmailComposer.Trigger />
+              </AppShell.Header.Mailbox>
+              {message && (folderMailboxes.has(pathname) || pathname === '/sent') ? (
+                <AppShell.Header.Actions className="hidden min-w-0 flex-1 self-start lg:flex">
+                  <ReaderToolbar
+                    messageActions={
+                      folderMailboxes.has(pathname) ? (
+                        <ReaderMessageActions userId={user.id} id={message} />
+                      ) : undefined
+                    }
+                  />
+                </AppShell.Header.Actions>
+              ) : null}
+            </AppShell.Header>
+            <AppShell.Content>
+              <WorkspaceBoundary>
+                <Outlet />
+              </WorkspaceBoundary>
+            </AppShell.Content>
+          </AppShell.Main>
+        </MailFolderActions>
       </AppShell.Root>
       <EmailComposer.Content>
         <EmailComposer.Header />

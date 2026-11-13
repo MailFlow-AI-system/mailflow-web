@@ -9,6 +9,7 @@ import { useMailListAutoFill } from '../hooks/useMailListAutoFill'
 import { useMailMessages } from '../hooks/useMailMessages'
 import type { MailFolderName } from '../types/mailFolder'
 import type { MailMessage } from '../types/mailMessage'
+import { MailFolderEmpty } from './MailFolderEmpty'
 import { MailMessageCard } from './MailMessageCard'
 import { MailMessageSkeletonRows } from './MailMessageSkeleton'
 
@@ -22,6 +23,9 @@ type MailListProps = {
   onSelect?: (id: string) => void
   onAutoSelect?: (id: string) => void
   heading?: string
+  // Folder actions supplied by the page, so the list stays independent of them.
+  renderSelectionActions?: (messages: readonly MailMessage[]) => ReactNode
+  renderActions?: (message: MailMessage) => ReactNode
 }
 
 export function MailList({
@@ -34,6 +38,8 @@ export function MailList({
   onSelect,
   onAutoSelect,
   heading,
+  renderSelectionActions,
+  renderActions,
 }: MailListProps) {
   const mail = useMailMessages(userId, workspaceSlug, q, folder)
   const selection = useMailSelection()
@@ -47,6 +53,9 @@ export function MailList({
       onSelect={onSelect}
       onAutoSelect={onAutoSelect}
       selection={selection ?? undefined}
+      selectionActions={renderSelectionActions?.(mail.messages)}
+      renderActions={renderActions}
+      empty={<MailFolderEmpty folder={folder} q={q} />}
       {...(heading ? { heading } : {})}
     />
   )
@@ -73,6 +82,10 @@ type MailListViewProps = {
   selection?: MailSelection | undefined
   // Mailbox-specific bulk actions shown in the selection bar.
   selectionActions?: ReactNode
+  // Row controls beside each pointer-layout message.
+  renderActions?: (message: MailMessage) => ReactNode
+  // Replaces the generic text when the loaded list is empty.
+  empty?: ReactNode
   heading?: string
 }
 
@@ -86,6 +99,8 @@ export function MailListView({
   onAutoSelect,
   selection,
   selectionActions,
+  renderActions,
+  empty,
   heading,
 }: MailListViewProps) {
   const listId = useId()
@@ -217,6 +232,7 @@ export function MailListView({
                   active={message.id === selectedId}
                   onSelect={onSelect}
                   selected={selection?.isSelected(message.id) ?? false}
+                  actions={renderActions && !touch ? renderActions(message) : undefined}
                   {...(selection
                     ? {
                         onSelectedChange: (selected: boolean) =>
@@ -232,7 +248,11 @@ export function MailListView({
             {showPageSkeletons ? <MailMessageSkeletonRows /> : null}
           </ul>
         ) : (
-          <p className="px-4 py-8 text-center text-sm text-muted-foreground">No messages found.</p>
+          (empty ?? (
+            <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+              No messages found.
+            </p>
+          ))
         )}
         <div aria-hidden="true" className="h-px" ref={sentinelRef} />
         {!showSearchSkeletons && (mail.hasNextPage || mail.hasNextPageError) ? (

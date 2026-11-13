@@ -4,6 +4,11 @@ import { mailLabelSchema } from '#/features/mail-labels/mailLabel'
 export const mailDetailSchema = z.object({
   id: z.string(),
   labels: z.array(mailLabelSchema).optional(),
+  isRead: z.boolean().optional(),
+  isStarred: z.boolean().optional(),
+  archivedAt: z.string().nullable().optional(),
+  trashedAt: z.string().nullable().optional(),
+  spamAt: z.string().nullable().optional(),
   subject: z.string(),
   senderName: z.string().nullable(),
   senderEmail: z.string().nullable(),
