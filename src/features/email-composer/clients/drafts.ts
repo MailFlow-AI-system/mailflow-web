@@ -33,6 +33,7 @@ export const draftPageSchema = z.object({
       id: z.uuid(),
       version: z.number().int(),
       to: z.string(),
+      recipientName: z.string().trim().default(''),
       subject: z.string(),
       text: z.string(),
       updatedAt: z.string(),
