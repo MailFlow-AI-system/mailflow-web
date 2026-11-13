@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, Checkbox } from '@mailflow/ui/components'
-import { useEffect, useId, useRef } from 'react'
+import { type ReactNode, useEffect, useId, useRef } from 'react'
 import { MailLabelBadges } from '#/features/mail-labels/MailLabelBadges'
 import { useLongPress } from '#/features/mail-selection/hooks/useLongPress'
 import { getSenderAvatarColorClass } from '../senderAvatarColor'
@@ -14,6 +14,8 @@ type MailMessageCardProps = {
   variant?: 'pointer' | 'touch'
   selecting?: boolean
   onLongPress?: () => void
+  // Row-level controls rendered beside, never inside, the message button.
+  actions?: ReactNode
 }
 
 function senderInitials(senderName: string) {
@@ -25,10 +27,25 @@ function senderInitials(senderName: string) {
 }
 
 function MessageText({ message }: { message: MailMessage }) {
+  // Older payloads without read state render as read.
+  const unread = message.isRead === false
+  const weight = unread ? 'font-semibold' : 'font-medium'
   return (
     <span className="flex min-w-0 flex-1 flex-col gap-1">
-      <span className="block truncate text-xs font-medium">{message.senderName}</span>
-      <span className="block truncate text-xs font-medium">{message.subject}</span>
+      <span className="flex min-w-0 items-center gap-1.5">
+        {unread ? (
+          <>
+            <span className="sr-only">Unread,</span>
+            <span
+              aria-hidden="true"
+              className="size-1.5 shrink-0 rounded-full bg-primary"
+              data-slot="unread-dot"
+            />
+          </>
+        ) : null}
+        <span className={`block truncate text-xs ${weight}`}>{message.senderName}</span>
+      </span>
+      <span className={`block truncate text-xs ${weight}`}>{message.subject}</span>
       <span className="block truncate whitespace-nowrap text-[11px] text-muted-foreground">
         {message.body}
       </span>
@@ -46,6 +63,7 @@ export function MailMessageCard({
   variant = 'pointer',
   selecting = false,
   onLongPress,
+  actions,
 }: MailMessageCardProps) {
   const checkboxId = useId()
   const nameId = useId()
@@ -144,7 +162,7 @@ export function MailMessageCard({
 
   return (
     <li
-      className={`group/row border-b border-border py-3 pr-3 transition-colors ${active ? 'pl-[10px]' : 'pl-3'} ${selected ? 'bg-primary/10 hover:bg-primary/15' : active ? 'bg-primary/5' : 'hover:bg-muted/40'} ${active ? 'border-l-2 border-l-primary' : ''}`}
+      className={`group/row relative border-b border-border py-3 pr-3 transition-colors ${active ? 'pl-[10px]' : 'pl-3'} ${selected ? 'bg-primary/10 hover:bg-primary/15' : active ? 'bg-primary/5' : 'hover:bg-muted/40'} ${active ? 'border-l-2 border-l-primary' : ''}`}
       data-selected={selectable ? selected : undefined}
     >
       <div className="flex min-w-0 items-start gap-3">
@@ -178,6 +196,7 @@ export function MailMessageCard({
         ) : (
           <MessageText message={message} />
         )}
+        {actions}
       </div>
     </li>
   )

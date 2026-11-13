@@ -1,4 +1,4 @@
-import { Toaster } from '@mailflow/ui/components'
+import { Toaster, TooltipProvider } from '@mailflow/ui/components'
 import { themeScript } from '@mailflow/ui/theme-script'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import type { QueryClient } from '@tanstack/react-query'
@@ -107,7 +107,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <BrowserObservability />
-        {children}
+        <TooltipProvider>{children}</TooltipProvider>
         <Toaster />
         {import.meta.env.DEV ? (
           <TanStackDevtools

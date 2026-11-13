@@ -14,6 +14,8 @@ export type MailSelectionAction =
 export type VisibleSelectionState = 'none' | 'some' | 'all'
 
 export type MailSelection = {
+  // Every selected id, including messages hidden by search or not loaded.
+  ids: readonly string[]
   count: number
   selecting: boolean
   isSelected: (id: string) => boolean

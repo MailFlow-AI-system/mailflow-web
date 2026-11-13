@@ -35,6 +35,53 @@ describe('MailMessageCard', () => {
     expect(screen.queryByText(/2026|favorite|star/i)).not.toBeInTheDocument()
   })
 
+  it('marks unread messages visually and for assistive technology', () => {
+    const message = {
+      id: 'message-unread',
+      senderName: 'Ada Lovelace',
+      subject: 'Analytical Engine',
+      body: 'Preview',
+      receivedAt: '2026-10-01T12:00:00.000Z',
+    }
+    const { rerender } = render(
+      <ul>
+        <MailMessageCard message={{ ...message, isRead: false }} onSelect={vi.fn()} />
+      </ul>,
+    )
+    const button = screen.getByRole('button', { name: /Unread.*Ada Lovelace/ })
+    expect(screen.getByText('Analytical Engine')).toHaveClass('font-semibold')
+    expect(button.querySelector('[data-slot="unread-dot"]')).not.toBeNull()
+
+    rerender(
+      <ul>
+        <MailMessageCard message={{ ...message, isRead: true }} onSelect={vi.fn()} />
+      </ul>,
+    )
+    expect(screen.queryByText('Unread,')).toBeNull()
+    expect(screen.getByText('Analytical Engine')).not.toHaveClass('font-semibold')
+  })
+
+  it('renders row actions next to the message without nesting them in its button', () => {
+    render(
+      <ul>
+        <MailMessageCard
+          message={{
+            id: 'message-3',
+            senderName: 'Ada',
+            subject: 'Hello',
+            body: 'Preview',
+            receivedAt: '2026-10-01T12:00:00.000Z',
+          }}
+          onSelect={vi.fn()}
+          actions={<button type="button">Archive</button>}
+        />
+      </ul>,
+    )
+    const archive = screen.getByRole('button', { name: 'Archive' })
+    expect(archive.closest('button[aria-current], button:not([type="button"])')).toBeNull()
+    expect(screen.getByRole('button', { name: /Ada/ })).not.toContainElement(archive)
+  })
+
   it('keeps the fallback sender marker decorative for an empty sender name', () => {
     render(
       <ul>
