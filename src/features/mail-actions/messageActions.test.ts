@@ -20,22 +20,22 @@ describe('applyMessageAction', () => {
   it('toggles per-user read and star state without touching folders', () => {
     const read = applyMessageAction(base, 'read', now)
     expect(read).toMatchObject({ isRead: true, isStarred: false, archivedAt: null })
-    expect(applyMessageAction(read!, 'unread', now)?.isRead).toBe(false)
+    expect(applyMessageAction(read as MailMessage, 'unread', now)?.isRead).toBe(false)
     const starred = applyMessageAction(base, 'star', now)
     expect(starred?.isStarred).toBe(true)
-    expect(applyMessageAction(starred!, 'unstar', now)?.isStarred).toBe(false)
+    expect(applyMessageAction(starred as MailMessage, 'unstar', now)?.isStarred).toBe(false)
   })
 
   it('records workspace moves and clears them on restore', () => {
     const archived = applyMessageAction(base, 'archive', now)
     expect(archived?.archivedAt).toBe(now)
-    expect(applyMessageAction(archived!, 'unarchive', now)?.archivedAt).toBeNull()
+    expect(applyMessageAction(archived as MailMessage, 'unarchive', now)?.archivedAt).toBeNull()
     const trashed = applyMessageAction(base, 'trash', now)
     expect(trashed?.trashedAt).toBe(now)
-    expect(applyMessageAction(trashed!, 'restore', now)?.trashedAt).toBeNull()
+    expect(applyMessageAction(trashed as MailMessage, 'restore', now)?.trashedAt).toBeNull()
     const spam = applyMessageAction(base, 'spam', now)
     expect(spam?.spamAt).toBe(now)
-    expect(applyMessageAction(spam!, 'not_spam', now)?.spamAt).toBeNull()
+    expect(applyMessageAction(spam as MailMessage, 'not_spam', now)?.spamAt).toBeNull()
   })
 
   it('removes a permanently deleted message and returns a new object otherwise', () => {

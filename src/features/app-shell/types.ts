@@ -30,7 +30,10 @@ export type NavigationSection = {
 
 export type NavigationItemButtonProps = {
   item: NavigationItem
+  unread?: number
 }
+
+export type MailboxBadges = Partial<Record<MailRoutePath, number>>
 
 export type AppShellRootProps = {
   children: ReactNode
@@ -41,6 +44,8 @@ export type ShellUser = Pick<User, 'name' | 'email'>
 export type AppShellSidebarProps = {
   user: ShellUser
   userMenu: ReactNode
+  // Unread counts shown beside mailbox links.
+  badges?: MailboxBadges | undefined
 }
 
 export const sidebarSearchTextSize = {
