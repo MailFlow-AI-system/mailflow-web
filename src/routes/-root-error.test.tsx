@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { RootErrorComponent, RootNotFoundComponent } from './__root'
+import { RootErrorComponent, RootNotFoundComponent, Route } from './__root'
 
 const captureBrowserError = vi.hoisted(() => vi.fn())
 
@@ -14,6 +14,19 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
       <a href={to}>{children}</a>
     ),
   }
+})
+
+describe('root head', () => {
+  it('links the MailFlow brand icons used by the landing page', async () => {
+    const head = await Route.options.head?.({} as never)
+    expect(head?.links).toEqual(
+      expect.arrayContaining([
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'icon', type: 'image/png', sizes: '64x64', href: '/favicon.png' },
+        { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' },
+      ]),
+    )
+  })
 })
 
 describe('RootErrorComponent', () => {
