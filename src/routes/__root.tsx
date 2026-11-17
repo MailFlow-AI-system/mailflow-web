@@ -13,6 +13,7 @@ import {
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { NuqsAdapter } from 'nuqs/adapters/tanstack-router'
 import { useEffect } from 'react'
+import { orderQueryParams } from '#/config/queryParams'
 
 import { BrowserObservability } from '../observability/BrowserObservability'
 import { captureBrowserError } from '../observability/faro'
@@ -59,7 +60,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function AppShell() {
   return (
-    <NuqsAdapter>
+    <NuqsAdapter processUrlSearchParams={orderQueryParams}>
       <Outlet />
     </NuqsAdapter>
   )
