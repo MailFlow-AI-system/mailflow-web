@@ -7,14 +7,18 @@ import { useUnreadCounts } from '#/features/mail-actions/hooks/useUnreadCounts'
 import { MailboxSearch } from '#/features/mail-list/components/MailboxSearch'
 import { normalizeMailSearch } from '#/features/mail-list/types/mailSearch'
 import { ReaderToolbar } from '#/features/mail-reader/MailReader'
+import { MailSortMenu } from '#/features/mail-sort/MailSortMenu'
+import { useMailSort } from '#/features/mail-sort/useMailSort'
 import { WorkspaceBoundary } from '#/features/workspaces/components/WorkspaceBoundary'
 import { useWorkspaceContext } from '#/features/workspaces/hooks/useWorkspaceContext'
 import { AppShell } from '@/features/app-shell'
 import { EmailComposer } from '@/features/email-composer'
 
-// Mailboxes whose list can be searched; the others keep the inert search field.
+// Mailboxes whose list can be searched and sorted; the others keep the inert search field.
 const folderMailboxes = new Set(['/inbox', '/starred', '/archive', '/spam', '/trash'])
-const searchableMailboxes = new Set([...folderMailboxes, '/sent', '/drafts'])
+// Outgoing lists show, and sort by, the recipient instead of the sender.
+const outgoingMailboxes = new Set(['/sent', '/drafts'])
+const searchableMailboxes = new Set([...folderMailboxes, ...outgoingMailboxes])
 const mailRoute = getRouteApi('/_authenticated/_mail')
 const authenticatedRoute = getRouteApi('/_authenticated')
 
@@ -30,6 +34,8 @@ function MailLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const workspace = useWorkspaceContext()
   const badges = useUnreadCounts(user.id, workspace?.current?.slug)
+  const listMailbox = searchableMailboxes.has(pathname)
+  const { sort, setSort } = useMailSort(user.id, { syncUrl: listMailbox })
 
   return (
     <EmailComposer.Root key={user.id} userId={user.id} {...handlers}>
@@ -39,12 +45,18 @@ function MailLayout() {
           <AppShell.Main>
             <AppShell.Header>
               <AppShell.Header.Mailbox fullWidth={pathname === '/drafts'}>
-                {searchableMailboxes.has(pathname) ? (
+                {listMailbox ? (
                   <MailboxSearch userId={user.id} prefetch={pathname === '/inbox'} />
                 ) : (
                   <AppShell.Header.Search />
                 )}
-                <AppShell.Header.Filters />
+                {listMailbox ? (
+                  <MailSortMenu
+                    value={sort}
+                    onChange={setSort}
+                    correspondent={outgoingMailboxes.has(pathname) ? 'recipient' : 'sender'}
+                  />
+                ) : null}
                 <EmailComposer.Trigger />
               </AppShell.Header.Mailbox>
               {message && (folderMailboxes.has(pathname) || pathname === '/sent') ? (

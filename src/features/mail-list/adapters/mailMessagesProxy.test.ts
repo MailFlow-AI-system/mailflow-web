@@ -99,6 +99,24 @@ describe('createMailMessagesProxyHandler', () => {
     expect(upstream[1]?.searchParams.has('folder')).toBe(false)
   })
 
+  it('forwards a supported non-default order and drops unknown or default orders', async () => {
+    const upstream: URL[] = []
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      upstream.push(new URL(String(input)))
+      return Response.json({ items: [], nextCursor: null })
+    })
+    const proxy = createMailMessagesProxyHandler(apiOrigin, fetcher, 'workspace.test')
+    const headers = { Cookie: 'better-auth.session_token=opaque' }
+
+    await proxy(new Request(`${webOrigin}/api/mail/messages?sort=subject-desc`, { headers }))
+    await proxy(new Request(`${webOrigin}/api/mail/messages?sort=size;drop`, { headers }))
+    await proxy(new Request(`${webOrigin}/api/mail/messages?sort=newest`, { headers }))
+
+    expect(upstream[0]?.searchParams.get('sort')).toBe('subject-desc')
+    expect(upstream[1]?.searchParams.has('sort')).toBe(false)
+    expect(upstream[2]?.searchParams.has('sort')).toBe(false)
+  })
+
   it('returns a generic private gateway error when Core cannot be reached', async () => {
     const fetcher = vi.fn(async () => {
       throw new Error('sensitive upstream detail')

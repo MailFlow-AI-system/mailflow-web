@@ -5,6 +5,7 @@ import { DraftMailList } from '#/features/email-drafts/DraftMailList'
 import { MailboxLayout } from '#/features/mail-list/components/MailboxLayout'
 import { mailQueryParser } from '#/features/mail-list/types/mailSearch'
 import { MailSelectionProvider } from '#/features/mail-selection/components/MailSelectionProvider'
+import { useMailSort } from '#/features/mail-sort/useMailSort'
 import { useWorkspaceContext } from '#/features/workspaces/hooks/useWorkspaceContext'
 
 const mailRoute = getRouteApi('/_authenticated/_mail')
@@ -20,6 +21,7 @@ function DraftsPage() {
   const workspace = useWorkspaceContext()
   const { q: committedQ } = mailRoute.useSearch()
   const [q] = useQueryState('q', mailQueryParser.withDefault(''))
+  const { sort, isReady: sortReady } = useMailSort(user.id)
   const { openDraft } = useComposer()
   const isSearching = q !== (committedQ ?? '')
   const scope = `${user.id}:${workspace?.current?.id ?? 'default'}`
@@ -32,6 +34,7 @@ function DraftsPage() {
           heading="Drafts"
           userId={user.id}
           q={q}
+          order={{ sort, enabled: sortReady }}
           isSearching={isSearching}
           onSelect={(id) => void openDraft?.(id)}
         />

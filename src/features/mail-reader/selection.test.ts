@@ -11,4 +11,11 @@ describe('mail selection URL', () => {
   it('rejects invalid selection and unrelated search fields', () => {
     expect(normalizeMailSearch({ message: '../private', workspace: 'other' })).toEqual({})
   })
+  it('keeps a supported list order and drops an unknown one', () => {
+    expect(normalizeMailSearch({ sort: 'subject-asc', q: 'a' })).toEqual({
+      q: 'a',
+      sort: 'subject-asc',
+    })
+    expect(normalizeMailSearch({ sort: 'size' })).toEqual({})
+  })
 })

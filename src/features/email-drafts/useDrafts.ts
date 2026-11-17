@@ -1,12 +1,17 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { readSentWorkspace } from '#/features/mail-list/clients/sentEmailsClient'
 import type { MailMessage } from '#/features/mail-list/types/mailMessage'
+import type { MailListOrder } from '#/features/mail-sort/mailSort'
 import { WorkspaceIdentityChangedError } from '#/features/workspaces/clients/workspaceIdentityChangedError'
 import { useWorkspaceContext } from '#/features/workspaces/hooks/useWorkspaceContext'
 import { useWorkspaceIdentityRecovery } from '#/features/workspaces/hooks/useWorkspaceIdentityRecovery'
 import { fetchDraftPage } from './draftsClient'
 
-export function useDrafts(userId: string, search = '') {
+export function useDrafts(
+  userId: string,
+  search = '',
+  { sort = 'newest', enabled = true }: MailListOrder = {},
+) {
   const q = search.trim()
   const state = useWorkspaceContext()
   const hostname = typeof window === 'undefined' ? 'server' : window.location.hostname
@@ -33,13 +38,13 @@ export function useDrafts(userId: string, search = '') {
     (useDefault ? current.isPending || current.isFetching : state.status === 'loading')
   const contextFailed = foreignIdentity || (!scopeLoading && !workspace)
   const query = useInfiniteQuery({
-    queryKey: ['drafts', userId, workspace?.id ?? null, hostname, q],
+    queryKey: ['drafts', userId, workspace?.id ?? null, hostname, q, sort],
     initialPageParam: 0,
     queryFn: ({ pageParam, signal }) => {
       if (!workspace) throw new Error('Draft workspace could not be verified')
-      return fetchDraftPage(userId, workspace.id, pageParam, signal, q)
+      return fetchDraftPage(userId, workspace.id, pageParam, signal, q, sort)
     },
-    enabled: Boolean(workspace),
+    enabled: enabled && Boolean(workspace),
     getNextPageParam: (page) => page.nextOffset ?? undefined,
     retry: false,
   })

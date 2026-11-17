@@ -5,6 +5,7 @@ import { MailSelectionBar } from '#/features/mail-selection/components/MailSelec
 import { useCoarseLayout } from '#/features/mail-selection/hooks/useCoarseLayout'
 import { useMailSelection } from '#/features/mail-selection/hooks/useMailSelection'
 import type { MailSelection } from '#/features/mail-selection/types/selection'
+import type { MailListOrder, MailSortValue } from '#/features/mail-sort/mailSort'
 import { useMailListAutoFill } from '../hooks/useMailListAutoFill'
 import { useMailMessages } from '../hooks/useMailMessages'
 import type { MailFolderName } from '../types/mailFolder'
@@ -18,6 +19,7 @@ type MailListProps = {
   userId: string
   q: string
   folder?: MailFolderName
+  order?: MailListOrder
   isSearching?: boolean
   selectedId?: string
   onSelect?: (id: string) => void
@@ -33,6 +35,7 @@ export function MailList({
   workspaceSlug,
   q,
   folder = 'inbox',
+  order,
   isSearching = false,
   selectedId,
   onSelect,
@@ -41,12 +44,13 @@ export function MailList({
   renderSelectionActions,
   renderActions,
 }: MailListProps) {
-  const mail = useMailMessages(userId, workspaceSlug, q, folder)
+  const mail = useMailMessages(userId, workspaceSlug, q, folder, order)
   const selection = useMailSelection()
   return (
     <MailListView
       mail={mail}
       q={q}
+      sort={order?.sort}
       isSearching={isSearching}
       label={`${heading ?? 'Inbox'} message list`}
       selectedId={selectedId}
@@ -75,6 +79,8 @@ type MailListViewProps = {
   }
   label: string
   q?: string
+  // A new order, like a new search, starts again from the top of the list.
+  sort?: MailSortValue | undefined
   isSearching?: boolean
   selectedId?: string
   onSelect?: (id: string) => void
@@ -93,6 +99,7 @@ export function MailListView({
   mail,
   label,
   q = '',
+  sort = 'newest',
   isSearching = false,
   selectedId,
   onSelect,
@@ -135,17 +142,18 @@ export function MailListView({
     mail.isError,
   ])
   const scrollRootRef = useRef<HTMLElement>(null)
-  const previousQuery = useRef(q)
+  const listView = `${sort}\u0000${q}`
+  const previousView = useRef(listView)
   const sentinelRef = useRef<HTMLDivElement>(null)
   const setScrollRoot = useCallback(
     (root: HTMLElement | null) => {
       scrollRootRef.current = root
-      if (root && previousQuery.current !== q) {
+      if (root && previousView.current !== listView) {
         root.scrollTop = 0
-        previousQuery.current = q
+        previousView.current = listView
       }
     },
-    [q],
+    [listView],
   )
   const showSearchSkeletons = isSearching || mail.isPending
   const showPageSkeletons = !showSearchSkeletons && mail.isFetchingNextPage
