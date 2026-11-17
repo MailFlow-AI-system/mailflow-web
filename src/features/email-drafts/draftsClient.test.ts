@@ -25,6 +25,16 @@ describe('draft list client', () => {
     await fetchDraftPage('owner', 'ws-a', 0, signal)
     expect(fetcher.mock.calls[1]?.[0]).toBe('/api/mail/drafts?offset=0')
   })
+  it('sends a non-default order and omits newest', async () => {
+    vi.mocked(getCurrentSession).mockResolvedValue({ id: 'owner', name: '', email: '' })
+    const fetcher = vi.fn<typeof fetch>(async () => reply())
+    vi.stubGlobal('fetch', fetcher)
+    const signal = new AbortController().signal
+    await fetchDraftPage('owner', 'ws-a', 0, signal, '', 'sender-asc')
+    expect(fetcher.mock.calls[0]?.[0]).toBe('/api/mail/drafts?offset=0&sort=sender-asc')
+    await fetchDraftPage('owner', 'ws-a', 0, signal, 'plan', 'newest')
+    expect(fetcher.mock.calls[1]?.[0]).toBe('/api/mail/drafts?offset=0&q=plan')
+  })
   it('rejects a response from another workspace', async () => {
     vi.mocked(getCurrentSession).mockResolvedValue({ id: 'owner', name: '', email: '' })
     vi.stubGlobal(

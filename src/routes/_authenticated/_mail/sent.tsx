@@ -5,6 +5,7 @@ import { SentMailList } from '#/features/mail-list/components/SentMailList'
 import { mailQueryParser } from '#/features/mail-list/types/mailSearch'
 import { MailReader } from '#/features/mail-reader/MailReader'
 import { MailSelectionProvider } from '#/features/mail-selection/components/MailSelectionProvider'
+import { useMailSort } from '#/features/mail-sort/useMailSort'
 import { useWorkspaceContext } from '#/features/workspaces/hooks/useWorkspaceContext'
 
 const mailRoute = getRouteApi('/_authenticated/_mail')
@@ -23,6 +24,7 @@ function SentPage() {
     parseAsString.withOptions({ shallow: false, history: 'push', scroll: false }),
   )
   const [q] = useQueryState('q', mailQueryParser.withDefault(''))
+  const { sort, isReady: sortReady } = useMailSort(user.id)
   const isSearching = q !== (committedQ ?? '')
   const scope = `${user.id}:${workspace?.current?.id ?? 'default'}`
   return (
@@ -48,6 +50,7 @@ function SentPage() {
           heading="Sent"
           userId={user.id}
           q={q}
+          order={{ sort, enabled: sortReady }}
           isSearching={isSearching}
           selectedId={selectedId}
           onSelect={(id) => void setMessage(id)}

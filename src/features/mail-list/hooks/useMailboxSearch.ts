@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useQueryState } from 'nuqs'
 import { useEffect, useRef, useState } from 'react'
+import { useMailSort } from '#/features/mail-sort/useMailSort'
 
 import { mailMessagesPageOptions } from '../queries/mailMessagesQuery'
 import { mailQueryParser } from '../types/mailSearch'
@@ -8,6 +9,7 @@ import { mailQueryParser } from '../types/mailSearch'
 export function useMailboxSearch(userId: string, workspaceSlug: string, prefetch = true) {
   const [query, setQuery] = useQueryState('q', mailQueryParser.withDefault(''))
   const queryClient = useQueryClient()
+  const { sort, isReady: sortReady } = useMailSort(userId)
   const [draft, setDraft] = useState({ query, value: query })
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
@@ -35,9 +37,17 @@ export function useMailboxSearch(userId: string, workspaceSlug: string, prefetch
     timer.current = setTimeout(() => {
       timer.current = undefined
       // Only the Inbox has pages worth warming; other mailboxes search on demand.
-      if (prefetch && workspaceSlug)
+      if (prefetch && workspaceSlug && sortReady)
         void queryClient.prefetchQuery(
-          mailMessagesPageOptions(userId, workspaceSlug, normalized, null),
+          mailMessagesPageOptions(
+            userId,
+            workspaceSlug,
+            normalized,
+            null,
+            undefined,
+            'inbox',
+            sort,
+          ),
         )
       void setQuery(normalized || null, { history: 'replace', scroll: false })
     }, 300)

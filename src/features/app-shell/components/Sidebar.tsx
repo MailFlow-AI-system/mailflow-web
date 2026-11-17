@@ -14,6 +14,8 @@ import {
 import { Sparkles } from '@mailflow/ui/icons'
 import { Link, useRouterState } from '@tanstack/react-router'
 
+import { keepMailSort } from '#/features/mail-sort/mailSort'
+
 import { navigationSections, settingsItem, themeItem } from '../navigation'
 import type { AppShellSidebarProps, NavigationItemButtonProps } from '../types'
 import { SidebarSearch } from './SidebarSearch'
@@ -42,7 +44,9 @@ function NavigationItemButton({ item, unread = 0 }: NavigationItemButtonProps) {
   return (
     <SidebarMenuButton
       isActive={active}
-      render={<Link aria-current={active ? 'page' : undefined} to={item.to} />}
+      render={
+        <Link aria-current={active ? 'page' : undefined} to={item.to} search={keepMailSort} />
+      }
       tooltip={item.label}
     >
       <Icon aria-hidden="true" />
@@ -61,6 +65,7 @@ function SidebarNavigation({ user, userMenu, badges }: AppShellSidebarProps) {
             aria-label="MailFlow AI — Inbox"
             className="flex min-w-0 items-center gap-2 text-sidebar-foreground no-underline group-data-[collapsible=icon]:hidden"
             to="/inbox"
+            search={keepMailSort}
           >
             <span
               aria-hidden="true"

@@ -31,6 +31,7 @@ vi.mock('#/features/workspaces/hooks/useWorkspaceContext', () => ({
   useWorkspaceContext: () => ({ current: { slug: 'acme' } }),
 }))
 
+import { mailSortStorageKey } from '#/features/mail-sort/useMailSort'
 import { mailQueryParser } from '../types/mailSearch'
 import { MailboxSearch } from './MailboxSearch'
 
@@ -86,9 +87,35 @@ describe('MailboxSearch', () => {
       'inbox',
       'invoice',
       null,
+      'newest',
     ])
     expect(screen.getByTestId('query-value')).toHaveTextContent('invoice')
     expect(input).toHaveValue('invoice')
+  })
+
+  it('prefetches the first page in the stored order', async () => {
+    window.localStorage.setItem(mailSortStorageKey('user-1'), 'sender-asc')
+    render(
+      <NuqsTestingAdapter searchParams="" hasMemory>
+        <MailboxSearch userId="user-1" />
+      </NuqsTestingAdapter>,
+    )
+
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'invoice' } })
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300)
+    })
+
+    expect(queryState.queryClient.prefetchQuery.mock.calls[0]?.[0].queryKey).toEqual([
+      'mail-messages-page',
+      'user-1',
+      'acme',
+      'inbox',
+      'invoice',
+      null,
+      'sender-asc',
+    ])
+    window.localStorage.clear()
   })
 
   it('removes q when the input is cleared', async () => {

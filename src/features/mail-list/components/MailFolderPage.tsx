@@ -5,6 +5,7 @@ import { MessageRowActions } from '#/features/mail-actions/components/MessageRow
 import { ReaderMessageActions } from '#/features/mail-actions/components/ReaderMessageActions'
 import { MailReader } from '#/features/mail-reader/MailReader'
 import { MailSelectionProvider } from '#/features/mail-selection/components/MailSelectionProvider'
+import { useMailSort } from '#/features/mail-sort/useMailSort'
 import { useWorkspaceContext } from '#/features/workspaces/hooks/useWorkspaceContext'
 import type { MailFolderName } from '../types/mailFolder'
 import { mailQueryParser } from '../types/mailSearch'
@@ -31,10 +32,12 @@ export function MailFolderPage({ folder }: { folder: MailFolderName }) {
     parseAsString.withOptions({ shallow: false, history: 'push', scroll: false }),
   )
   const [q] = useQueryState('q', mailQueryParser.withDefault(''))
+  const { sort, isReady: sortReady } = useMailSort(user.id)
   const isSearching = q !== (committedQ ?? '')
   const workspace = useWorkspaceContext()
   if (!workspace?.current) return <p>Open a workspace address</p>
   const title = mailFolderTitles[folder]
+  // The order stays out of the scope: a new order keeps checked messages and the open one.
   const scope = `${user.id}:${workspace.current.id}:${workspace.current.slug}:${folder}`
 
   return (
@@ -59,6 +62,7 @@ export function MailFolderPage({ folder }: { folder: MailFolderName }) {
         <MailList
           key={scope}
           folder={folder}
+          order={{ sort, enabled: sortReady }}
           heading={title}
           workspaceSlug={workspace.current.slug}
           selectedId={selectedId}

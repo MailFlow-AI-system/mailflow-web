@@ -1,4 +1,5 @@
 import { filterBetterAuthCookies } from '#/features/auth/adapters/authCookies'
+import { explicitMailSort } from '#/features/mail-sort/mailSort'
 import {
   createWorkspaceTransport,
   workspaceResponseHeaders,
@@ -30,6 +31,8 @@ export function createMailMessagesProxyHandler(
     if (isMailFolderName(folder) && folder !== 'inbox') query.set('folder', folder)
     const cursor = url.searchParams.get('cursor')
     if (cursor !== null) query.set('cursor', cursor)
+    const sort = explicitMailSort(url.searchParams.get('sort'))
+    if (sort) query.set('sort', sort)
     try {
       const upstream = await forward(
         request,

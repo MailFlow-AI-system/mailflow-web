@@ -1,4 +1,5 @@
 import { createParser } from 'nuqs'
+import { isMailSortValue, type MailSortValue } from '#/features/mail-sort/mailSort'
 
 export const mailQueryParser = createParser({
   parse: (value) => value.trim() || null,
@@ -8,11 +9,13 @@ export const mailQueryParser = createParser({
 export function normalizeMailSearch(search: Record<string, unknown>): {
   q?: string
   message?: string
+  sort?: MailSortValue
 } {
   const q = typeof search.q === 'string' ? mailQueryParser.parse(search.q) : null
   const message =
     typeof search.message === 'string' && /^[a-zA-Z0-9_-]{1,128}$/.test(search.message)
       ? search.message
       : undefined
-  return { ...(q ? { q } : {}), ...(message ? { message } : {}) }
+  const sort = isMailSortValue(search.sort) ? search.sort : undefined
+  return { ...(q ? { q } : {}), ...(message ? { message } : {}), ...(sort ? { sort } : {}) }
 }
