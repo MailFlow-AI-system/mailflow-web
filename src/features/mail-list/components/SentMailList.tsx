@@ -1,10 +1,12 @@
 import { useMailSelection } from '#/features/mail-selection/hooks/useMailSelection'
+import type { MailListOrder } from '#/features/mail-sort/mailSort'
 import { useSentEmails } from '../hooks/useSentEmails'
 import { MailListView } from './MailList'
 
 export function SentMailList({
   userId,
   q = '',
+  order,
   isSearching = false,
   heading,
   selectedId,
@@ -13,18 +15,20 @@ export function SentMailList({
 }: {
   userId: string
   q?: string
+  order?: MailListOrder
   isSearching?: boolean
   heading?: string
   selectedId?: string
   onSelect?: (id: string) => void
   onAutoSelect?: (id: string) => void
 }) {
-  const mail = useSentEmails(userId, q)
+  const mail = useSentEmails(userId, q, order)
   const selection = useMailSelection()
   return (
     <MailListView
       label="Sent message list"
       q={q}
+      sort={order?.sort}
       isSearching={isSearching}
       selectedId={selectedId}
       onSelect={onSelect}

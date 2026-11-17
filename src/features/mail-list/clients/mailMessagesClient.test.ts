@@ -69,6 +69,26 @@ describe('fetchMailMessages', () => {
     expect(urls).toEqual(['/api/mail/messages?q=&folder=trash', '/api/mail/messages?q='])
   })
 
+  it('requests a non-default order and omits the default newest order', async () => {
+    const urls: string[] = []
+    vi.stubGlobal('fetch', async (input: RequestInfo | URL) => {
+      urls.push(String(input))
+      return Response.json(
+        { items: [], nextCursor: null },
+        { headers: { 'X-Workspace-Identity': 'user-1' } },
+      )
+    })
+    const signal = new AbortController().signal
+
+    await fetchMailMessages({ userId: 'user-1', q: '', folder: 'trash', sort: 'oldest', signal })
+    await fetchMailMessages({ userId: 'user-1', q: '', sort: 'newest', signal })
+
+    expect(urls).toEqual([
+      '/api/mail/messages?q=&folder=trash&sort=oldest',
+      '/api/mail/messages?q=',
+    ])
+  })
+
   it('throws a safe error for unsuccessful responses', async () => {
     const fetcher: typeof fetch = async () =>
       Response.json({ message: 'private details' }, { status: 502 })

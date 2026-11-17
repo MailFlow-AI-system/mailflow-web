@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { mailLabelSchema } from '#/features/mail-labels/mailLabel'
+import { explicitMailSort, type MailSortValue } from '#/features/mail-sort/mailSort'
 import {
   readWorkspaceResponse,
   WorkspaceIdentityChangedError,
@@ -43,11 +44,11 @@ export async function fetchSentEmails(
   offset: number,
   signal: AbortSignal,
   search = '',
+  sort: MailSortValue = 'newest',
 ) {
-  const q = search.trim()
   return pageSchema.parse(
     await readWorkspaceResponse(
-      `/api/mail/sent?offset=${offset}${q ? `&q=${encodeURIComponent(q)}` : ''}`,
+      `/api/mail/sent?${outgoingListSearch(offset, search, sort)}`,
       userId,
       signal,
       {
@@ -57,4 +58,11 @@ export async function fetchSentEmails(
       workspaceId,
     ),
   )
+}
+
+/** Query string shared by the Sent and Drafts lists. */
+export function outgoingListSearch(offset: number, search: string, sort: MailSortValue) {
+  const q = search.trim()
+  const order = explicitMailSort(sort)
+  return `offset=${offset}${q ? `&q=${encodeURIComponent(q)}` : ''}${order ? `&sort=${order}` : ''}`
 }

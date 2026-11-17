@@ -3,12 +3,25 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, expect, it, vi } from 'vitest'
 
+const currentSearch = vi.hoisted(() => ({ value: {} as Record<string, unknown> }))
+
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, to, ...props }: React.PropsWithChildren<{ to: string }>) => (
-    <a href={to} {...props}>
-      {children}
-    </a>
-  ),
+  Link: ({
+    children,
+    to,
+    search,
+    ...props
+  }: React.PropsWithChildren<{
+    to: string
+    search?: (previous: Record<string, unknown>) => Record<string, string>
+  }>) => {
+    const query = search ? new URLSearchParams(search(currentSearch.value)).toString() : ''
+    return (
+      <a href={query ? `${to}?${query}` : to} {...props}>
+        {children}
+      </a>
+    )
+  },
   useRouterState: ({ select }: { select: (state: { location: { pathname: string } }) => string }) =>
     select({ location: { pathname: '/inbox' } }),
 }))
@@ -18,7 +31,10 @@ vi.mock('./SidebarUser', () => ({ SidebarUser: () => null }))
 
 import { Sidebar } from './Sidebar'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  currentSearch.value = {}
+})
 
 it('shows unread badges and includes the count in the link name', () => {
   render(
@@ -81,4 +97,21 @@ it('keeps unavailable navigation disabled without warnings and preserves working
     expect(screen.getByRole('link', { name })).toHaveAttribute('href', href)
   }
   warning.mockRestore()
+})
+
+it('carries the current list order, and nothing else, to the other mailboxes', () => {
+  currentSearch.value = { sort: 'subject-asc', q: 'invoice', message: 'message-1' }
+  render(
+    <SidebarProvider>
+      <Sidebar user={{ name: 'Ada', email: 'ada@example.test' }} userMenu={null} />
+    </SidebarProvider>,
+  )
+  expect(screen.getByRole('link', { name: 'Archive' })).toHaveAttribute(
+    'href',
+    '/archive?sort=subject-asc',
+  )
+  expect(screen.getByRole('link', { name: 'Sent' })).toHaveAttribute(
+    'href',
+    '/sent?sort=subject-asc',
+  )
 })

@@ -1,10 +1,15 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import type { MailListOrder } from '#/features/mail-sort/mailSort'
 import { WorkspaceIdentityChangedError } from '#/features/workspaces/clients/workspaceIdentityChangedError'
 import { useWorkspaceContext } from '#/features/workspaces/hooks/useWorkspaceContext'
 import { useWorkspaceIdentityRecovery } from '#/features/workspaces/hooks/useWorkspaceIdentityRecovery'
 import { fetchSentEmails, readSentWorkspace } from '../clients/sentEmailsClient'
 
-export function useSentEmails(userId: string, search = '') {
+export function useSentEmails(
+  userId: string,
+  search = '',
+  { sort = 'newest', enabled = true }: MailListOrder = {},
+) {
   const q = search.trim()
   const state = useWorkspaceContext()
   const hostname = typeof window === 'undefined' ? 'server' : window.location.hostname
@@ -31,13 +36,13 @@ export function useSentEmails(userId: string, search = '') {
     (useDefault ? current.isPending || current.isFetching : state.status === 'loading')
   const contextFailed = foreignIdentity || (!scopeLoading && !workspace)
   const query = useInfiniteQuery({
-    queryKey: ['sent-emails', userId, workspace?.id ?? null, hostname, q],
+    queryKey: ['sent-emails', userId, workspace?.id ?? null, hostname, q, sort],
     initialPageParam: 0,
     queryFn: ({ pageParam, signal }) => {
       if (!workspace) throw new Error('Sent workspace could not be verified')
-      return fetchSentEmails(userId, workspace.id, pageParam, signal, q)
+      return fetchSentEmails(userId, workspace.id, pageParam, signal, q, sort)
     },
-    enabled: Boolean(workspace),
+    enabled: enabled && Boolean(workspace),
     getNextPageParam: (page) => page.nextOffset ?? undefined,
     retry: false,
   })

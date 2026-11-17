@@ -82,7 +82,56 @@ describe('Sent search', () => {
       0,
       expect.any(AbortSignal),
       'invoice',
+      'newest',
     )
+  })
+})
+
+describe('Sent order', () => {
+  it('requests the chosen order and caches each order separately', async () => {
+    vi.mocked(fetchSentEmails).mockImplementation(
+      async (_userId, _workspaceId, _offset, _signal, _q, sort) => page(`order-${sort}`),
+    )
+    const { result, rerender } = renderHook(({ sort }) => useSentEmails('owner', '', { sort }), {
+      wrapper,
+      initialProps: { sort: 'newest' as 'newest' | 'sender-desc' },
+    })
+    await waitFor(() =>
+      expect(result.current.messages.map(({ id }) => id)).toEqual(['order-newest']),
+    )
+    rerender({ sort: 'sender-desc' })
+    expect(result.current.messages).toEqual([])
+    await waitFor(() =>
+      expect(result.current.messages.map(({ id }) => id)).toEqual(['order-sender-desc']),
+    )
+    expect(fetchSentEmails).toHaveBeenLastCalledWith(
+      'owner',
+      a.id,
+      0,
+      expect.any(AbortSignal),
+      '',
+      'sender-desc',
+    )
+    expect(
+      queryClient.getQueryData([
+        'sent-emails',
+        'owner',
+        a.id,
+        window.location.hostname,
+        '',
+        'sender-desc',
+      ]),
+    ).toBeDefined()
+  })
+
+  it('waits without fetching while the order is not known yet', async () => {
+    vi.mocked(fetchSentEmails).mockResolvedValue(page('sent'))
+    const { result } = renderHook(() => useSentEmails('owner', '', { enabled: false }), {
+      wrapper,
+    })
+    await act(async () => {})
+    expect(result.current.isPending).toBe(true)
+    expect(fetchSentEmails).not.toHaveBeenCalled()
   })
 })
 
@@ -96,10 +145,24 @@ describe('Sent workspace query scope', () => {
     expect(result.current.messages).toEqual([])
     await waitFor(() => expect(result.current.messages.map(({ id }) => id)).toEqual([b.id]))
     expect(
-      queryClient.getQueryData(['sent-emails', 'owner', a.id, window.location.hostname, '']),
+      queryClient.getQueryData([
+        'sent-emails',
+        'owner',
+        a.id,
+        window.location.hostname,
+        '',
+        'newest',
+      ]),
     ).toBeDefined()
     expect(
-      queryClient.getQueryData(['sent-emails', 'owner', b.id, window.location.hostname, '']),
+      queryClient.getQueryData([
+        'sent-emails',
+        'owner',
+        b.id,
+        window.location.hostname,
+        '',
+        'newest',
+      ]),
     ).toBeDefined()
     expect(readSentWorkspace).not.toHaveBeenCalled()
   })
@@ -153,7 +216,14 @@ describe('Sent workspace query scope', () => {
     expect(fetchSentEmails).not.toHaveBeenCalled()
     await act(async () => release(a))
     await waitFor(() => expect(result.current.messages.map(({ id }) => id)).toEqual(['default-a']))
-    expect(fetchSentEmails).toHaveBeenCalledWith('owner', a.id, 0, expect.any(AbortSignal), '')
+    expect(fetchSentEmails).toHaveBeenCalledWith(
+      'owner',
+      a.id,
+      0,
+      expect.any(AbortSignal),
+      '',
+      'newest',
+    )
   })
 
   it('hides cached A while the default is revalidated and refetches B after a default change', async () => {
@@ -219,7 +289,14 @@ describe('Sent workspace query scope', () => {
     version = 1
     await act(async () => queryClient.invalidateQueries({ queryKey: ['sent-emails', 'owner'] }))
     await waitFor(() => expect(result.current.messages.map(({ id }) => id)).toEqual([`${b.id}-1`]))
-    expect(fetchSentEmails).toHaveBeenLastCalledWith('owner', b.id, 0, expect.any(AbortSignal), '')
+    expect(fetchSentEmails).toHaveBeenLastCalledWith(
+      'owner',
+      b.id,
+      0,
+      expect.any(AbortSignal),
+      '',
+      'newest',
+    )
   })
 })
 
@@ -239,9 +316,23 @@ it('never reuses another signed-in identity cache even within the same workspace
     expect(result.current.messages.map(({ id }) => id)).toEqual(['mail-for-new-owner']),
   )
   expect(
-    queryClient.getQueryData(['sent-emails', 'owner', a.id, window.location.hostname, '']),
+    queryClient.getQueryData([
+      'sent-emails',
+      'owner',
+      a.id,
+      window.location.hostname,
+      '',
+      'newest',
+    ]),
   ).toBeDefined()
   expect(
-    queryClient.getQueryData(['sent-emails', 'new-owner', a.id, window.location.hostname, '']),
+    queryClient.getQueryData([
+      'sent-emails',
+      'new-owner',
+      a.id,
+      window.location.hostname,
+      '',
+      'newest',
+    ]),
   ).toBeDefined()
 })

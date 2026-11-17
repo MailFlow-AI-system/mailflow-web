@@ -1,4 +1,5 @@
 import { filterBetterAuthCookies } from '#/features/auth/adapters/authCookies'
+import { explicitMailSort } from '#/features/mail-sort/mailSort'
 
 export function createOutgoingMailProxy(apiBaseUrl: string, fetcher: typeof fetch = fetch) {
   return async (request: Request): Promise<Response> => {
@@ -104,6 +105,8 @@ export function createOutgoingMailProxy(apiBaseUrl: string, fetcher: typeof fetc
         const value = incoming.searchParams.get(key)
         if (value !== null) upstreamUrl.searchParams.set(key, value)
       }
+      const sort = explicitMailSort(incoming.searchParams.get('sort'))
+      if (sort) upstreamUrl.searchParams.set('sort', sort)
     }
     const headers = new Headers()
     for (const name of ['accept', 'content-type', 'origin', 'traceparent', 'tracestate']) {

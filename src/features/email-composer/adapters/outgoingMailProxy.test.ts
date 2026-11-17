@@ -42,6 +42,22 @@ it('forwards only the bounded search text for Sent and draft lists', async () =>
     )
   }
 })
+it('forwards only a supported non-default order for Sent and draft lists', async () => {
+  const fetcher = vi.fn<typeof fetch>(async () => Response.json({ items: [] }))
+  const proxy = createOutgoingMailProxy('https://api.example.test', fetcher)
+  for (const path of ['sent', 'drafts']) {
+    await proxy(new Request(`${origin}/api/mail/${path}?offset=0&sort=sender-desc`))
+    expect(String(fetcher.mock.calls.at(-1)?.[0])).toBe(
+      `https://api.example.test/api/v1/mail/${path}?offset=0&sort=sender-desc`,
+    )
+    for (const sort of ['newest', 'size', '']) {
+      await proxy(new Request(`${origin}/api/mail/${path}?offset=0&sort=${sort}`))
+      expect(String(fetcher.mock.calls.at(-1)?.[0])).toBe(
+        `https://api.example.test/api/v1/mail/${path}?offset=0`,
+      )
+    }
+  }
+})
 it('proxies bulk draft deletion only as a same-origin JSON POST', async () => {
   const fetcher = vi.fn<typeof fetch>(async () => Response.json({ results: [] }))
   const proxy = createOutgoingMailProxy('https://api.example.test', fetcher)
