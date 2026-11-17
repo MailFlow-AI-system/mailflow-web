@@ -114,6 +114,39 @@ describe('useDrafts', () => {
       0,
       expect.any(AbortSignal),
       'budget',
+      'newest',
     )
+  })
+
+  it('requests the chosen order as a separate list', async () => {
+    vi.mocked(fetchDraftPage).mockImplementation(
+      async (_user, _workspace, _offset, _signal, _q, sort) => ({
+        items: [draft(`order-${sort}`)],
+        nextOffset: null,
+      }),
+    )
+    const { result, rerender } = renderHook(({ sort }) => useDrafts('owner', '', { sort }), {
+      wrapper,
+      initialProps: { sort: 'newest' as 'newest' | 'subject-desc' },
+    })
+    await waitFor(() => expect(result.current.messages[0]?.id).toBe('order-newest'))
+    rerender({ sort: 'subject-desc' })
+    expect(result.current.messages).toEqual([])
+    await waitFor(() => expect(result.current.messages[0]?.id).toBe('order-subject-desc'))
+    expect(fetchDraftPage).toHaveBeenLastCalledWith(
+      'owner',
+      workspace.id,
+      0,
+      expect.any(AbortSignal),
+      '',
+      'subject-desc',
+    )
+  })
+
+  it('waits without fetching while the order is not known yet', async () => {
+    vi.mocked(fetchDraftPage).mockResolvedValue({ items: [], nextOffset: null })
+    const { result } = renderHook(() => useDrafts('owner', '', { enabled: false }), { wrapper })
+    await waitFor(() => expect(result.current.isPending).toBe(true))
+    expect(fetchDraftPage).not.toHaveBeenCalled()
   })
 })

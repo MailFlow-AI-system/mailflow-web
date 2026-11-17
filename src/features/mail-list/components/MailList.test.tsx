@@ -205,6 +205,45 @@ describe('MailList', () => {
     expect(screen.queryByTestId('mail-message-skeleton')).not.toBeInTheDocument()
   })
 
+  it('reloads from the first page in a new order and returns to the top', async () => {
+    client.fetchMailMessages.mockImplementation(({ sort }: { sort?: string }) =>
+      sort === 'oldest'
+        ? Promise.resolve({ items: [message('earliest')], nextCursor: null })
+        : Promise.resolve({ items: [message('latest')], nextCursor: null }),
+    )
+    const view = render(<MailList workspaceSlug="acme" userId="user-1" q="" />, {
+      wrapper: createWrapper(),
+    })
+    await screen.findByText('Message latest')
+    const region = screen.getByRole('region', { name: 'Inbox message list' })
+    region.scrollTop = 120
+
+    view.rerender(<MailList workspaceSlug="acme" userId="user-1" q="" order={{ sort: 'oldest' }} />)
+
+    expect(region.scrollTop).toBe(0)
+    expect(await screen.findByText('Message earliest')).toBeInTheDocument()
+    expect(screen.queryByText('Message latest')).not.toBeInTheDocument()
+    expect(client.fetchMailMessages).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sort: 'oldest', cursor: null }),
+    )
+  })
+
+  it('shows loading rows without requesting a page until the order is known', async () => {
+    client.fetchMailMessages.mockResolvedValue({ items: [message('first')], nextCursor: null })
+    render(
+      <MailList
+        workspaceSlug="acme"
+        userId="user-1"
+        q=""
+        order={{ sort: 'newest', enabled: false }}
+      />,
+      { wrapper: createWrapper() },
+    )
+    await act(async () => {})
+    expect(screen.getAllByTestId('mail-message-skeleton')).toHaveLength(8)
+    expect(client.fetchMailMessages).not.toHaveBeenCalled()
+  })
+
   it('preserves the scroll region and resets its position when the filter changes', async () => {
     client.fetchMailMessages.mockImplementation(({ q }: { q: string }) =>
       q ? new Promise(() => {}) : Promise.resolve({ items: [message('first')], nextCursor: null }),
@@ -256,6 +295,7 @@ describe('MailList', () => {
         'acme',
         'inbox',
         '',
+        'newest',
       ])?.pages,
     ).toHaveLength(1)
     expect(client.fetchMailMessages).toHaveBeenCalledTimes(2)
@@ -324,7 +364,7 @@ describe('MailList', () => {
         refetchType: 'none',
       })
       void activeQueryClient.invalidateQueries({
-        queryKey: ['mail-messages', 'user-1', 'acme', 'inbox', ''],
+        queryKey: ['mail-messages', 'user-1', 'acme', 'inbox', '', 'newest'],
         exact: true,
       })
     })

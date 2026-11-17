@@ -34,7 +34,7 @@ Environment suffixes: `development`, `staging`, `production`.
 Inbox and Sent open persisted message details with the `message` search parameter while
 preserving the list and search state. Mobile reading replaces the list and provides a back
 control. The reader displays available metadata, plain text or sanitized HTML, private CID
-images, and authenticated attachment downloads. Unavailable message, AI, filter, and scheduling
+images, and authenticated attachment downloads. Unavailable message, AI, and scheduling
 actions display the same warning notification through the Design System. Navigation entries
 without implemented pages remain disabled; Inbox, Sent, and Drafts remain active.
 
@@ -81,6 +81,18 @@ Unavailable actions use a shared Sonner warning with a stable identifier, so rep
 reuse one notification. Only action placeholders are enabled; loading, validation, and
 in-flight restrictions on implemented actions remain enforced. The warning does not promise
 a release date or execute the unavailable operation.
+
+Every list (folders, Sent, and Drafts) can be sorted by date, sender or recipient, and subject
+from the header. The `sort` search parameter is the source of truth, so reloads and shared
+links keep the order, and the sidebar carries it between mailboxes (unlike `q`). The last
+choice is also kept per user in this browser's local storage: a URL without `sort` (a new tab
+or a bare link) takes that choice and writes it back to the URL. Newest first is the default
+and leaves the URL clean. Core sorts, so each order loads from its own first page and cursors
+are never reused across orders. Lists wait for the stored order before their first request, so
+a reload does not fetch the default order first. A new order keeps the open message and the
+checked messages, as a new search does. Opening a shared link does not overwrite the stored
+choice; only choosing an order does. The inert Filters button was removed so the header does
+not offer two list controls.
 
 Reader activity and bulk selection have separate state. Checkbox and long-press gestures
 never navigate to a message, while opening a message preserves the selected set. The

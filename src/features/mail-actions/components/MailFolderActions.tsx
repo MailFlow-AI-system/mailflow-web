@@ -5,6 +5,7 @@ import { mailMessagesKey } from '#/features/mail-list/queries/mailMessagesQuery'
 import { isMailFolderName } from '#/features/mail-list/types/mailFolder'
 import type { MailMessagesPage } from '#/features/mail-list/types/mailMessage'
 import { mailQueryParser } from '#/features/mail-list/types/mailSearch'
+import { useMailSort } from '#/features/mail-sort/useMailSort'
 import { useWorkspaceContext } from '#/features/workspaces/hooks/useWorkspaceContext'
 import { patchMessageCaches } from '../messageCache'
 import { neighborMessageId } from '../neighborMessage'
@@ -32,18 +33,20 @@ export function MailFolderActions({
     parseAsString.withOptions({ shallow: false, history: 'replace', scroll: false }),
   )
   const [q] = useQueryState('q', mailQueryParser.withDefault(''))
+  const { sort } = useMailSort(userId)
   const valid = isMailFolderName(folder) && Boolean(slug)
 
   const onLeave = useCallback(
     (ids: readonly string[]) => {
       if (!openId || !ids.includes(openId) || !slug || !isMailFolderName(folder)) return
       const list = queryClient.getQueryData<InfiniteData<MailMessagesPage>>(
-        mailMessagesKey(userId, slug, q.trim(), folder),
+        // The visible list, in its current order, decides which neighbour opens next.
+        mailMessagesKey(userId, slug, q.trim(), folder, sort),
       )
       const listIds = list?.pages.flatMap((page) => page.items.map((item) => item.id)) ?? []
       void setOpenId(neighborMessageId(listIds, openId, ids))
     },
-    [folder, openId, q, queryClient, setOpenId, slug, userId],
+    [folder, openId, q, queryClient, setOpenId, slug, sort, userId],
   )
 
   // Core marks a message read when its detail is fetched; reflect it in the lists at once.

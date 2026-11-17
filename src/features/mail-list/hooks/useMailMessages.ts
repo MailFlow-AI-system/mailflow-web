@@ -1,4 +1,5 @@
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { MailListOrder } from '#/features/mail-sort/mailSort'
 import { WorkspaceIdentityChangedError } from '#/features/workspaces/clients/workspaceIdentityChangedError'
 import { useWorkspaceIdentityRecovery } from '#/features/workspaces/hooks/useWorkspaceIdentityRecovery'
 
@@ -15,11 +16,12 @@ export function useMailMessages(
   workspaceSlug: string,
   q: string,
   folder: MailFolderName = 'inbox',
+  { sort = 'newest', enabled = true }: MailListOrder = {},
 ) {
   const normalizedQ = q.trim()
   const queryClient = useQueryClient()
-  const queryKey = mailMessagesKey(userId, workspaceSlug, normalizedQ, folder)
-  const firstPageKey = mailMessagesPageKey(userId, workspaceSlug, normalizedQ, null, folder)
+  const queryKey = mailMessagesKey(userId, workspaceSlug, normalizedQ, folder, sort)
+  const firstPageKey = mailMessagesPageKey(userId, workspaceSlug, normalizedQ, null, folder, sort)
   const firstPage = queryClient.getQueryData<MailMessagesPage>(firstPageKey)
   const query = useInfiniteQuery({
     queryKey,
@@ -27,17 +29,34 @@ export function useMailMessages(
     initialData: firstPage ? { pages: [firstPage], pageParams: [null] } : undefined,
     initialDataUpdatedAt: queryClient.getQueryState(firstPageKey)?.dataUpdatedAt,
     staleTime: 30_000,
+    enabled,
     queryFn: ({ pageParam, signal }) =>
       queryClient.fetchQuery(
-        mailMessagesPageOptions(userId, workspaceSlug, normalizedQ, pageParam, signal, folder),
+        mailMessagesPageOptions(
+          userId,
+          workspaceSlug,
+          normalizedQ,
+          pageParam,
+          signal,
+          folder,
+          sort,
+        ),
       ),
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     retry: 0,
   })
   const nextCursor = query.data?.pages.at(-1)?.nextCursor ?? null
   const warmPage = useQuery({
-    ...mailMessagesPageOptions(userId, workspaceSlug, normalizedQ, nextCursor, undefined, folder),
-    enabled: nextCursor !== null,
+    ...mailMessagesPageOptions(
+      userId,
+      workspaceSlug,
+      normalizedQ,
+      nextCursor,
+      undefined,
+      folder,
+      sort,
+    ),
+    enabled: enabled && nextCursor !== null,
   })
 
   const identityError =

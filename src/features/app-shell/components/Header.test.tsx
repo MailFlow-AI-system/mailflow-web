@@ -1,4 +1,3 @@
-import { toast } from '@mailflow/ui/components'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -17,7 +16,6 @@ describe('Header mailbox toolbar', () => {
     render(
       <Header.Mailbox fullWidth>
         <Header.Search />
-        <Header.Filters />
         <button type="button">Compose</button>
       </Header.Mailbox>,
     )
@@ -33,7 +31,6 @@ describe('Header mailbox toolbar', () => {
     render(
       <Header.Mailbox>
         <Header.Search />
-        <Header.Filters />
         <button type="button">Compose</button>
       </Header.Mailbox>,
     )
@@ -58,21 +55,7 @@ describe('Header mailbox toolbar', () => {
     expect(search).not.toHaveClass('focus-visible:ring-[3px]')
     expect(search).not.toHaveClass('focus-visible:ring-ring/50')
     expect(search).not.toHaveClass('focus-visible:border-ring')
-    expect(toolbar).toContainElement(screen.getByRole('button', { name: 'Filters' }))
     expect(toolbar).toContainElement(screen.getByRole('button', { name: 'Compose' }))
-  })
-
-  it('shows the unavailable warning when filters are activated by keyboard', async () => {
-    const warning = vi.spyOn(toast, 'warning').mockReturnValue('feature-unavailable')
-    const user = userEvent.setup()
-    render(<Header.Filters />)
-    await user.tab()
-    await user.keyboard('{Enter}')
-    expect(warning).toHaveBeenCalledWith(
-      'This feature is under development and is not available yet.',
-      { id: 'feature-unavailable' },
-    )
-    warning.mockRestore()
   })
 
   it('shows Clear search only for a nonempty controlled value with a change callback', () => {

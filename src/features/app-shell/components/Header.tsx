@@ -1,9 +1,7 @@
 import { Button, Input, SidebarTrigger } from '@mailflow/ui/components'
-import { Filter, Search, X } from '@mailflow/ui/icons'
+import { Search, X } from '@mailflow/ui/icons'
 import { useRouterState } from '@tanstack/react-router'
 import { useRef } from 'react'
-
-import { showFeatureUnavailable } from '#/lib/showFeatureUnavailable'
 
 import { mailboxSearchScope } from '../navigation'
 import type {
@@ -80,24 +78,8 @@ function MailboxSearch({ value, onChange }: AppShellHeaderSearchProps) {
   )
 }
 
-function MailboxFilters() {
-  return (
-    <Button
-      aria-label="Filters"
-      className="h-8 w-8 shrink-0"
-      onClick={showFeatureUnavailable}
-      size="icon"
-      type="button"
-      variant="ghost"
-    >
-      <Filter aria-hidden="true" className="size-3.5" />
-    </Button>
-  )
-}
-
 export const Header = Object.assign(HeaderRoot, {
   Actions,
   Mailbox,
   Search: MailboxSearch,
-  Filters: MailboxFilters,
 })

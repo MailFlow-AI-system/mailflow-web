@@ -45,6 +45,16 @@ describe('Sent response scope', () => {
     expect(fetcher.mock.calls[1]?.[0]).toBe('/api/mail/sent?offset=0')
   })
 
+  it('sends a non-default order after the search and omits newest', async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => response({ items: [], nextOffset: null }))
+    vi.stubGlobal('fetch', fetcher)
+    const signal = new AbortController().signal
+    await fetchSentEmails('owner', workspace.id, 20, signal, 'invoice', 'subject-asc')
+    expect(fetcher.mock.calls[0]?.[0]).toBe('/api/mail/sent?offset=20&q=invoice&sort=subject-asc')
+    await fetchSentEmails('owner', workspace.id, 0, signal, '', 'newest')
+    expect(fetcher.mock.calls[1]?.[0]).toBe('/api/mail/sent?offset=0')
+  })
+
   it.each(['', 'workspace-b'])(
     'rejects an unexpected workspace header %j before parsing body',
     async (actual) => {

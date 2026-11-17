@@ -230,4 +230,50 @@ describe('useMailMessages', () => {
     )
     expect(nextPageAttempts).toBe(3)
   })
+
+  it('starts a fresh first page in the chosen order without mixing cursors', async () => {
+    client.fetchMailMessages.mockImplementation(
+      async ({ sort, cursor }: { sort?: string; cursor?: string | null }) =>
+        sort === 'subject-asc'
+          ? makePage([`by-subject${cursor ? `-${cursor}` : ''}`], null)
+          : makePage(['by-date'], cursor ? null : 'date-cursor'),
+    )
+    const { Wrapper } = createWrapper()
+    const { result, rerender } = renderHook(
+      ({ sort }) => useMailMessages('user-1', 'acme', '', 'inbox', { sort }),
+      { wrapper: Wrapper, initialProps: { sort: 'newest' as 'newest' | 'subject-asc' } },
+    )
+    await waitFor(() => expect(result.current.messages.map(({ id }) => id)).toEqual(['by-date']))
+
+    rerender({ sort: 'subject-asc' })
+
+    expect(result.current.messages).toEqual([])
+    await waitFor(() => expect(result.current.messages.map(({ id }) => id)).toEqual(['by-subject']))
+    expect(client.fetchMailMessages).toHaveBeenCalledWith(
+      expect.objectContaining({ sort: 'subject-asc', cursor: null }),
+    )
+    expect(client.fetchMailMessages).not.toHaveBeenCalledWith(
+      expect.objectContaining({ sort: 'subject-asc', cursor: 'date-cursor' }),
+    )
+  })
+
+  it('waits without fetching while the order is not known yet', async () => {
+    client.fetchMailMessages.mockResolvedValue(makePage(['first'], null))
+    const { Wrapper } = createWrapper()
+    const { result, rerender } = renderHook(
+      ({ enabled }) => useMailMessages('user-1', 'acme', '', 'inbox', { sort: 'oldest', enabled }),
+      { wrapper: Wrapper, initialProps: { enabled: false } },
+    )
+    await act(async () => {})
+    expect(result.current.isPending).toBe(true)
+    expect(client.fetchMailMessages).not.toHaveBeenCalled()
+
+    rerender({ enabled: true })
+
+    await waitFor(() => expect(result.current.messages.map(({ id }) => id)).toEqual(['first']))
+    expect(client.fetchMailMessages).toHaveBeenCalledTimes(1)
+    expect(client.fetchMailMessages).toHaveBeenCalledWith(
+      expect.objectContaining({ sort: 'oldest' }),
+    )
+  })
 })

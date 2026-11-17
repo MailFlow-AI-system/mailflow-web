@@ -1,3 +1,5 @@
+import { outgoingListSearch } from '#/features/mail-list/clients/sentEmailsClient'
+import type { MailSortValue } from '#/features/mail-sort/mailSort'
 import { readWorkspaceResponse } from '#/features/workspaces/clients/workspaceAuthority'
 import { draftPageSchema } from '../email-composer/clients/drafts'
 
@@ -7,11 +9,11 @@ export async function fetchDraftPage(
   offset: number,
   signal: AbortSignal,
   search = '',
+  sort: MailSortValue = 'newest',
 ) {
-  const q = search.trim()
   return draftPageSchema.parse(
     await readWorkspaceResponse(
-      `/api/mail/drafts?offset=${offset}${q ? `&q=${encodeURIComponent(q)}` : ''}`,
+      `/api/mail/drafts?${outgoingListSearch(offset, search, sort)}`,
       userId,
       signal,
       { headers: { 'X-Workspace-Id': workspaceId } },
