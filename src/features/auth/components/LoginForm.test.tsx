@@ -24,6 +24,7 @@ vi.mock('../clients/authClient', () => ({
 vi.mock('../../../observability/faro', () => ({ recordAuthTransportFailure }))
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a href="/forgot-password">{children}</a>,
+  useHydrated: () => true,
   useNavigate: () => navigate,
   useRouter: () => ({ invalidate }),
 }))
