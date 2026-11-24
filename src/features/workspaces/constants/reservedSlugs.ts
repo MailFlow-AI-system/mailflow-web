@@ -1,0 +1,28 @@
+// Mirrors Core's RESERVED_WORKSPACE_SLUGS: hosts that share the workspace namespace but never
+// serve a workspace (landing, API and retired entry hosts of every environment).
+export const RESERVED_WORKSPACE_SLUGS = new Set([
+  'www',
+  'api',
+  'app',
+  'app-dev',
+  'app-staging',
+  'api-dev',
+  'api-staging',
+  'site-dev',
+  'site-staging',
+  'auth',
+  'admin',
+  'mail',
+  'web',
+  'site',
+  'development',
+  'dev',
+  'staging',
+  'stage',
+  'production',
+  'prod',
+  'localhost',
+  'support',
+  'status',
+  'assets',
+])

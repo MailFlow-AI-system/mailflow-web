@@ -29,6 +29,14 @@ export async function login(page: Page, url: string, email?: string) {
   await password.fill(data.password)
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
 }
+// Sessions are host-only: each workspace host needs its own sign-in (or a handoff).
+export async function signIn(page: Page, host: string, path = '/inbox') {
+  await login(page, `http://${host}:3003/login`)
+  await expect(page.getByRole('button', { name: 'Compose', exact: true })).toBeEnabled({
+    timeout: 15000,
+  })
+  if (path !== '/inbox') await page.goto(`http://${host}:3003${path}`)
+}
 export async function logout(page: Page) {
   await expect(page.getByRole('button', { name: 'Compose', exact: true })).toBeEnabled()
   await page.getByRole('button', { name: /^Open menu for / }).click()

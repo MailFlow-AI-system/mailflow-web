@@ -20,8 +20,9 @@ export function localDevelopmentEnvironment(
   return {
     ...environment,
     VITE_API_BASE_URL: localApi ? environment.VITE_API_BASE_URL : 'http://localhost:8080',
+    // Workspaces run on http://{slug}.localhost:3000 with host-only sessions.
     VITE_WORKSPACE_BASE_HOST: 'localhost',
-    VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED: 'true',
-    VITE_WORKSPACE_SWITCHING_ENABLED: 'false',
+    VITE_WORKSPACE_SWITCHING_ENABLED: 'true',
+    VITE_SITE_URL: 'http://localhost:4321',
   }
 }

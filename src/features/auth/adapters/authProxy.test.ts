@@ -178,11 +178,16 @@ describe('createAuthProxyHandler', () => {
       new Request(webUrl('/api/auth/reset-password/reset-token'), { method: 'GET' }),
     )
     const unsupportedMethod = await proxy(new Request(webUrl('/api/auth/sign-in/email')))
+    // Codes are exchanged only by the /auth/handoff server route, never from browser script.
+    const exchange = await proxy(
+      new Request(webUrl('/api/auth/workspace-handoff/exchange'), { method: 'POST', body: '{}' }),
+    )
 
     expect(signup.status).toBe(404)
     expect(unknownPath.status).toBe(404)
     expect(unsupportedResetRoute.status).toBe(404)
     expect(unsupportedMethod.status).toBe(404)
+    expect(exchange.status).toBe(404)
     expect(fetcher).not.toHaveBeenCalled()
   })
 
@@ -191,6 +196,7 @@ describe('createAuthProxyHandler', () => {
     ['POST', '/api/auth/sign-out'],
     ['POST', '/api/auth/request-password-reset'],
     ['POST', '/api/auth/reset-password'],
+    ['POST', '/api/auth/workspace-handoff/issue'],
   ])('proxies the supported %s %s operation', async (method, path) => {
     let forwardedInput: RequestInfo | URL | undefined
     const fetcher = vi.fn(async (input: RequestInfo | URL) => {

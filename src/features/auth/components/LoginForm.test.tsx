@@ -1,9 +1,10 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { signIn, invalidate, navigate, recordAuthTransportFailure, clear, cancelQueries } =
+const { signIn, signOut, invalidate, navigate, recordAuthTransportFailure, clear, cancelQueries } =
   vi.hoisted(() => ({
     signIn: vi.fn(),
+    signOut: vi.fn(async () => ({ data: { success: true } })),
     invalidate: vi.fn(async () => {}),
     navigate: vi.fn(async () => {}),
     recordAuthTransportFailure: vi.fn(),
@@ -17,7 +18,9 @@ const environment = vi.hoisted(() => ({
 }))
 vi.mock('#/config/env', () => ({ clientEnvironment: environment }))
 
-vi.mock('../clients/authClient', () => ({ authClient: { signIn: { email: signIn } } }))
+vi.mock('../clients/authClient', () => ({
+  authClient: { signIn: { email: signIn }, signOut },
+}))
 vi.mock('../../../observability/faro', () => ({ recordAuthTransportFailure }))
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a href="/forgot-password">{children}</a>,
@@ -34,6 +37,7 @@ describe('LoginForm', () => {
     environment.VITE_WORKSPACE_BASE_HOST = undefined
     vi.unstubAllGlobals()
     signIn.mockReset()
+    signOut.mockClear()
     invalidate.mockReset()
     invalidate.mockImplementation(async () => {})
     navigate.mockReset()
@@ -122,9 +126,12 @@ describe('LoginForm', () => {
     await waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: '/sent' }))
     expect(clear.mock.invocationCallOrder[0]).toBeLessThan(invalidate.mock.invocationCallOrder[0])
   })
-  it('uses a single full-document navigation for workspace login without competing route invalidation', async () => {
+  it('opens the inbox on the same workspace host after verifying membership', async () => {
     environment.workspaceSwitchingEnabled = true
+    environment.VITE_WORKSPACE_BASE_HOST = 'localhost'
     signIn.mockResolvedValue({ data: { user: { id: 'next-identity' } } })
+    const access = vi.fn(async () => Response.json({ workspace: { id: 'a' } }))
+    vi.stubGlobal('fetch', access)
     render(<LoginForm returnTo="/sent" />)
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'other@example.test' } })
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } })
@@ -136,63 +143,57 @@ describe('LoginForm', () => {
         reloadDocument: true,
       }),
     )
+    expect(access).toHaveBeenCalledWith(
+      '/api/workspace-context',
+      expect.objectContaining({ credentials: 'same-origin', cache: 'no-store' }),
+    )
     expect(invalidate).not.toHaveBeenCalled()
+    expect(signOut).not.toHaveBeenCalled()
     expect(clear.mock.invocationCallOrder[0]).toBeLessThan(navigate.mock.invocationCallOrder[0])
   })
 
-  it('opens the server-selected workspace after signing in on the generic host', async () => {
-    environment.workspaceSwitchingEnabled = true
-    environment.VITE_WORKSPACE_BASE_HOST = 'localhost'
-    signIn.mockResolvedValue({ data: { user: { id: 'next-identity' } } })
-    const entry = vi.fn(async () =>
-      Response.json({
-        source: 'preference',
-        workspace: { id: 'id', name: 'Acme', slug: 'acme', role: 'owner' },
-      }),
-    )
-    vi.stubGlobal('fetch', entry)
-    render(<LoginForm returnTo="/sent" />)
-    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'other@example.test' } })
-    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
-    await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith({
-        href: 'http://acme.localhost:3000/sent#',
-        replace: true,
-        reloadDocument: true,
-      }),
-    )
-    expect(entry).toHaveBeenCalledWith(
-      '/api/v1/workspace-entry',
-      expect.objectContaining({ credentials: 'same-origin' }),
-    )
-  })
-
-  it.each([
-    { source: 'none', workspace: null },
-    {
-      source: 'preference',
-      workspace: { id: 'id', name: 'Bad', slug: 'evil.test/path', role: 'owner' },
+  it.each([403, 404])(
+    'signs out and explains a missing membership on this workspace host (%s)',
+    async (status) => {
+      environment.workspaceSwitchingEnabled = true
+      environment.VITE_WORKSPACE_BASE_HOST = 'localhost'
+      signIn.mockResolvedValue({ data: { user: { id: 'outsider' } } })
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => Response.json({ code: 'workspace_unavailable' }, { status })),
+      )
+      render(<LoginForm />)
+      fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'other@example.test' } })
+      fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'This account does not have access to this workspace.',
+      )
+      expect(signOut).toHaveBeenCalledOnce()
+      expect(navigate).not.toHaveBeenCalled()
     },
-  ])('falls back to the authenticated route for empty or invalid workspace entry', async (body) => {
+  )
+
+  it('leaves operational membership failures to the authenticated route', async () => {
     environment.workspaceSwitchingEnabled = true
     environment.VITE_WORKSPACE_BASE_HOST = 'localhost'
-    signIn.mockResolvedValue({ data: { user: { id: 'next-identity' } } })
+    signIn.mockResolvedValue({ data: { user: { id: 'member' } } })
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => Response.json(body)),
+      vi.fn(async () => new Response(null, { status: 503 })),
     )
-    render(<LoginForm returnTo="/sent" />)
-    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'other@example.test' } })
+    render(<LoginForm />)
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'ada@example.test' } })
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } })
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
     await waitFor(() =>
       expect(navigate).toHaveBeenCalledWith({
-        href: '/sent#',
+        href: '/inbox#',
         replace: true,
         reloadDocument: true,
       }),
     )
+    expect(signOut).not.toHaveBeenCalled()
   })
 
   it('reports an auth transport failure without recording credentials or errors', async () => {

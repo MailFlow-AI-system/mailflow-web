@@ -40,7 +40,8 @@ export default defineConfig({
       env: {
         VITE_API_BASE_URL: 'http://127.0.0.1:8083',
         VITE_WORKSPACE_BASE_HOST: 'workspace.test',
-        VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED: 'true',
+        VITE_WORKSPACE_SWITCHING_ENABLED: 'true',
+        VITE_SITE_URL: 'http://localhost:4321',
         VITE_FARO_COLLECTOR_URL: 'http://127.0.0.1:14319/collect',
         VITE_FARO_APP_NAME: 'mailflow-web',
         VITE_FARO_APP_ENVIRONMENT: 'workspace-local',

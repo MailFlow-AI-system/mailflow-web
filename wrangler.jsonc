@@ -16,47 +16,42 @@
     }
   },
   "workers_dev": true,
+  // Workspace hosting: see infrastructure/workspaceDomains.md. Workers Routes win over Custom
+  // Domains on the same hostname and the most specific route wins, so every non-production
+  // host that the production wildcard would also match gets an explicit, more specific route.
   "env": {
     "development": {
       "name": "mailflow-web-development",
       "workers_dev": true,
       "routes": [
-        {
-          "pattern": "app-dev.mailflow-ai.online",
-          "custom_domain": true
-        },
-        {
-          "pattern": "*.app-dev.mailflow-ai.online/*",
-          "zone_name": "mailflow-ai.online"
-        }
+        { "pattern": "dev.mailflow-ai.online", "custom_domain": true },
+        { "pattern": "dev.mailflow-ai.online/*", "zone_name": "mailflow-ai.online" },
+        { "pattern": "*.dev.mailflow-ai.online/*", "zone_name": "mailflow-ai.online" },
+        // Retired entry host: kept only to redirect to the development landing.
+        { "pattern": "app-dev.mailflow-ai.online", "custom_domain": true },
+        { "pattern": "app-dev.mailflow-ai.online/*", "zone_name": "mailflow-ai.online" }
       ]
     },
     "staging": {
       "name": "mailflow-web-staging",
       "workers_dev": true,
       "routes": [
-        {
-          "pattern": "app-staging.mailflow-ai.online",
-          "custom_domain": true
-        },
-        {
-          "pattern": "*.app-staging.mailflow-ai.online/*",
-          "zone_name": "mailflow-ai.online"
-        }
+        { "pattern": "staging.mailflow-ai.online", "custom_domain": true },
+        { "pattern": "staging.mailflow-ai.online/*", "zone_name": "mailflow-ai.online" },
+        { "pattern": "*.staging.mailflow-ai.online/*", "zone_name": "mailflow-ai.online" },
+        // Retired entry host: kept only to redirect to the staging landing.
+        { "pattern": "app-staging.mailflow-ai.online", "custom_domain": true },
+        { "pattern": "app-staging.mailflow-ai.online/*", "zone_name": "mailflow-ai.online" }
       ]
     },
     "production": {
       "name": "mailflow-web",
       "workers_dev": true,
       "routes": [
-        {
-          "pattern": "app.mailflow-ai.online",
-          "custom_domain": true
-        },
-        {
-          "pattern": "*.app.mailflow-ai.online/*",
-          "zone_name": "mailflow-ai.online"
-        }
+        // Retired entry host: kept only to redirect to the landing.
+        { "pattern": "app.mailflow-ai.online", "custom_domain": true },
+        // Matches every subdomain, at any depth, unless a more specific route exists.
+        { "pattern": "*.mailflow-ai.online/*", "zone_name": "mailflow-ai.online" }
       ]
     }
   }

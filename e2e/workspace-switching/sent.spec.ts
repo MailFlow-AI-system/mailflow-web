@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { control, fixture, login } from './fixture'
+import { control, fixture, login, signIn } from './fixture'
 
 test.setTimeout(60000)
 test.beforeEach(async () => {
@@ -40,7 +40,7 @@ test('isolates sent messages and pagination across workspace tabs and refresh', 
   expect(pages.next.items).toHaveLength(1)
   expect(JSON.stringify(pages)).not.toContain('Northwind sent message')
   const second = await context.newPage()
-  await second.goto(`http://${data.targetHost}:3003/sent`)
+  await signIn(second, data.targetHost, '/sent')
   await expect(
     second
       .getByRole('region', { name: 'Sent message list', exact: true })
@@ -117,7 +117,7 @@ test('refreshes the current workspace Sent list after a controlled real Core sen
       .getByRole('region', { name: 'Sent message list', exact: true })
       .getByText('Acme newly sent message', { exact: true }),
   ).toBeVisible()
-  await page.goto(`http://${data.targetHost}:3003/sent`)
+  await signIn(page, data.targetHost, '/sent')
   await expect(
     page
       .getByRole('region', { name: 'Sent message list', exact: true })
@@ -174,7 +174,7 @@ test('uploads verified attachments and an inline image on localhost and sends on
   )
   expect(message.attachments).toHaveLength(2)
   const foreign = await context.newPage()
-  await foreign.goto(`http://${data.targetHost}:3003/inbox`)
+  await signIn(foreign, data.targetHost)
   const status = await foreign.evaluate(
     async (id: string) => (await fetch(`/api/mail/attachments/${id}`)).status,
     message.attachments[0].id,

@@ -17,6 +17,7 @@ import { Route as PublicForgotPasswordRouteImport } from './routes/_public/forgo
 import { Route as PublicLoginRouteImport } from './routes/_public/login'
 import { Route as PublicResetPasswordRouteImport } from './routes/_public/reset-password'
 import { Route as ApiWorkspaceContextRouteImport } from './routes/api/workspace-context'
+import { Route as AuthHandoffRouteImport } from './routes/auth/handoff'
 import { Route as AuthenticatedMailArchiveRouteImport } from './routes/_authenticated/_mail/archive'
 import { Route as AuthenticatedMailDraftsRouteImport } from './routes/_authenticated/_mail/drafts'
 import { Route as AuthenticatedMailInboxRouteImport } from './routes/_authenticated/_mail/inbox'
@@ -33,8 +34,6 @@ import { Route as ApiMailMessagesRouteImport } from './routes/api/mail/messages'
 import { Route as ApiMailSendRouteImport } from './routes/api/mail/send'
 import { Route as ApiMailSentRouteImport } from './routes/api/mail/sent'
 import { Route as ApiMailUnreadCountsRouteImport } from './routes/api/mail/unread-counts'
-import { Route as ApiV1WorkspaceEntryRouteImport } from './routes/api/v1/workspace-entry'
-import { Route as ApiV1WorkspaceSelectionRouteImport } from './routes/api/v1/workspace-selection'
 import { Route as ApiV1WorkspacesRouteImport } from './routes/api/v1/workspaces'
 import { Route as ApiMailAttachmentsIdRouteImport } from './routes/api/mail/attachments.$id'
 import { Route as ApiMailDraftsIdRouteImport } from './routes/api/mail/drafts.$id'
@@ -82,6 +81,11 @@ const PublicResetPasswordRoute = PublicResetPasswordRouteImport.update({
 const ApiWorkspaceContextRoute = ApiWorkspaceContextRouteImport.update({
   id: '/api/workspace-context',
   path: '/api/workspace-context',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthHandoffRoute = AuthHandoffRouteImport.update({
+  id: '/auth/handoff',
+  path: '/auth/handoff',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedMailArchiveRoute =
@@ -166,16 +170,6 @@ const ApiMailUnreadCountsRoute = ApiMailUnreadCountsRouteImport.update({
   path: '/api/mail/unread-counts',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1WorkspaceEntryRoute = ApiV1WorkspaceEntryRouteImport.update({
-  id: '/api/v1/workspace-entry',
-  path: '/api/v1/workspace-entry',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1WorkspaceSelectionRoute = ApiV1WorkspaceSelectionRouteImport.update({
-  id: '/api/v1/workspace-selection',
-  path: '/api/v1/workspace-selection',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiV1WorkspacesRoute = ApiV1WorkspacesRouteImport.update({
   id: '/api/v1/workspaces',
   path: '/api/v1/workspaces',
@@ -241,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof PublicLoginRoute
   '/reset-password': typeof PublicResetPasswordRoute
   '/api/workspace-context': typeof ApiWorkspaceContextRoute
+  '/auth/handoff': typeof AuthHandoffRoute
   '/archive': typeof AuthenticatedMailArchiveRoute
   '/drafts': typeof AuthenticatedMailDraftsRoute
   '/inbox': typeof AuthenticatedMailInboxRoute
@@ -257,8 +252,6 @@ export interface FileRoutesByFullPath {
   '/api/mail/send': typeof ApiMailSendRoute
   '/api/mail/sent': typeof ApiMailSentRouteWithChildren
   '/api/mail/unread-counts': typeof ApiMailUnreadCountsRoute
-  '/api/v1/workspace-entry': typeof ApiV1WorkspaceEntryRoute
-  '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
   '/api/mail/attachments/$id': typeof ApiMailAttachmentsIdRouteWithChildren
   '/api/mail/drafts/$id': typeof ApiMailDraftsIdRoute
@@ -277,6 +270,7 @@ export interface FileRoutesByTo {
   '/login': typeof PublicLoginRoute
   '/reset-password': typeof PublicResetPasswordRoute
   '/api/workspace-context': typeof ApiWorkspaceContextRoute
+  '/auth/handoff': typeof AuthHandoffRoute
   '/archive': typeof AuthenticatedMailArchiveRoute
   '/drafts': typeof AuthenticatedMailDraftsRoute
   '/inbox': typeof AuthenticatedMailInboxRoute
@@ -293,8 +287,6 @@ export interface FileRoutesByTo {
   '/api/mail/send': typeof ApiMailSendRoute
   '/api/mail/sent': typeof ApiMailSentRouteWithChildren
   '/api/mail/unread-counts': typeof ApiMailUnreadCountsRoute
-  '/api/v1/workspace-entry': typeof ApiV1WorkspaceEntryRoute
-  '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
   '/api/mail/attachments/$id': typeof ApiMailAttachmentsIdRouteWithChildren
   '/api/mail/drafts/$id': typeof ApiMailDraftsIdRoute
@@ -316,6 +308,7 @@ export interface FileRoutesById {
   '/_public/login': typeof PublicLoginRoute
   '/_public/reset-password': typeof PublicResetPasswordRoute
   '/api/workspace-context': typeof ApiWorkspaceContextRoute
+  '/auth/handoff': typeof AuthHandoffRoute
   '/_public/': typeof PublicIndexRoute
   '/_authenticated/_mail/archive': typeof AuthenticatedMailArchiveRoute
   '/_authenticated/_mail/drafts': typeof AuthenticatedMailDraftsRoute
@@ -333,8 +326,6 @@ export interface FileRoutesById {
   '/api/mail/send': typeof ApiMailSendRoute
   '/api/mail/sent': typeof ApiMailSentRouteWithChildren
   '/api/mail/unread-counts': typeof ApiMailUnreadCountsRoute
-  '/api/v1/workspace-entry': typeof ApiV1WorkspaceEntryRoute
-  '/api/v1/workspace-selection': typeof ApiV1WorkspaceSelectionRoute
   '/api/v1/workspaces': typeof ApiV1WorkspacesRoute
   '/api/mail/attachments/$id': typeof ApiMailAttachmentsIdRouteWithChildren
   '/api/mail/drafts/$id': typeof ApiMailDraftsIdRoute
@@ -355,6 +346,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/api/workspace-context'
+    | '/auth/handoff'
     | '/archive'
     | '/drafts'
     | '/inbox'
@@ -371,8 +363,6 @@ export interface FileRouteTypes {
     | '/api/mail/send'
     | '/api/mail/sent'
     | '/api/mail/unread-counts'
-    | '/api/v1/workspace-entry'
-    | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
     | '/api/mail/attachments/$id'
     | '/api/mail/drafts/$id'
@@ -391,6 +381,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/api/workspace-context'
+    | '/auth/handoff'
     | '/archive'
     | '/drafts'
     | '/inbox'
@@ -407,8 +398,6 @@ export interface FileRouteTypes {
     | '/api/mail/send'
     | '/api/mail/sent'
     | '/api/mail/unread-counts'
-    | '/api/v1/workspace-entry'
-    | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
     | '/api/mail/attachments/$id'
     | '/api/mail/drafts/$id'
@@ -429,6 +418,7 @@ export interface FileRouteTypes {
     | '/_public/login'
     | '/_public/reset-password'
     | '/api/workspace-context'
+    | '/auth/handoff'
     | '/_public/'
     | '/_authenticated/_mail/archive'
     | '/_authenticated/_mail/drafts'
@@ -446,8 +436,6 @@ export interface FileRouteTypes {
     | '/api/mail/send'
     | '/api/mail/sent'
     | '/api/mail/unread-counts'
-    | '/api/v1/workspace-entry'
-    | '/api/v1/workspace-selection'
     | '/api/v1/workspaces'
     | '/api/mail/attachments/$id'
     | '/api/mail/drafts/$id'
@@ -465,6 +453,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   PublicRouteRoute: typeof PublicRouteRouteWithChildren
   ApiWorkspaceContextRoute: typeof ApiWorkspaceContextRoute
+  AuthHandoffRoute: typeof AuthHandoffRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiMailAttachmentsRoute: typeof ApiMailAttachmentsRouteWithChildren
   ApiMailContextRoute: typeof ApiMailContextRoute
@@ -474,8 +463,6 @@ export interface RootRouteChildren {
   ApiMailSendRoute: typeof ApiMailSendRoute
   ApiMailSentRoute: typeof ApiMailSentRouteWithChildren
   ApiMailUnreadCountsRoute: typeof ApiMailUnreadCountsRoute
-  ApiV1WorkspaceEntryRoute: typeof ApiV1WorkspaceEntryRoute
-  ApiV1WorkspaceSelectionRoute: typeof ApiV1WorkspaceSelectionRoute
   ApiV1WorkspacesRoute: typeof ApiV1WorkspacesRoute
   ApiMailLabelsSplatRoute: typeof ApiMailLabelsSplatRoute
 }
@@ -536,6 +523,13 @@ declare module '@tanstack/react-router' {
       path: '/api/workspace-context'
       fullPath: '/api/workspace-context'
       preLoaderRoute: typeof ApiWorkspaceContextRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/handoff': {
+      id: '/auth/handoff'
+      path: '/auth/handoff'
+      fullPath: '/auth/handoff'
+      preLoaderRoute: typeof AuthHandoffRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/_mail/archive': {
@@ -648,20 +642,6 @@ declare module '@tanstack/react-router' {
       path: '/api/mail/unread-counts'
       fullPath: '/api/mail/unread-counts'
       preLoaderRoute: typeof ApiMailUnreadCountsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/workspace-entry': {
-      id: '/api/v1/workspace-entry'
-      path: '/api/v1/workspace-entry'
-      fullPath: '/api/v1/workspace-entry'
-      preLoaderRoute: typeof ApiV1WorkspaceEntryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/workspace-selection': {
-      id: '/api/v1/workspace-selection'
-      path: '/api/v1/workspace-selection'
-      fullPath: '/api/v1/workspace-selection'
-      preLoaderRoute: typeof ApiV1WorkspaceSelectionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/workspaces': {
@@ -869,6 +849,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   PublicRouteRoute: PublicRouteRouteWithChildren,
   ApiWorkspaceContextRoute: ApiWorkspaceContextRoute,
+  AuthHandoffRoute: AuthHandoffRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiMailAttachmentsRoute: ApiMailAttachmentsRouteWithChildren,
   ApiMailContextRoute: ApiMailContextRoute,
@@ -878,8 +859,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMailSendRoute: ApiMailSendRoute,
   ApiMailSentRoute: ApiMailSentRouteWithChildren,
   ApiMailUnreadCountsRoute: ApiMailUnreadCountsRoute,
-  ApiV1WorkspaceEntryRoute: ApiV1WorkspaceEntryRoute,
-  ApiV1WorkspaceSelectionRoute: ApiV1WorkspaceSelectionRoute,
   ApiV1WorkspacesRoute: ApiV1WorkspacesRoute,
   ApiMailLabelsSplatRoute: ApiMailLabelsSplatRoute,
 }
@@ -888,10 +867,11 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }
