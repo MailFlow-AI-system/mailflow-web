@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@mailflow/ui/components'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { Link, useHydrated, useNavigate } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { resetPasswordSchema } from '../schemas/passwordRecoverySchema'
 import type { PasswordRecoveryClient } from '../types/PasswordRecoveryClient'
@@ -57,6 +57,9 @@ export function ResetPasswordForm({
     }
   })
 
+  // Until React hydrates, a native submission would send the fields as a GET query string.
+  const hydrated = useHydrated()
+
   if (!token) {
     return (
       <div className="mt-6 grid gap-4">
@@ -74,7 +77,7 @@ export function ResetPasswordForm({
   }
 
   return (
-    <form className="mt-6 grid gap-5" onSubmit={submit} noValidate>
+    <form className="mt-6 grid gap-5" method="post" onSubmit={submit} noValidate>
       <div className="grid gap-2">
         <label className="font-semibold" htmlFor="new-password">
           New password
@@ -120,7 +123,7 @@ export function ResetPasswordForm({
           {errors.root.server.message}
         </p>
       ) : null}
-      <Button type="submit" disabled={isSubmitting}>
+      <Button type="submit" disabled={!hydrated || isSubmitting}>
         {isSubmitting ? 'Saving…' : 'Reset password'}
       </Button>
       <Link
