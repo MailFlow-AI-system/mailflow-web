@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button, Input } from '@mailflow/ui/components'
 import { useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate, useRouter } from '@tanstack/react-router'
+import { Link, useHydrated, useNavigate, useRouter } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { clientEnvironment } from '#/config/env'
 
@@ -95,8 +95,10 @@ export function LoginForm({ returnTo }: LoginFormProps = {}) {
     }
   })
 
+  // Until React hydrates, a native submission would send the fields as a GET query string.
+  const hydrated = useHydrated()
   return (
-    <form className="mt-6 grid gap-5" onSubmit={submit} noValidate>
+    <form className="mt-6 grid gap-5" method="post" onSubmit={submit} noValidate>
       <div className="grid gap-2">
         <label className="font-semibold" htmlFor="login-email">
           Email
@@ -137,7 +139,7 @@ export function LoginForm({ returnTo }: LoginFormProps = {}) {
           {errors.root.server.message}
         </p>
       ) : null}
-      <Button type="submit" disabled={isSubmitting}>
+      <Button type="submit" disabled={!hydrated || isSubmitting}>
         {isSubmitting ? 'Signing in…' : 'Sign in'}
       </Button>
       <Link

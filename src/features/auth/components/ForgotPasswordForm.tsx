@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button, Input } from '@mailflow/ui/components'
+import { useHydrated } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { usePasswordRecoveryCooldown } from '../hooks/usePasswordRecoveryCooldown'
 import { RECOVERY_COOLDOWN_SECONDS } from '../passwordRecoveryConstants'
@@ -72,8 +73,10 @@ export function ForgotPasswordForm({
     }
   })
 
+  // Until React hydrates, a native submission would send the fields as a GET query string.
+  const hydrated = useHydrated()
   return (
-    <form className="mt-6 grid gap-5" onSubmit={submit} noValidate>
+    <form className="mt-6 grid gap-5" method="post" onSubmit={submit} noValidate>
       <div className="grid gap-2">
         <label className="font-semibold" htmlFor="recovery-email">
           Email
@@ -108,7 +111,7 @@ export function ForgotPasswordForm({
           {errors.root.server.message}
         </p>
       ) : null}
-      <Button type="submit" disabled={isSubmitting || cooldownSeconds > 0}>
+      <Button type="submit" disabled={!hydrated || isSubmitting || cooldownSeconds > 0}>
         {isSubmitting
           ? 'Sending…'
           : cooldownSeconds > 0
