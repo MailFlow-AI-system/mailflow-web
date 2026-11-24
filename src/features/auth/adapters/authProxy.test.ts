@@ -211,3 +211,50 @@ describe('createAuthProxyHandler', () => {
     expect(String(forwardedInput)).toBe(new URL(path, apiBaseUrl).toString())
   })
 })
+
+describe('createAuthProxyHandler client IP forwarding', () => {
+  const secret = 'worker-proxy-secret-0123456789abcdef'
+  const signIn = (headers: Record<string, string>) =>
+    new Request(webUrl('/api/auth/sign-in/email'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Origin: testOrigin, ...headers },
+      body: '{}',
+    })
+
+  it('forwards the Cloudflare client IP with the proxy secret and drops forged values', async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => Response.json({}))
+    await createAuthProxyHandler(
+      apiBaseUrl,
+      fetcher,
+      () => secret,
+    )(
+      signIn({
+        'CF-Connecting-IP': '203.0.113.27',
+        'X-Real-IP': '198.51.100.66',
+        'X-MailFlow-Client-IP': '192.0.2.1',
+        'X-MailFlow-Proxy-Secret': 'guess',
+      }),
+    )
+    const headers = new Headers(fetcher.mock.calls[0]?.[1]?.headers)
+    expect(headers.get('x-mailflow-client-ip')).toBe('203.0.113.27')
+    expect(headers.get('x-mailflow-proxy-secret')).toBe(secret)
+    expect(headers.get('x-real-ip')).toBeNull()
+  })
+
+  it('sends no proxy headers without a configured secret', async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => Response.json({}))
+    await createAuthProxyHandler(
+      apiBaseUrl,
+      fetcher,
+    )(
+      signIn({
+        'CF-Connecting-IP': '203.0.113.27',
+        'X-MailFlow-Client-IP': '192.0.2.1',
+        'X-MailFlow-Proxy-Secret': 'guess',
+      }),
+    )
+    const headers = new Headers(fetcher.mock.calls[0]?.[1]?.headers)
+    expect(headers.get('x-mailflow-client-ip')).toBeNull()
+    expect(headers.get('x-mailflow-proxy-secret')).toBeNull()
+  })
+})

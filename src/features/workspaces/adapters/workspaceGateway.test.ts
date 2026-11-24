@@ -98,3 +98,39 @@ describe('bounded workspace gateway', () => {
     ])
   })
 })
+
+describe('workspace transport client IP forwarding', () => {
+  const secret = 'worker-proxy-secret-0123456789abcdef'
+  const request = () =>
+    new Request('http://acme.workspace.test/api/workspace-context', {
+      headers: {
+        Cookie: 'better-auth.session_token=test-session',
+        'CF-Connecting-IP': '203.0.113.27',
+        'X-Real-IP': '198.51.100.66',
+        'X-MailFlow-Client-IP': '192.0.2.1',
+        'X-MailFlow-Proxy-Secret': 'guess',
+      },
+    })
+
+  it('sends the client IP and proxy secret through the shared transport', async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => Response.json({ workspace: { id: 'a' } }))
+    await createWorkspaceGateway(
+      'https://core.test',
+      'workspace.test',
+      fetcher,
+      () => secret,
+    )(request())
+    const headers = new Headers(fetcher.mock.calls[0]?.[1]?.headers)
+    expect(headers.get('x-mailflow-client-ip')).toBe('203.0.113.27')
+    expect(headers.get('x-mailflow-proxy-secret')).toBe(secret)
+    expect(headers.get('x-real-ip')).toBeNull()
+  })
+
+  it('sends no proxy headers without a secret', async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => Response.json({ workspace: { id: 'a' } }))
+    await createWorkspaceGateway('https://core.test', 'workspace.test', fetcher)(request())
+    const headers = new Headers(fetcher.mock.calls[0]?.[1]?.headers)
+    expect(headers.get('x-mailflow-client-ip')).toBeNull()
+    expect(headers.get('x-mailflow-proxy-secret')).toBeNull()
+  })
+})

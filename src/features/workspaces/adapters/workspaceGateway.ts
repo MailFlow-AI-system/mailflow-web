@@ -1,3 +1,4 @@
+import { noProxySecret, type ProxySecretReader } from '#/features/auth/adapters/clientIpForwarding'
 import { filterBetterAuthCookies } from '../../auth/adapters/authCookies'
 import { resolveWorkspaceHost } from '../utils/workspaceHost'
 import { isWorkspaceRequestOrigin } from '../utils/workspaceOrigin'
@@ -11,8 +12,9 @@ export function createWorkspaceGateway(
   apiBaseUrl: string,
   baseHost: string | undefined,
   fetcher: typeof fetch = fetch,
+  readProxySecret: ProxySecretReader = noProxySecret,
 ) {
-  const forward = createWorkspaceTransport(apiBaseUrl, fetcher)
+  const forward = createWorkspaceTransport(apiBaseUrl, fetcher, readProxySecret)
   return async (request: Request) => {
     if (request.method !== 'GET') return failure(405, 'method_not_allowed')
     if (!baseHost) return failure(503, 'workspace_not_configured')

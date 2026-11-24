@@ -29,6 +29,19 @@ Environment suffixes: `development`, `staging`, `production`.
 
 [Local workspace and browser QA](docs/localWorkspace.md)
 
+## Client IP forwarding
+
+Core rate limits authentication per client IP. Every server-side request from this Worker to Core
+sends the browser's `CF-Connecting-IP` as `X-MailFlow-Client-IP`, together with
+`X-MailFlow-Proxy-Secret`, so all users do not share the Cloudflare IP. Client-supplied copies of
+both headers are always dropped, and `x-real-ip` is never forwarded.
+
+`MAILFLOW_PROXY_SECRET` is a Worker secret (dashboard or `wrangler secret`), never a `VITE_*`
+value or a `wrangler.jsonc` var. It must have the same value in the Web Worker and the Core API
+(Railway) of each environment. Generate it with `openssl rand -base64 48`. Without it, the Worker
+sends neither header. Residual risk: a direct call to the Railway origin with a forged
+`CF-Connecting-IP` only bypasses per-IP rate limiting, not authentication.
+
 ## Message reader
 
 Inbox and Sent open persisted message details with the `message` search parameter while

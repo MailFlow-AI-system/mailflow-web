@@ -1,17 +1,23 @@
 import { authSessionSchema } from '../schemas/authSessionSchema'
 import type { AuthUser } from '../types/AuthUser'
 import { filterBetterAuthCookies } from './authCookies'
+import { clientIpHeaders, noProxySecret, type ProxySecretReader } from './clientIpForwarding'
 
 export async function readAuthSession(
   apiBaseUrl: string,
   cookie: string | undefined,
   fetcher: typeof fetch = fetch,
+  request?: Request,
+  readProxySecret: ProxySecretReader = noProxySecret,
 ): Promise<AuthUser | null> {
   const authCookies = filterBetterAuthCookies(cookie)
   if (!authCookies) return null
 
   const response = await fetcher(`${apiBaseUrl.replace(/\/$/, '')}/api/auth/get-session`, {
-    headers: { Cookie: authCookies },
+    headers: {
+      Cookie: authCookies,
+      ...(request ? clientIpHeaders(request, readProxySecret()) : {}),
+    },
     cache: 'no-store',
   })
 

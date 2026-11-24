@@ -1,7 +1,16 @@
 import { filterBetterAuthCookies } from '#/features/auth/adapters/authCookies'
+import {
+  noProxySecret,
+  type ProxySecretReader,
+  setClientIpHeaders,
+} from '#/features/auth/adapters/clientIpForwarding'
 import { explicitMailSort } from '#/features/mail-sort/mailSort'
 
-export function createOutgoingMailProxy(apiBaseUrl: string, fetcher: typeof fetch = fetch) {
+export function createOutgoingMailProxy(
+  apiBaseUrl: string,
+  fetcher: typeof fetch = fetch,
+  readProxySecret: ProxySecretReader = noProxySecret,
+) {
   return async (request: Request): Promise<Response> => {
     const incoming = new URL(request.url)
     const sending = request.method === 'POST' && incoming.pathname === '/api/mail/send'
@@ -120,6 +129,7 @@ export function createOutgoingMailProxy(apiBaseUrl: string, fetcher: typeof fetc
     }
     const cookies = filterBetterAuthCookies(request.headers.get('cookie'))
     if (cookies) headers.set('cookie', cookies)
+    setClientIpHeaders(request, headers, readProxySecret())
     try {
       const init: RequestInit & { duplex?: 'half' } = {
         method: request.method,
