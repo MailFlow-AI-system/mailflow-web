@@ -9,8 +9,12 @@ test('six authenticated pages cold-start together with workspace authority enabl
   const data = await fixture()
   const context = await browser.newContext()
   const loginPage = await context.newPage()
-  await login(loginPage, 'http://localhost:3003/login')
-  await expect(loginPage.getByRole('button', { name: 'Compose', exact: true })).toBeEnabled()
+  // Sessions are host-only: sign in on both workspace hosts before the parallel cold start.
+  // Splitting pages across hosts also stays under Chromium's per-host HTTP/1.1 connection cap.
+  for (const host of [data.host, data.targetHost]) {
+    await login(loginPage, `http://${host}:3003/login`)
+    await expect(loginPage.getByRole('button', { name: 'Compose', exact: true })).toBeEnabled()
+  }
   await loginPage.close()
   try {
     const pages = await Promise.all(Array.from({ length: 6 }, () => context.newPage()))
@@ -34,7 +38,6 @@ test('six authenticated pages cold-start together with workspace authority enabl
     )
     const after = await fixture()
     expect(after.preference).toBeNull()
-    expect(after.selections).toBe(0)
     expect(after.hasActiveOrganization).toBe(false)
     expect(after.globalMailCalls).toBe(0)
   } finally {

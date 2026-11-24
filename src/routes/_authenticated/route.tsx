@@ -3,7 +3,7 @@ import { clientEnvironment } from '#/config/env'
 import { LogoutButton } from '#/features/auth/components/LogoutButton'
 import { requireAuthenticatedUser } from '#/features/auth/routeGuards'
 import { workspaceLoginDestination } from '#/features/auth/utils/authNavigation'
-import { resolveWorkspaceEntry } from '#/features/workspaces/adapters/resolveWorkspaceEntry'
+import { resolveWorkspaceAccess } from '#/features/workspaces/adapters/resolveWorkspaceAccess'
 import { WorkspaceEntryBoundary } from '#/features/workspaces/components/WorkspaceEntryBoundary'
 import { WorkspaceProvider } from '#/features/workspaces/components/WorkspaceProvider'
 
@@ -14,30 +14,28 @@ export const Route = createFileRoute('/_authenticated')({
       location,
       clearFragment: clientEnvironment.workspaceSwitchingEnabled,
     })
-    const entry = await resolveWorkspaceEntry(
-      location.pathname,
+    // Each workspace host only serves members of its own workspace.
+    const access = await resolveWorkspaceAccess(
       clientEnvironment.VITE_WORKSPACE_BASE_HOST,
       clientEnvironment.workspaceSwitchingEnabled,
     )
-    if (entry.kind === 'redirect')
-      throw redirect({ href: entry.href, reloadDocument: true, replace: true })
-    if (entry.kind === 'unauthenticated')
+    if (access.kind === 'unauthenticated')
       throw redirect({
         href: workspaceLoginDestination(location.pathname),
         replace: true,
         reloadDocument: true,
       })
-    return { user, workspaceEntryKind: entry.kind }
+    return { user, workspaceAccess: access.kind }
   },
   component: AuthenticatedLayout,
 })
 
 function AuthenticatedLayout() {
-  const { user, workspaceEntryKind } = Route.useRouteContext()
+  const { user, workspaceAccess } = Route.useRouteContext()
   const router = useRouter()
   return (
     <WorkspaceEntryBoundary
-      kind={workspaceEntryKind}
+      kind={workspaceAccess}
       accountAction={<LogoutButton />}
       retry={() => {
         void router.invalidate()

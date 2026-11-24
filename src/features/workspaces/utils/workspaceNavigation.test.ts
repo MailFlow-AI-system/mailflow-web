@@ -1,44 +1,58 @@
 import { describe, expect, it } from 'vitest'
-import { workspaceDestination } from './workspaceNavigation'
+import { workspaceHandoffDestination } from './workspaceNavigation'
 
 const workspace = { id: 'b', name: 'Northwind', slug: 'northwind', role: 'member' as const }
-describe('workspace destination', () => {
-  it.each(['/inbox', '/sent', '/drafts', '/starred', '/spam', '/trash'])(
-    'preserves collection %s and clears old tenant selectors',
-    (path) => {
-      expect(
-        workspaceDestination(
-          `http://acme.workspace.test:3003${path}?q=private&messageId=a#old`,
-          'workspace.test',
-          workspace,
-        ),
-      ).toBe(`http://northwind.workspace.test:3003${path}`)
-    },
-  )
-  it('falls back to Inbox for routes with IDs or unrelated feature pages', () => {
+const code = 'A'.repeat(43)
+
+describe('workspace handoff destination', () => {
+  it('accepts only the selected workspace handoff on the current protocol and port', () => {
     expect(
-      workspaceDestination(
-        'http://acme.workspace.test:3003/inbox/old-id',
-        'workspace.test',
+      workspaceHandoffDestination(
+        `https://northwind.example.com/auth/handoff?code=${code}`,
+        'https://acme.example.com/sent?q=private#old',
+        'example.com',
         workspace,
       ),
-    ).toBe('http://northwind.workspace.test:3003/inbox')
+    ).toBe(`https://northwind.example.com/auth/handoff?code=${code}`)
+    expect(
+      workspaceHandoffDestination(
+        `http://northwind.localhost:3000/auth/handoff?code=${code}`,
+        'http://acme.localhost:3000/inbox',
+        'localhost',
+        workspace,
+      ),
+    ).toBe(`http://northwind.localhost:3000/auth/handoff?code=${code}`)
   })
-  it('rejects external origins and unsafe returned slugs', () => {
+  it.each([
+    `https://evil.test/auth/handoff?code=${code}`,
+    `https://acme.example.com/auth/handoff?code=${code}`,
+    `https://northwind.example.com.evil.test/auth/handoff?code=${code}`,
+    `http://northwind.example.com/auth/handoff?code=${code}`,
+    `https://northwind.example.com:8443/auth/handoff?code=${code}`,
+    `https://northwind.example.com/inbox?code=${code}`,
+    `https://northwind.example.com/auth/handoff?code=${code}&next=https://evil.test`,
+    `https://northwind.example.com/auth/handoff?code=${code}#fragment`,
+    'https://northwind.example.com/auth/handoff?code=short',
+    `https://user@northwind.example.com/auth/handoff?code=${code}`,
+    'not a url',
+  ])('rejects %s', (handoff) => {
     expect(() =>
-      workspaceDestination('https://evil.test/inbox', 'workspace.test', workspace),
-    ).toThrow()
-    expect(() =>
-      workspaceDestination('http://acme.workspace.test/inbox', 'workspace.test', {
-        ...workspace,
-        slug: 'evil.example',
-      }),
+      workspaceHandoffDestination(
+        handoff,
+        'https://acme.example.com/inbox',
+        'example.com',
+        workspace,
+      ),
     ).toThrow()
   })
-})
-
-it('navigates between localhost hosts while clearing selectors', () => {
-  expect(
-    workspaceDestination('http://localhost:3000/sent?q=private#old', 'localhost', workspace),
-  ).toBe('http://northwind.localhost:3000/sent')
+  it('rejects a source page outside the workspace hosts', () => {
+    expect(() =>
+      workspaceHandoffDestination(
+        `https://northwind.example.com/auth/handoff?code=${code}`,
+        'https://evil.test/inbox',
+        'example.com',
+        workspace,
+      ),
+    ).toThrow()
+  })
 })
