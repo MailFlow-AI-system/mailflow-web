@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { control, fixture, login } from './fixture'
+import { control, fixture, login, selectNorthwind } from './fixture'
 
 test.setTimeout(60000)
 
@@ -90,7 +90,7 @@ test('does not carry a selection into another workspace', async ({ page }) => {
     .click()
   await expect(page.getByText('1 selected', { exact: true })).toBeVisible()
 
-  await page.goto(`http://${data.targetHost}:3003/inbox`)
+  await selectNorthwind(page)
   await expect(page.getByText('Northwind private message', { exact: true }).first()).toBeVisible({
     timeout: 15000,
   })

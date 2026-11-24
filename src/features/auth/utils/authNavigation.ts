@@ -10,7 +10,11 @@ export function safeMailCollectionPath(value: unknown): MailCollectionPath {
 
 export function normalizeLoginSearch(search: Record<string, unknown>): LoginSearch {
   const path = safeMailCollectionPath(search.returnTo)
-  return path === '/inbox' ? {} : { returnTo: path }
+  return {
+    // Set by /auth/handoff when a workspace switch link is invalid, used or expired.
+    ...(search.handoff === 'expired' ? { handoff: 'expired' as const } : {}),
+    ...(path === '/inbox' ? {} : { returnTo: path }),
+  }
 }
 
 export function workspaceLoginDestination(pathname: string) {

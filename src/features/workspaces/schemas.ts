@@ -25,12 +25,4 @@ export const workspacePageSchema = z.object({
   nextCursor: z.string().nullable(),
 })
 export const workspaceContextSchema = z.object({ workspace: workspaceSchema.nullable() })
-export const workspaceSelectionSchema = z
-  .object({ workspaceId: z.string().min(1).max(128) })
-  .strict()
-export const workspaceSelectionResultSchema = z.object({ workspace: workspaceSchema }).strict()
-export const workspaceEntrySchema = z.discriminatedUnion('source', [
-  z.object({ source: z.literal('preference'), workspace: workspaceSchema }).strict(),
-  z.object({ source: z.literal('fallback'), workspace: workspaceSchema }).strict(),
-  z.object({ source: z.literal('none'), workspace: z.null() }).strict(),
-])
+export const workspaceHandoffResultSchema = z.object({ url: z.string().max(2048) }).strict()

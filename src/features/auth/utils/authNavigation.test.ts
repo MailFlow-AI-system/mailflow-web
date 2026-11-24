@@ -22,3 +22,15 @@ describe('bounded login continuation', () => {
     expect(normalizeLoginSearch({ returnTo })).toEqual({})
   })
 })
+
+describe('workspace handoff notice', () => {
+  it('keeps only the known expired-handoff marker', () => {
+    expect(normalizeLoginSearch({ handoff: 'expired' })).toEqual({ handoff: 'expired' })
+    expect(normalizeLoginSearch({ handoff: 'expired', returnTo: '/sent' })).toEqual({
+      handoff: 'expired',
+      returnTo: '/sent',
+    })
+    for (const handoff of ['other', '<script>', 1, null])
+      expect(normalizeLoginSearch({ handoff })).toEqual({})
+  })
+})

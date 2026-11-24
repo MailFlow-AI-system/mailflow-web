@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { WorkspaceIdentityChangedError } from '../clients/workspaceAuthority'
-import { selectWorkspace } from '../clients/workspaceClient'
+import { issueWorkspaceHandoff } from '../clients/workspaceClient'
 import { WorkspaceRateLimitedError } from '../clients/workspaceRateLimitedError'
 import type { Workspace } from '../types'
 import type { WorkspaceSelectionOptions } from '../types/selection'
-import { workspaceDestination } from '../utils/workspaceNavigation'
+import { workspaceHandoffDestination } from '../utils/workspaceNavigation'
 import { useWorkspaceIdentityRecovery } from './useWorkspaceIdentityRecovery'
 
 export function useWorkspaceSelection({ state, baseHost, enabled }: WorkspaceSelectionOptions) {
@@ -30,12 +30,12 @@ export function useWorkspaceSelection({ state, baseHost, enabled }: WorkspaceSel
     setRetryAfterSeconds(null)
     let navigating = false
     try {
-      // Check our source and proposed destination before committing anything.
-      workspaceDestination(window.location.href, baseHost, workspace)
-      const authorized = await selectWorkspace(workspace.id, state.identityId, controller.signal)
+      // The destination host has no session yet; the single-use handoff code creates one.
+      const handoff = await issueWorkspaceHandoff(workspace.id, state.identityId, controller.signal)
       if (controller.signal.aborted) return
-      const destination = workspaceDestination(window.location.href, baseHost, authorized)
-      window.location.assign(destination)
+      window.location.assign(
+        workspaceHandoffDestination(handoff, window.location.href, baseHost, workspace),
+      )
       navigating = true
     } catch (failure) {
       if (!controller.signal.aborted) {

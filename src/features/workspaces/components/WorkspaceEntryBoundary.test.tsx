@@ -4,13 +4,14 @@ import { WorkspaceEntryBoundary } from './WorkspaceEntryBoundary'
 
 afterEach(cleanup)
 describe('workspace entry boundary', () => {
-  it('does not mount the composer or content while entry is empty or unavailable', () => {
+  it('explains a missing membership without mounting the composer or content', () => {
     render(
-      <WorkspaceEntryBoundary kind="empty" retry={() => {}}>
+      <WorkspaceEntryBoundary kind="forbidden" retry={() => {}}>
         <button type="button">Compose</button>
       </WorkspaceEntryBoundary>,
     )
-    expect(screen.getByRole('heading', { name: 'No workspace available' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'No access to this workspace' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Compose' })).not.toBeInTheDocument()
   })
   it('offers a retry only for operational failures without mounting tenant content', () => {
@@ -35,7 +36,7 @@ describe('workspace entry boundary', () => {
   it('offers an account action without requiring any tenant content', () => {
     render(
       <WorkspaceEntryBoundary
-        kind="empty"
+        kind="forbidden"
         retry={() => {}}
         accountAction={<button type="button">Sign out</button>}
       >

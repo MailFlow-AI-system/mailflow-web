@@ -19,6 +19,23 @@ describe('workspace host resolution', () => {
   ])('rejects %s', (hostname) => {
     expect(resolveWorkspaceHost(hostname, 'workspace.test')).toEqual({ kind: 'invalid' })
   })
+  it.each([
+    'www',
+    'api',
+    'app',
+    'app-dev',
+    'app-staging',
+    'api-dev',
+    'api-staging',
+    'site-dev',
+    'site-staging',
+    'dev',
+    'staging',
+  ])('treats the reserved %s host as a non-workspace host', (slug) => {
+    expect(resolveWorkspaceHost(`${slug}.mailflow-ai.online`, 'mailflow-ai.online')).toEqual({
+      kind: 'invalid',
+    })
+  })
   it('uses at most two word initials', () => {
     expect(workspaceInitials('  Acme Corp Group ')).toBe('AC')
   })

@@ -73,9 +73,7 @@ test('ingests real Faro spans and correlates all workspace outcomes through Web/
   }
 
   await exercise('/api/v1/workspaces', null, 200, 'success')
-  await exercise('/api/v1/workspace-selection', data.unrelatedId, 404, 'denied')
-  await control('fail-next')
-  await exercise('/api/v1/workspace-selection', data.targetId, 502, 'failure')
+  await exercise('/api/auth/workspace-handoff/issue', data.unrelatedId, 404, 'denied')
   await control('fail-next-budget')
   await exercise('/api/v1/workspaces', null, 503, 'unavailable')
   await page.evaluate(async () => {

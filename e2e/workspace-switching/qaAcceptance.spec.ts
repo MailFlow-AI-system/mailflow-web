@@ -59,7 +59,6 @@ for (const scenario of workspaceQaCases) {
       })
       await page.keyboard.press('Escape')
       await expect(trigger).toBeFocused()
-      expect((await fixture()).selections).toBe(0)
 
       await reachByTab(page, trigger)
       await page.keyboard.press('Enter')

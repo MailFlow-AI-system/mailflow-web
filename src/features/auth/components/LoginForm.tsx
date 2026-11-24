@@ -6,9 +6,6 @@ import { useForm } from 'react-hook-form'
 import { clientEnvironment } from '#/config/env'
 
 import { recordAuthTransportFailure } from '../../../observability/faro'
-import { workspaceEntrySchema } from '../../workspaces/schemas'
-import { resolveWorkspaceHost } from '../../workspaces/utils/workspaceHost'
-import { workspaceDestination } from '../../workspaces/utils/workspaceNavigation'
 import { AUTH_UPSTREAM_UNAVAILABLE } from '../authErrorCodes'
 import { authClient } from '../clients/authClient'
 import { loginSchema } from '../schemas/loginSchema'
@@ -19,6 +16,27 @@ import { PasswordInput } from './PasswordInput'
 
 const INVALID_CREDENTIALS_MESSAGE = 'Email or password is incorrect.'
 const SIGN_IN_ERROR_MESSAGE = 'Unable to sign in. Please try again.'
+// Identical for unknown and unauthorized workspaces, so it never reveals whether one exists.
+const NO_WORKSPACE_ACCESS_MESSAGE = 'This account does not have access to this workspace.'
+const authMessages = [
+  INVALID_CREDENTIALS_MESSAGE,
+  SIGN_IN_ERROR_MESSAGE,
+  NO_WORKSPACE_ACCESS_MESSAGE,
+]
+
+// Login happens on the workspace host itself; only members of that workspace may stay signed in.
+async function hasWorkspaceAccess() {
+  try {
+    const response = await fetch('/api/workspace-context', {
+      credentials: 'same-origin',
+      cache: 'no-store',
+    })
+    return response.status !== 403 && response.status !== 404
+  } catch {
+    // The authenticated route reports operational failures and offers a retry.
+    return true
+  }
+}
 
 export function LoginForm({ returnTo }: LoginFormProps = {}) {
   const queryClient = useQueryClient()
@@ -52,30 +70,12 @@ export function LoginForm({ returnTo }: LoginFormProps = {}) {
       await queryClient.cancelQueries()
       queryClient.clear()
       if (clientEnvironment.workspaceSwitchingEnabled) {
-        const path = safeMailCollectionPath(returnTo)
-        let href = `${path}#`
-        const baseHost = clientEnvironment.VITE_WORKSPACE_BASE_HOST
-        if (
-          baseHost &&
-          resolveWorkspaceHost(window.location.hostname, baseHost).kind === 'generic'
-        ) {
-          try {
-            const response = await fetch('/api/v1/workspace-entry', {
-              credentials: 'same-origin',
-              cache: 'no-store',
-            })
-            if (response.ok) {
-              const entry = workspaceEntrySchema.parse(await response.json())
-              if (entry.workspace) {
-                href = `${workspaceDestination(new URL(path, window.location.origin).href, baseHost, entry.workspace)}#`
-              }
-            }
-          } catch {
-            // The authenticated route displays the workspace error or empty state.
-          }
+        if (!(await hasWorkspaceAccess())) {
+          await authClient.signOut().catch(() => undefined)
+          throw new Error(NO_WORKSPACE_ACCESS_MESSAGE)
         }
         await navigate({
-          href,
+          href: `${safeMailCollectionPath(returnTo)}#`,
           replace: true,
           reloadDocument: true,
         })
@@ -88,8 +88,7 @@ export function LoginForm({ returnTo }: LoginFormProps = {}) {
         recordAuthTransportFailure('sign_in', performance.now() - authStartedAt)
       }
       const message =
-        error instanceof Error &&
-        (error.message === INVALID_CREDENTIALS_MESSAGE || error.message === SIGN_IN_ERROR_MESSAGE)
+        error instanceof Error && authMessages.includes(error.message)
           ? error.message
           : SIGN_IN_ERROR_MESSAGE
       setFormError('root.server', { type: 'server', message })
