@@ -1,4 +1,5 @@
 import { filterBetterAuthCookies } from '#/features/auth/adapters/authCookies'
+import { noProxySecret, type ProxySecretReader } from '#/features/auth/adapters/clientIpForwarding'
 import { explicitMailSort } from '#/features/mail-sort/mailSort'
 import {
   createWorkspaceTransport,
@@ -12,8 +13,9 @@ export function createMailMessagesProxyHandler(
   apiBaseUrl: string,
   fetcher: typeof fetch = fetch,
   baseHost?: string,
+  readProxySecret: ProxySecretReader = noProxySecret,
 ) {
-  const forward = createWorkspaceTransport(apiBaseUrl, fetcher)
+  const forward = createWorkspaceTransport(apiBaseUrl, fetcher, readProxySecret)
   return async function proxyMailMessages(request: Request): Promise<Response> {
     const url = new URL(request.url)
     const failure = (status: number, code: string) =>

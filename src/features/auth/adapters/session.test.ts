@@ -68,3 +68,25 @@ describe('readAuthSession', () => {
     ).rejects.toThrow('Unable to verify the session')
   })
 })
+
+describe('readAuthSession client IP forwarding', () => {
+  it('forwards the original request client IP with the proxy secret', async () => {
+    const secret = 'worker-proxy-secret-0123456789abcdef'
+    const fetcher = vi.fn<typeof fetch>(async () => Response.json(null))
+    const request = new Request('https://acme.example.com/inbox', {
+      headers: { 'CF-Connecting-IP': '203.0.113.27', 'X-MailFlow-Client-IP': '192.0.2.1' },
+    })
+
+    await readAuthSession(
+      'http://localhost:8080',
+      'better-auth.session_token=abc',
+      fetcher,
+      request,
+      () => secret,
+    )
+
+    const headers = new Headers(fetcher.mock.calls[0]?.[1]?.headers)
+    expect(headers.get('x-mailflow-client-ip')).toBe('203.0.113.27')
+    expect(headers.get('x-mailflow-proxy-secret')).toBe(secret)
+  })
+})

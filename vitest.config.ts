@@ -8,6 +8,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      'cloudflare:workers': fileURLToPath(
+        new URL('./src/test/cloudflareWorkers.ts', import.meta.url),
+      ),
     },
   },
   test: {

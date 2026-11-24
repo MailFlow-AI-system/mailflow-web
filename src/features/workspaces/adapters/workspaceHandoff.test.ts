@@ -80,3 +80,45 @@ describe('workspace handoff route', () => {
     expect(fetcher).not.toHaveBeenCalled()
   })
 })
+
+describe('workspace handoff client IP forwarding', () => {
+  const secret = 'worker-proxy-secret-0123456789abcdef'
+  const exchange = (readProxySecret?: () => string | undefined) => {
+    const fetcher = vi.fn(async () => new Response('{"status":true}'))
+    const handle = createWorkspaceHandoffHandler(
+      api,
+      'example.com',
+      true,
+      fetcher,
+      ...(readProxySecret ? [readProxySecret] : []),
+    )
+    return { fetcher, handle }
+  }
+  const request = () =>
+    new Request(`https://acme.example.com/auth/handoff?code=${code}`, {
+      headers: {
+        'CF-Connecting-IP': '2001:db8::7',
+        'X-Real-IP': '198.51.100.66',
+        'X-MailFlow-Client-IP': '192.0.2.1',
+      },
+    })
+
+  it('sends the client IP and proxy secret with the exchange', async () => {
+    const { fetcher, handle } = exchange(() => secret)
+    await handle(request())
+    const [, init] = fetcher.mock.calls[0] as unknown as [URL, RequestInit]
+    const headers = new Headers(init.headers)
+    expect(headers.get('x-mailflow-client-ip')).toBe('2001:db8::7')
+    expect(headers.get('x-mailflow-proxy-secret')).toBe(secret)
+    expect(headers.get('x-real-ip')).toBeNull()
+  })
+
+  it('sends no proxy headers without a secret', async () => {
+    const { fetcher, handle } = exchange()
+    await handle(request())
+    const [, init] = fetcher.mock.calls[0] as unknown as [URL, RequestInit]
+    const headers = new Headers(init.headers)
+    expect(headers.get('x-mailflow-client-ip')).toBeNull()
+    expect(headers.get('x-mailflow-proxy-secret')).toBeNull()
+  })
+})

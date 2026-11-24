@@ -1,4 +1,5 @@
 import { filterBetterAuthCookies } from '#/features/auth/adapters/authCookies'
+import { noProxySecret, type ProxySecretReader } from '#/features/auth/adapters/clientIpForwarding'
 import {
   createWorkspaceTransport,
   workspaceResponseHeaders,
@@ -11,8 +12,9 @@ export function createUnreadCountsProxy(
   apiBaseUrl: string,
   fetcher: typeof fetch = fetch,
   baseHost?: string,
+  readProxySecret: ProxySecretReader = noProxySecret,
 ) {
-  const forward = createWorkspaceTransport(apiBaseUrl, fetcher)
+  const forward = createWorkspaceTransport(apiBaseUrl, fetcher, readProxySecret)
   return async (request: Request): Promise<Response> => {
     const url = new URL(request.url)
     const failure = (status: number, code: string) =>

@@ -1,5 +1,6 @@
 import { AUTH_UPSTREAM_UNAVAILABLE } from '../authErrorCodes'
 import { filterBetterAuthCookies } from './authCookies'
+import { noProxySecret, type ProxySecretReader, setClientIpHeaders } from './clientIpForwarding'
 
 const allowedAuthRequests = new Set([
   'GET /api/auth/get-session',
@@ -89,7 +90,11 @@ function copyResponseHeaders(source: Headers): Headers {
   return headers
 }
 
-export function createAuthProxyHandler(apiBaseUrl: string, fetcher: typeof fetch = fetch) {
+export function createAuthProxyHandler(
+  apiBaseUrl: string,
+  fetcher: typeof fetch = fetch,
+  readProxySecret: ProxySecretReader = noProxySecret,
+) {
   return async function proxyAuthRequest(request: Request): Promise<Response> {
     const incomingUrl = new URL(request.url)
     if (!allowedAuthRequests.has(`${request.method} ${incomingUrl.pathname}`)) {
@@ -102,7 +107,7 @@ export function createAuthProxyHandler(apiBaseUrl: string, fetcher: typeof fetch
     const upstreamUrl = new URL(incomingUrl.pathname + incomingUrl.search, apiBaseUrl)
     const init: StreamingRequestInit = {
       method: request.method,
-      headers: copyRequestHeaders(request.headers),
+      headers: setClientIpHeaders(request, copyRequestHeaders(request.headers), readProxySecret()),
       redirect: 'manual',
       cache: 'no-store',
     }

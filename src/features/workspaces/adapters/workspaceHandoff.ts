@@ -1,3 +1,8 @@
+import {
+  clientIpHeaders,
+  noProxySecret,
+  type ProxySecretReader,
+} from '#/features/auth/adapters/clientIpForwarding'
 import { resolveWorkspaceHost } from '../utils/workspaceHost'
 import { isWorkspaceRequestOrigin } from '../utils/workspaceOrigin'
 
@@ -23,6 +28,7 @@ export function createWorkspaceHandoffHandler(
   baseHost: string | undefined,
   enabled: boolean,
   fetcher: typeof fetch = fetch,
+  readProxySecret: ProxySecretReader = noProxySecret,
 ) {
   return async (request: Request) => {
     const url = new URL(request.url)
@@ -43,6 +49,7 @@ export function createWorkspaceHandoffHandler(
           Accept: 'application/json',
           'Content-Type': 'application/json',
           Origin: url.origin,
+          ...clientIpHeaders(request, readProxySecret()),
         },
         body: JSON.stringify({ code }),
         cache: 'no-store',

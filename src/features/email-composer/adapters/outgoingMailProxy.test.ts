@@ -343,3 +343,29 @@ it('forwards the workspace-scoped label search and rejects untrusted assignment 
     `https://api.example.test/api/v1/workspaces/team-a/mail/sent/${id}/labels/${id}`,
   )
 })
+it('forwards the Cloudflare client IP with the proxy secret and never client-supplied values', async () => {
+  const secret = 'worker-proxy-secret-0123456789abcdef'
+  const fetcher = vi.fn<typeof fetch>(async () => Response.json({ items: [] }))
+  const forged = {
+    'CF-Connecting-IP': '203.0.113.27',
+    'X-Real-IP': '198.51.100.66',
+    'X-MailFlow-Client-IP': '192.0.2.1',
+    'X-MailFlow-Proxy-Secret': 'guess',
+  }
+  await createOutgoingMailProxy(
+    'https://api.example.test',
+    fetcher,
+    () => secret,
+  )(new Request(`${origin}/api/mail/sent`, { headers: forged }))
+  const withSecret = new Headers(fetcher.mock.calls.at(-1)?.[1]?.headers)
+  expect(withSecret.get('x-mailflow-client-ip')).toBe('203.0.113.27')
+  expect(withSecret.get('x-mailflow-proxy-secret')).toBe(secret)
+  expect(withSecret.get('x-real-ip')).toBeNull()
+  await createOutgoingMailProxy(
+    'https://api.example.test',
+    fetcher,
+  )(new Request(`${origin}/api/mail/sent`, { headers: forged }))
+  const withoutSecret = new Headers(fetcher.mock.calls.at(-1)?.[1]?.headers)
+  expect(withoutSecret.get('x-mailflow-client-ip')).toBeNull()
+  expect(withoutSecret.get('x-mailflow-proxy-secret')).toBeNull()
+})

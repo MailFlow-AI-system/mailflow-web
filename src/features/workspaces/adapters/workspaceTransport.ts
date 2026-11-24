@@ -1,13 +1,23 @@
 import { filterBetterAuthCookies } from '../../auth/adapters/authCookies'
+import {
+  clientIpHeaders,
+  noProxySecret,
+  type ProxySecretReader,
+} from '../../auth/adapters/clientIpForwarding'
 import type { WorkspaceResponseHeader, WorkspaceTransportOptions } from '../types/transport'
 
-export function createWorkspaceTransport(apiBaseUrl: string, fetcher: typeof fetch) {
+export function createWorkspaceTransport(
+  apiBaseUrl: string,
+  fetcher: typeof fetch,
+  readProxySecret: ProxySecretReader = noProxySecret,
+) {
   return (request: Request, path: string, options: WorkspaceTransportOptions = {}) => {
     const cookie = filterBetterAuthCookies(request.headers.get('cookie'))
     if (!cookie) throw new Error('Workspace forwarding requires a session cookie')
     const headers: Record<string, string> = {
       Cookie: cookie,
       Accept: 'application/json',
+      ...clientIpHeaders(request, readProxySecret()),
     }
     for (const name of ['traceparent', 'tracestate']) {
       const value = request.headers.get(name)

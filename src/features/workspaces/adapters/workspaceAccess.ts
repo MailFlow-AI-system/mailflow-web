@@ -1,3 +1,4 @@
+import { noProxySecret, type ProxySecretReader } from '#/features/auth/adapters/clientIpForwarding'
 import type { WorkspaceAccess } from '../types/access'
 import { resolveWorkspaceHost } from '../utils/workspaceHost'
 import { isWorkspaceRequestOrigin } from '../utils/workspaceOrigin'
@@ -11,6 +12,7 @@ export async function readWorkspaceAccess(
   baseHost: string | undefined,
   enabled: boolean,
   fetcher: typeof fetch = fetch,
+  readProxySecret: ProxySecretReader = noProxySecret,
 ): Promise<WorkspaceAccess> {
   if (!baseHost || !enabled) return { kind: 'passthrough' }
   const url = new URL(request.url)
@@ -18,10 +20,11 @@ export async function readWorkspaceAccess(
   if (!isWorkspaceRequestOrigin(url, baseHost) || host.kind !== 'workspace')
     return { kind: 'invalid' }
   try {
-    const upstream = await createWorkspaceTransport(apiBaseUrl, fetcher)(
-      request,
-      `/api/v1/workspaces/${host.slug}/context`,
-    )
+    const upstream = await createWorkspaceTransport(
+      apiBaseUrl,
+      fetcher,
+      readProxySecret,
+    )(request, `/api/v1/workspaces/${host.slug}/context`)
     if (upstream.ok) return { kind: 'passthrough' }
     if (upstream.status === 401) return { kind: 'unauthenticated' }
     if (upstream.status === 403 || upstream.status === 404) return { kind: 'forbidden' }
