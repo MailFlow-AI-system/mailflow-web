@@ -5,13 +5,11 @@ export type SwitchingFixture = {
   otherEmail: string
   emptyEmail: string
   currentId: string
-  fallbackHost: string
   password: string
   targetId: string
   unrelatedId: string
   unrelatedHost: string
   controlKey: string
-  selections: number
   globalMailCalls: number
   preference: string | null
   hasActiveOrganization: boolean
@@ -24,7 +22,7 @@ export type PausedWorkspaceResponse = {
   responseHeaders?: { name: string; value: string }[]
 }
 
-export type PausedWorkspacePath = '/api/workspace-context' | '/api/v1/workspace-selection'
+export type PausedWorkspacePath = '/api/workspace-context' | '/api/auth/workspace-handoff/issue'
 
 export type WorkspaceQaCase = {
   name: string

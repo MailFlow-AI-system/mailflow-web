@@ -1,26 +1,22 @@
 # Local workspaces
 
-`bun run dev` selects the local profile from the actual Vite dev-server context.
-Open `http://localhost:3000`; membership and the saved preference select the destination.
-An explicit address such as `http://luis-felipe.localhost:3000` always keeps that workspace.
-No hosts-file entries are needed. The local profile replaces injected published API origins
-with `http://localhost:8080` and preserves explicit HTTP loopback API ports.
-Injected published Web hosts are replaced only in the local dev-server profile.
-Builds, previews and Cloudflare/CI execution keep their explicit deployment configuration.
-Use `MAILFLOW_LOCAL_PROFILE=false` for an intentional remote dev-server profile.
-The isolated `workspace.test` fixtures remain supported explicitly.
+`bun run dev` selects the local profile from the actual Vite dev-server context: workspaces run
+on `http://{slug}.localhost:3000` with `VITE_WORKSPACE_SWITCHING_ENABLED=true`, and the bare
+`http://localhost:3000` (or any reserved host) redirects to the local Site at
+`http://localhost:4321`. No hosts-file entries are needed; browsers resolve `*.localhost` to
+loopback. The local profile replaces injected published API origins with `http://localhost:8080`
+and preserves explicit HTTP loopback API ports. Builds, previews and Cloudflare/CI execution keep
+their explicit deployment configuration. Use `MAILFLOW_LOCAL_PROFILE=false` for an intentional
+remote dev-server profile. The isolated `workspace.test` zone remains supported explicitly.
 
-Run Core with its restricted runtime role and current schema first; see its README.
-Its local runner verifies those prerequisites before enabling workspace reads and switching.
-It never migrates the shared database. Owner/BYPASSRLS credentials cannot serve workspace data.
+Run Core with its restricted runtime role and current schema first; see its README. Its local
+runner verifies those prerequisites (including the handoff functions) before enabling workspace
+hosting. It never migrates the shared database.
 
-Browsers do not share a `Domain=localhost` cookie with sibling localhost hosts.
-The local Vite middleware therefore keeps the real Better Auth token in server memory.
-Each host receives a host-only HttpOnly browser binding through a 30-second, single-use
-handoff with a destination challenge and source-browser verification. Login/logout update
-the shared server session while workspace authority stays host-specific in Core.
-Tokens never enter handoff URLs or browser JavaScript. Restarting Vite requires signing in again.
-The middleware is absent from build and preview, and localhost workspace builds are rejected.
+Each host keeps its own host-only session cookie, exactly as in published environments. Sign in
+at `http://{slug}.localhost:3000/login`; switching workspaces asks Core for a one-time handoff
+code and opens `http://{other}.localhost:3000/auth/handoff?code=…`, which creates that host's
+session. Logout only ends the current host's session.
 
 ## Browser acceptance
 
@@ -39,8 +35,6 @@ with a developer's existing server.
 
 ## Listening
 
-A shared localhost domain cookie was rejected after a real Chromium check showed it was
-host-only. The dev-server session broker preserves shared identity and independent workspace
-contexts across tabs without weakening published cookie or origin policies. Public environments
-continue using their isolated HTTPS Web domains; enable their switching flags only after the
-backend migration/role rollout and tenant upload CORS have been verified.
+The former dev-server session broker shared one server-side session across localhost hosts
+because the published design shared a cookie across subdomains. With host-only cookies and the
+Core handoff everywhere, local development follows the published flow and the broker was removed.

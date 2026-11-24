@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { control, fixture, login } from './fixture'
+import { control, fixture, login, signIn } from './fixture'
 
 test.setTimeout(60000)
 
@@ -23,7 +23,7 @@ test('isolates real inboxes across tabs, search, pagination and refresh', async 
   })
   await expect(page.getByText('Northwind private message', { exact: true })).toHaveCount(0)
   const second = await context.newPage()
-  await second.goto(`http://${data.targetHost}:3003/inbox`)
+  await signIn(second, data.targetHost)
   await expect(
     second
       .getByRole('region', { name: 'Inbox message list', exact: true })
@@ -113,10 +113,11 @@ test('denies spoofed identity, unrelated hosts, revoked membership and legacy in
         .status,
   )
   expect(mismatch).toBe(403)
+  // Another host never sees this host's session.
   await page.goto(`http://${data.unrelatedHost}:3003/inbox`)
-  await expect(page.getByRole('heading', { name: 'Workspace unavailable' })).toBeVisible()
-  expect(await page.evaluate(async () => (await fetch('/api/mail/messages')).status)).toBe(404)
-  await page.goto(`http://${data.targetHost}:3003/inbox`)
+  await expect(page.getByRole('heading', { name: 'Sign in to MailFlow' })).toBeVisible()
+  expect(await page.evaluate(async () => (await fetch('/api/mail/messages')).status)).toBe(401)
+  await signIn(page, data.targetHost)
   await expect(
     page
       .getByRole('region', { name: 'Inbox message list', exact: true })
@@ -125,7 +126,7 @@ test('denies spoofed identity, unrelated hosts, revoked membership and legacy in
   await control('revoke-northwind')
   expect(await page.evaluate(async () => (await fetch('/api/mail/messages')).status)).toBe(404)
   await page.reload()
-  await expect(page.getByRole('heading', { name: 'Workspace unavailable' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'No access to this workspace' })).toBeVisible()
   await expect(page.getByText('Northwind private message', { exact: true })).toHaveCount(0)
   expect((await fetch('http://127.0.0.1:8083/api/v1/mail/messages')).status).toBe(401)
 })

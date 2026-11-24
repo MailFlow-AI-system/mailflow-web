@@ -4,13 +4,13 @@ import { localDevelopmentEnvironment } from './localDevelopment'
 describe('local development environment', () => {
   const env = {
     VITE_API_BASE_URL: 'http://localhost:8080',
-    VITE_WORKSPACE_BASE_HOST: 'app-dev.mailflow-ai.online',
+    VITE_WORKSPACE_BASE_HOST: 'dev.mailflow-ai.online',
   }
   it('uses localhost only for a real local dev server, overriding injected published hosts', () => {
     expect(localDevelopmentEnvironment(env, { command: 'serve', isPreview: false })).toMatchObject({
       VITE_WORKSPACE_BASE_HOST: 'localhost',
-      VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED: 'true',
-      VITE_WORKSPACE_SWITCHING_ENABLED: 'false',
+      VITE_WORKSPACE_SWITCHING_ENABLED: 'true',
+      VITE_SITE_URL: 'http://localhost:4321',
       VITE_API_BASE_URL: env.VITE_API_BASE_URL,
     })
   })

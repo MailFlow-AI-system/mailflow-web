@@ -1,7 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createWorkspaceEntryGateway } from './workspaceEntryGateway'
 import { createWorkspaceGateway } from './workspaceGateway'
-import { createWorkspaceSelectionGateway } from './workspaceSelectionGateway'
 
 const workspace = { id: 'b', name: 'Northwind', slug: 'northwind', role: 'member' }
 const operations = [
@@ -12,24 +10,6 @@ const operations = [
       createWorkspaceGateway('https://core.test', 'workspace.test', fetcher),
     payload: { workspaces: [workspace], nextCursor: null },
     identity: true,
-    method: 'GET',
-  },
-  {
-    name: 'selection',
-    path: 'http://acme.workspace.test/api/v1/workspace-selection',
-    create: (fetcher: typeof fetch) =>
-      createWorkspaceSelectionGateway('https://core.test', 'workspace.test', true, fetcher),
-    payload: { workspace },
-    identity: true,
-    method: 'POST',
-  },
-  {
-    name: 'entry',
-    path: 'http://workspace.test/api/v1/workspace-entry',
-    create: (fetcher: typeof fetch) =>
-      createWorkspaceEntryGateway('https://core.test', 'workspace.test', true, fetcher),
-    payload: { source: 'preference', workspace },
-    identity: false,
     method: 'GET',
   },
 ] as const
@@ -51,7 +31,6 @@ describe.each(operations)('$name forwarding contract', (operation) => {
         Authorization: 'private',
         'X-Forwarded-Host': 'evil.test',
       },
-      ...(operation.method === 'POST' ? { body: JSON.stringify({ workspaceId: 'b' }) } : {}),
     })
   }
 
@@ -67,9 +46,7 @@ describe.each(operations)('$name forwarding contract', (operation) => {
     expect(headers.get('x-workspace-identity')).toBe(operation.identity ? 'actor' : null)
     expect(headers.get('authorization')).toBeNull()
     expect(headers.get('x-forwarded-host')).toBeNull()
-    expect(headers.get('origin')).toBe(
-      operation.method === 'POST' ? new URL(operation.path).origin : null,
-    )
+    expect(headers.get('origin')).toBeNull()
     expect(init?.cache).toBe('no-store')
     expect(init?.redirect).toBe('manual')
   })
@@ -127,22 +104,4 @@ describe.each(operations)('$name forwarding contract', (operation) => {
       expect(response.headers.get('cache-control')).toBe('private, no-store')
     },
   )
-})
-
-it('preserves discovery 503 while sanitizing operational entry/selection failures', async () => {
-  for (const operation of operations) {
-    const request = new Request(operation.path, {
-      method: operation.method,
-      headers: {
-        Cookie: 'better-auth.session_token=synthetic',
-        Origin: new URL(operation.path).origin,
-        'Content-Type': 'application/json',
-      },
-      ...(operation.method === 'POST' ? { body: JSON.stringify({ workspaceId: 'b' }) } : {}),
-    })
-    const response = await operation.create(async () =>
-      Response.json({ code: 'unavailable' }, { status: 503 }),
-    )(request)
-    expect(response.status).toBe(operation.name === 'discovery' ? 503 : 502)
-  }
 })

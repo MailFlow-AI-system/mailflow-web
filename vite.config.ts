@@ -6,7 +6,6 @@ import viteReact from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { createClientEnvironment } from './src/config/env-schema.ts'
 import { localDevelopmentEnvironment } from './src/config/localDevelopment.ts'
-import { localSessionPlugin } from './src/config/localSessionPlugin.ts'
 
 const config = defineConfig(({ command, isPreview }) => {
   const environment = localDevelopmentEnvironment(process.env, {
@@ -16,8 +15,8 @@ const config = defineConfig(({ command, isPreview }) => {
   for (const name of [
     'VITE_API_BASE_URL',
     'VITE_WORKSPACE_BASE_HOST',
-    'VITE_WORKSPACE_LOCAL_SWITCHING_ENABLED',
     'VITE_WORKSPACE_SWITCHING_ENABLED',
+    'VITE_SITE_URL',
   ]) {
     if (environment[name] !== undefined) process.env[name] = String(environment[name])
   }
@@ -40,9 +39,6 @@ const config = defineConfig(({ command, isPreview }) => {
     resolve: { tsconfigPaths: true },
     ssr: { noExternal: ['@mailflow/ui'] },
     plugins: [
-      ...(command === 'serve' && !isPreview && environment.VITE_WORKSPACE_BASE_HOST === 'localhost'
-        ? [localSessionPlugin()]
-        : []),
       devtools(),
       cloudflare({ viteEnvironment: { name: 'ssr' } }),
       tailwindcss(),

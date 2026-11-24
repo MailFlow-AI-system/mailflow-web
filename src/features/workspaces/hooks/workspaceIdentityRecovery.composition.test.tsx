@@ -70,7 +70,7 @@ it('hides old workspace authority and rejects a delayed selection after discover
     'fetch',
     vi.fn<typeof fetch>(async (input, init) => {
       const path = String(input)
-      if (path === '/api/v1/workspace-selection') {
+      if (path === '/api/auth/workspace-handoff/issue') {
         selectionSignal = init?.signal
         return pendingSelection
       }
@@ -100,7 +100,11 @@ it('hides old workspace authority and rejects a delayed selection after discover
   expect(result.current.state.current).toBeNull()
   expect(result.current.state.items).toEqual([])
   expect(client.getQueryCache().getAll()).toHaveLength(0)
-  await act(async () => releaseSelection(response({ workspace: northwind })))
+  await act(async () =>
+    releaseSelection(
+      response({ url: `http://northwind.workspace.test/auth/handoff?code=${'A'.repeat(43)}` }),
+    ),
+  )
   await waitFor(() => expect(result.current.selection.error).toContain('session changed'))
   expect(navigation.assign).not.toHaveBeenCalled()
   expect(navigation.replace.mock.calls.every(([path]) => path === '/sent#')).toBe(true)
@@ -123,7 +127,7 @@ it('rejects late selection data after another identity logs in, without navigati
   vi.stubGlobal(
     'fetch',
     vi.fn<typeof fetch>(async (input) => {
-      if (String(input) === '/api/v1/workspace-selection') return pendingSelection
+      if (String(input) === '/api/auth/workspace-handoff/issue') return pendingSelection
       return response(
         String(input) === '/api/workspace-context'
           ? { workspace: acme }
@@ -150,7 +154,11 @@ it('rejects late selection data after another identity logs in, without navigati
     name: 'Other',
     email: 'other@mailflow.invalid',
   })
-  await act(async () => releaseSelection(response({ workspace: northwind })))
+  await act(async () =>
+    releaseSelection(
+      response({ url: `http://northwind.workspace.test/auth/handoff?code=${'A'.repeat(43)}` }),
+    ),
+  )
   await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith('/sent#'))
   expect(navigation.assign).not.toHaveBeenCalled()
   expect(client.getQueryCache().getAll()).toHaveLength(0)

@@ -7,6 +7,7 @@ const allowedAuthRequests = new Set([
   'POST /api/auth/reset-password',
   'POST /api/auth/sign-in/email',
   'POST /api/auth/sign-out',
+  'POST /api/auth/workspace-handoff/issue',
 ])
 
 const forwardedRequestHeaders = new Set([
